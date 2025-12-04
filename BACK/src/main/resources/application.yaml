@@ -1,14 +1,16 @@
 # 서버 포트
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 # 데이터베이스 연동 설정 (env 처리해야함)
 spring:
+  config:
+    import: optional:file:.env[.properties]
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/dream_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: root
-    password:
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/dream_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:ssafy}
     hikari:
       maximum-pool-size: 10
       connection-timeout: 30000
@@ -28,13 +30,13 @@ mybatis:
 
 # JWT 설정
 jwt:
-  secret: your-secret-key-here-must-be-at-least-256-bits-long-for-HS256-algorithm
-  expiration: 86400000 # 24시간 (밀리초)
+  secret: ${JWT_SECRET:your-secret-key-here-must-be-at-least-256-bits-long-for-HS256-algorithm}
+  expiration: ${JWT_EXPIRATION:86400000} # 24시간 (밀리초)
 
 # FastAPI 연동 설정
 fastapi:
-  url: http://localhost:8000
-  timeout: 60000 # 60초
+  url: ${FASTAPI_URL:http://localhost:8000}
+  timeout: ${FASTAPI_TIMEOUT:60000} # 60초
 
 # 로깅 설정
 logging:
@@ -46,10 +48,10 @@ logging:
 # Springdoc OpenAPI 설정
 springdoc:
   swagger-ui:
-    tags-sorter: alpha  # 태그를 알파벳 순으로 정렬 (1, 2, 3... 순서)
-    operations-sorter: alpha  # 각 태그 내 operation도 알파벳 순 정렬
+    tags-sorter: alpha # 태그를 알파벳 순으로 정렬 (1, 2, 3... 순서)
+    operations-sorter: alpha # 각 태그 내 operation도 알파벳 순 정렬
     display-request-duration: true
-    doc-expansion: none  # 기본적으로 모두 접혀있음
+    doc-expansion: none # 기본적으로 모두 접혀있음
   api-docs:
     path: /v3/api-docs
   default-consumes-media-type: application/json

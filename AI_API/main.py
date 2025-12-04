@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 # 서비스 모듈 및 스키마 임포트
 from services.schemas import (
@@ -55,6 +56,19 @@ app = FastAPI(
     description="꿈 해몽과 네이버 운세를 결합한 통합 운세 API",
     version="1.0.0",
     lifespan=lifespan
+)
+
+# CORS 설정 - 프론트엔드 및 백엔드 연동 허용
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # Vue 개발 서버
+        "http://localhost:3000",  # 대체 프론트엔드 포트
+        "http://localhost:8080",  # Spring Boot 백엔드
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # --- API 엔드포인트 ---

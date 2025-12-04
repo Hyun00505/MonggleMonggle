@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { useGalleryStore } from './galleryStore';
 import { useMonthlyMemoStore } from './monthlyMemoStore';
 import { luckyColorPalette, getLuckyColorById } from '../constants/luckyColors';
+import { dreamService } from '../services/dreamService';
 
 const STORAGE_KEY = 'dreamEntriesStore';
 const LEGACY_KEY = 'dreamStore';
@@ -26,6 +27,9 @@ export const useDreamEntriesStore = defineStore('dreamEntries', () => {
   const posts = ref({});
   const showAnalysisOption = ref(false);
   const currentLuckyColorId = ref(getRandomLuckyColorId());
+  const loading = ref(false);
+  const error = ref(null);
+  const currentDreamId = ref(null); // 서버에서 받은 꿈 ID
 
   function setSelectedDate(date) {
     selectedDate.value = date;
@@ -41,6 +45,7 @@ export const useDreamEntriesStore = defineStore('dreamEntries', () => {
       dreamTitle.value = existingPost.title;
       dreamContent.value = existingPost.content;
       selectedEmotion.value = existingPost.emotion ?? null;
+      currentDreamId.value = existingPost.dreamId ?? null;
       showAnalysisOption.value = true;
       if (typeof existingPost.luckyColorId === 'number') {
         currentLuckyColorId.value = existingPost.luckyColorId;
@@ -56,44 +61,135 @@ export const useDreamEntriesStore = defineStore('dreamEntries', () => {
     dreamTitle.value = '';
     dreamContent.value = '';
     selectedEmotion.value = null;
+    currentDreamId.value = null;
   }
 
-  function saveDream() {
+  // API 연동 꿈 저장
+  async function saveDream() {
     if (!selectedDate.value) return false;
 
     const dateKey = formatDateKey(selectedDate.value);
     const luckyColor = getLuckyColorById(currentLuckyColorId.value);
-    posts.value = {
-      ...posts.value,
-      [dateKey]: {
-        title: dreamTitle.value,
-        content: dreamContent.value,
-        emotion: selectedEmotion.value,
-        color: luckyColor.hex,
-        luckyColorId: luckyColor.id,
-        luckyColorName: luckyColor.name
-      }
-    };
+    
+    loading.value = true;
+    error.value = null;
 
-    showAnalysisOption.value = true;
-    persistEntries();
-    return true;
+    try {
+      // 로그인 상태일 때만 API 호출
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        const dreamData = {
+          title: dreamTitle.value,
+          content: dreamContent.value,
+          dreamDate: dateKey,
+          emotionScore: selectedEmotion.value || 3,
+        };
+
+        let response;
+        if (currentDreamId.value) {
+          // 수정
+          response = await dreamService.updateDream(currentDreamId.value, dreamData);
+        } else {
+          // 새로 생성
+          response = await dreamService.createDream(dreamData);
+          currentDreamId.value = response.dreamId;
+        }
+      }
+
+      // 로컬 상태 업데이트
+      posts.value = {
+        ...posts.value,
+        [dateKey]: {
+          dreamId: currentDreamId.value,
+          title: dreamTitle.value,
+          content: dreamContent.value,
+          emotion: selectedEmotion.value,
+          color: luckyColor.hex,
+          luckyColorId: luckyColor.id,
+          luckyColorName: luckyColor.name
+        }
+      };
+
+      showAnalysisOption.value = true;
+      persistEntries();
+      return true;
+    } catch (err) {
+      error.value = err.response?.data?.message || '꿈 일기 저장에 실패했습니다.';
+      console.error('Dream save error:', err);
+      return false;
+    } finally {
+      loading.value = false;
+    }
   }
 
-  function deleteDream() {
+  // API 연동 꿈 삭제
+  async function deleteDream() {
     if (!selectedDate.value) return;
     const dateKey = formatDateKey(selectedDate.value);
 
     if (!posts.value[dateKey]) return;
 
-    const updatedPosts = { ...posts.value };
-    delete updatedPosts[dateKey];
-    posts.value = updatedPosts;
+    loading.value = true;
+    error.value = null;
 
-    resetWriteFields();
-    selectedEmotion.value = null;
-    showAnalysisOption.value = false;
-    persistEntries();
+    try {
+      // 로그인 상태이고 dreamId가 있으면 API 호출
+      const token = localStorage.getItem('accessToken');
+      const dreamId = posts.value[dateKey]?.dreamId;
+      
+      if (token && dreamId) {
+        await dreamService.deleteDream(dreamId);
+      }
+
+      const updatedPosts = { ...posts.value };
+      delete updatedPosts[dateKey];
+      posts.value = updatedPosts;
+
+      resetWriteFields();
+      selectedEmotion.value = null;
+      showAnalysisOption.value = false;
+      persistEntries();
+    } catch (err) {
+      error.value = err.response?.data?.message || '꿈 일기 삭제에 실패했습니다.';
+      console.error('Dream delete error:', err);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // 서버에서 월별 꿈 목록 가져오기
+  async function fetchDreamsByMonth(year, month) {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await dreamService.getDreamsByMonth(year, month);
+      
+      // 서버 데이터를 로컬 상태에 병합
+      if (response.dreams && Array.isArray(response.dreams)) {
+        response.dreams.forEach(dream => {
+          const dateKey = dream.dreamDate;
+          posts.value[dateKey] = {
+            dreamId: dream.dreamId,
+            title: dream.title,
+            content: dream.content,
+            emotion: dream.emotionScore,
+            color: dream.luckyColor || getLuckyColorById(getRandomLuckyColorId()).hex,
+            luckyColorId: dream.luckyColorId || getRandomLuckyColorId(),
+            luckyColorName: dream.luckyColorName || ''
+          };
+        });
+        persistEntries();
+      }
+    } catch (err) {
+      error.value = err.response?.data?.message || '꿈 목록을 가져오는데 실패했습니다.';
+      console.error('Fetch dreams error:', err);
+    } finally {
+      loading.value = false;
+    }
   }
 
   function enableEditMode() {
@@ -208,6 +304,9 @@ export const useDreamEntriesStore = defineStore('dreamEntries', () => {
     formattedSelectedDate,
     postedDates,
     currentLuckyColor,
+    loading,
+    error,
+    currentDreamId,
     setSelectedDate,
     saveDream,
     deleteDream,
@@ -218,7 +317,8 @@ export const useDreamEntriesStore = defineStore('dreamEntries', () => {
     resetAll,
     setLuckyColorId,
     getMonthlyStats,
-    persistEntries
+    persistEntries,
+    fetchDreamsByMonth
   };
 });
 

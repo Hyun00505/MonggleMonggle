@@ -25,11 +25,13 @@
         <label class="input-label">생년월일</label>
         <input 
           v-model="birthDate" 
-          type="date" 
-          data-placeholder="YYYY-MM-DD"
+          type="text" 
+          placeholder="YYYY-MM-DD"
           class="auth-input date-input"
           required
-          @click="showDatePicker"
+          maxlength="10"
+          @input="formatBirthDate"
+          @keypress="onlyNumbers"
         />
       </div>
 
@@ -56,6 +58,44 @@
             />
             <span class="radio-label-text">여</span>
           </label>
+        </div>
+      </div>
+
+      <div v-if="!isLogin" class="input-group">
+        <label class="input-label">생년월일 달력 유형</label>
+        <div class="radio-group calendar-type-group">
+          <label class="radio-label">
+            <input 
+              type="radio" 
+              v-model="calendarBase" 
+              value="solar" 
+              class="custom-radio"
+              required 
+            />
+            <span class="radio-label-text">양력</span>
+          </label>
+          <label class="radio-label">
+            <input 
+              type="radio" 
+              v-model="calendarBase" 
+              value="lunar" 
+              class="custom-radio"
+              required 
+            />
+            <span class="radio-label-text">음력</span>
+          </label>
+        </div>
+        <!-- 음력 선택 시 윤달 체크박스 표시 -->
+        <div v-if="calendarBase === 'lunar'" class="leap-month-option">
+          <label class="checkbox-label">
+            <input 
+              type="checkbox" 
+              v-model="isLeapMonth" 
+              class="custom-checkbox"
+            />
+            <span class="checkbox-label-text">윤달에 태어났어요</span>
+          </label>
+          <p class="helper-text">* 윤달 여부를 모르시면 체크하지 않으셔도 됩니다</p>
         </div>
       </div>
 
@@ -139,14 +179,14 @@
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useDreamEntriesStore } from '../stores/dreamEntriesStore';
-import { useUserStorage } from '../composables/useUserStorage';
+import { useAuthStore } from '../stores/authStore';
 import { usePasswordValidation } from '../composables/usePasswordValidation';
 import { useInputValidation } from '../composables/useInputValidation';
 
 const router = useRouter();
 const dreamEntriesStore = useDreamEntriesStore();
+const authStore = useAuthStore();
 const { resetAll } = dreamEntriesStore;
-const { loadAllUsers, saveAllUsers, checkIdExists, setSessionUser } = useUserStorage();
 const { allowOnlyAlphaNumeric } = useInputValidation();
 
 const isLogin = ref(true);
@@ -158,7 +198,18 @@ const confirmPassword = ref('');
 const name = ref('');
 const birthDate = ref('');
 const gender = ref('');
+const calendarBase = ref('solar'); // 양력/음력 선택
+const isLeapMonth = ref(false); // 윤달 여부
 const loginError = ref('');
+const isSubmitting = ref(false);
+
+// 실제 API로 전송할 calendarType 계산
+function getCalendarType() {
+  if (calendarBase.value === 'solar') {
+    return 'solar';
+  }
+  return isLeapMonth.value ? 'lunarLeap' : 'lunarGeneral';
+}
 
 const { passwordError, validateMatch } = usePasswordValidation(signupPassword, confirmPassword);
 
@@ -174,103 +225,97 @@ function toggleAuthMode() {
   name.value = '';
   birthDate.value = '';
   gender.value = '';
+  calendarBase.value = 'solar';
+  isLeapMonth.value = false;
+  authStore.clearError();
 }
 
-function showDatePicker(event) {
+// 생년월일 입력 시 자동 포맷팅 (YYYY-MM-DD)
+function formatBirthDate(event) {
+  let value = event.target.value.replace(/[^0-9]/g, ''); // 숫자만 추출
+  
+  if (value.length > 8) {
+    value = value.slice(0, 8);
+  }
+  
+  // 자동으로 하이픈 추가
+  if (value.length >= 6) {
+    value = value.slice(0, 4) + '-' + value.slice(4, 6) + '-' + value.slice(6);
+  } else if (value.length >= 4) {
+    value = value.slice(0, 4) + '-' + value.slice(4);
+  }
+  
+  birthDate.value = value;
+}
+
+// 숫자와 하이픈만 입력 허용
+function onlyNumbers(event) {
+  const char = String.fromCharCode(event.keyCode || event.which);
+  if (!/[0-9]/.test(char)) {
+    event.preventDefault();
+  }
+}
+
+async function handleSubmit() {
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
+
   try {
-    event.target.showPicker();
-  } catch (error) {
-    // showPicker가 지원되지 않는 브라우저일 경우 무시
-    console.log('Date picker not supported programmatically');
+    if (!isLogin.value) {
+      // 회원가입
+      if (!validateMatch()) {
+        loginError.value = '비밀번호가 일치하지 않습니다!';
+        return;
+      }
+
+      // 필수 항목 확인
+      if (!signupId.value || !signupPassword.value || !name.value || !birthDate.value || !gender.value || !calendarBase.value) {
+        let missing = [];
+        if (!signupId.value) missing.push('아이디');
+        if (!signupPassword.value) missing.push('비밀번호');
+        if (!name.value) missing.push('이름');
+        if (!birthDate.value) missing.push('생년월일');
+        if (!gender.value) missing.push('성별');
+        if (!calendarBase.value) missing.push('달력 유형');
+        
+        loginError.value = `다음 항목을 입력해주세요: ${missing.join(', ')}`;
+        return;
+      }
+
+      const signupData = {
+        loginId: signupId.value,
+        password: signupPassword.value,
+        name: name.value,
+        birthDate: birthDate.value,
+        gender: gender.value,
+        calendarType: getCalendarType(),
+      };
+      console.log('회원가입 데이터:', signupData);
+      await authStore.signup(signupData);
+
+      alert('회원가입이 완료되었습니다.');
+    } else {
+      // 로그인
+      await authStore.login({
+        loginId: loginId.value,
+        password: loginPassword.value,
+      });
+    }
+
+    loginError.value = '';
+    resetAll();
+    router.push({ name: 'calendar' });
+  } catch (err) {
+    loginError.value = authStore.error || '처리 중 오류가 발생했습니다.';
+  } finally {
+    isSubmitting.value = false;
   }
 }
 
-function handleSubmit() {
-  const users = loadAllUsers();
-
-  if (!isLogin.value) {
-    if (!validateMatch()) {
-      alert('비밀번호가 일치하지 않습니다!');
-      return;
-    }
-
-    if (checkIdExists(signupId.value)) {
-      loginError.value = '이미 사용 중인 아이디입니다.';
-      alert('이미 사용 중인 아이디입니다.');
-      return;
-    }
-
-    const newUser = {
-      loginId: signupId.value,
-      password: signupPassword.value,
-      name: name.value,
-      birthDate: birthDate.value,
-      gender: gender.value
-    };
-    
-    // 데이터가 모두 있는지 확인
-    if (!newUser.loginId || !newUser.password || !newUser.name || !newUser.birthDate || !newUser.gender) {
-      // 어떤 항목이 누락되었는지 확인 (디버깅용)
-      let missing = [];
-      if (!newUser.loginId) missing.push('아이디');
-      if (!newUser.password) missing.push('비밀번호');
-      if (!newUser.name) missing.push('이름');
-      if (!newUser.birthDate) missing.push('생년월일');
-      if (!newUser.gender) missing.push('성별');
-      
-      alert(`다음 항목을 입력해주세요: ${missing.join(', ')}`);
-      return;
-    }
-
-    users.push(newUser);
-    saveAllUsers(users);
-    
-    // 회원가입 후 자동 로그인 처리 (세션 저장)
-    setSessionUser(newUser);
-
-    // 성공 메시지 표시
-    alert('회원가입이 완료되었습니다.');
-  } else {
-    const existingUser = users.find(user => user.loginId === loginId.value);
-    if (!existingUser) {
-      loginError.value = '유효한 계정이 아닙니다.';
-      return;
-    }
-
-    if (existingUser.password !== loginPassword.value) {
-      loginError.value = '비밀번호가 일치하지 않습니다.';
-      return;
-    }
-
-    // 로그인 성공 처리 (세션 저장)
-    setSessionUser(existingUser);
-  }
-
-  loginError.value = '';
-
-  resetAll();
-  router.push({ name: 'calendar' });
-}
-
-watch([signupId, isLogin], ([currentId, loginState]) => {
-  if (loginState) {
+watch([loginId, loginPassword, signupId], () => {
+  if (loginError.value) {
     loginError.value = '';
-    return;
-  }
-
-  if (!currentId) {
-    loginError.value = '';
-    return;
-  }
-
-  loginError.value = checkIdExists(currentId)
-    ? '이미 사용 중인 아이디입니다.'
-    : '';
-});
-
-watch([loginId, loginPassword], () => {
-  if (isLogin.value && loginError.value) {
-    loginError.value = '';
+    authStore.clearError();
   }
 });
 </script>
@@ -374,5 +419,44 @@ watch([loginId, loginPassword], () => {
 
 .toggle-btn:hover {
   text-decoration: underline;
+}
+
+/* 윤달 체크박스 옵션 */
+.leap-month-option {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(162, 210, 255, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(162, 210, 255, 0.3);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.custom-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #A2D2FF;
+  cursor: pointer;
+}
+
+.checkbox-label-text {
+  font-size: 0.9rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.helper-text {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.calendar-type-group {
+  margin-bottom: 0;
 }
 </style>

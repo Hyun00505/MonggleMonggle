@@ -4,10 +4,12 @@ import { RouterView, useRoute, useRouter } from 'vue-router';
 import CloudBackground from '../components/CloudBackground.vue';
 import TheHeader from './TheHeader.vue';
 import { useDreamEntriesStore } from '../stores/dreamEntriesStore';
+import { useAuthStore } from '../stores/authStore';
 
 const route = useRoute();
 const router = useRouter();
 const dreamEntriesStore = useDreamEntriesStore();
+const authStore = useAuthStore();
 const { resetAll } = dreamEntriesStore;
 
 const showHeader = computed(() => route.meta.hideHeader !== true);
@@ -16,7 +18,8 @@ function handleNavigateMypage() {
   router.push({ name: 'mypage' });
 }
 
-function handleLogout() {
+async function handleLogout() {
+  await authStore.logout();
   resetAll();
   alert('로그아웃 되었습니다.');
   router.push({ name: 'auth' });

@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 class ComprehensiveFortuneRequest(BaseModel):
     name: str = Field(..., description="사용자 이름")
     dream_content: str = Field(..., description="꿈 내용")
-    gender: str = Field(..., pattern="^(m|f)$", description="'m'(남성) 또는 'f'(여성)")
+    gender: str = Field(..., pattern="^(M|F)$", description="'M'(남성) 또는 'F'(여성)")
     calendar_type: str = Field(..., pattern="^(solar|lunarGeneral|lunarLeap)$", description="양력/음력 구분")
     birth_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="생년월일 (YYYY-MM-DD)")
 

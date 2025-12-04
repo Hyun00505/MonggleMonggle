@@ -45,10 +45,12 @@ async def process_comprehensive_fortune(request: ComprehensiveFortuneRequest) ->
 
     # 2. 네이버 운세 크롤링 (비동기 처리)
     print("🔍 [2/3] 네이버 운세 크롤링 중...")
+    # 네이버 API는 소문자 m/f를 사용하므로 변환
+    naver_gender = request.gender.lower()
     try:
         naver_fortune = await asyncio.to_thread(
             fetch_today_fortune,
-            gender=request.gender,
+            gender=naver_gender,
             calendar_type=request.calendar_type,
             birth_date=request.birth_date,
             headless=True,

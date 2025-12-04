@@ -11,7 +11,7 @@ except ImportError:
     sys.exit(1)
 
 # 모델 경로 설정
-GGUF_DIR = Path("./models/")
+GGUF_DIR = Path("./AI_API/models/")
 MODEL_FILES = {
     "q4_k_m": GGUF_DIR / "gemma-2-9b-it-dream-q4_k_m.gguf",
 }
