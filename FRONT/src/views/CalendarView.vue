@@ -11,7 +11,12 @@ const { setSelectedDate } = dreamEntriesStore;
 
 function handleDateSelect(date) {
   setSelectedDate(date);
-  router.push({ name: 'write' });
+  // 날짜를 쿼리 파라미터로 전달 (새로고침 시 복원용)
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const dateStr = `${year}-${month}-${day}`;
+  router.push({ name: 'write', query: { date: dateStr } });
 }
 </script>
 

@@ -67,4 +67,14 @@
           AND deleted_date IS NULL
     </select>
 
+    <!-- 사용자의 특정 날짜 꿈 조회 (중복 방지용) -->
+    <select id="findByUserIdAndDreamDate" resultMap="DreamResultMap">
+        SELECT *
+        FROM dreams
+        WHERE user_id = #{userId}
+          AND dream_date = #{dreamDate}
+          AND deleted_date IS NULL
+        LIMIT 1
+    </select>
+
 </mapper>

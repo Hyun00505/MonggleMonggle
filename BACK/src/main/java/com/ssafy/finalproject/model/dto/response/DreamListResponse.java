@@ -23,6 +23,7 @@ public class DreamListResponse {
     public static class DreamSummary {
         private Long dreamId;
         private String title;
+        private String content;
         private String dreamDate;
         private Integer emotionId;
         private String emotionName;

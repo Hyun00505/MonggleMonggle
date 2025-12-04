@@ -71,6 +71,9 @@ export const useDreamEntriesStore = defineStore('dreamEntries', () => {
     const dateKey = formatDateKey(selectedDate.value);
     const luckyColor = getLuckyColorById(currentLuckyColorId.value);
     
+    // 기존 게시물에서 dreamId 확인 (새로고침 후에도 유지되도록)
+    const existingDreamId = currentDreamId.value || posts.value[dateKey]?.dreamId;
+    
     loading.value = true;
     error.value = null;
 
@@ -82,13 +85,14 @@ export const useDreamEntriesStore = defineStore('dreamEntries', () => {
           title: dreamTitle.value,
           content: dreamContent.value,
           dreamDate: dateKey,
-          emotionScore: selectedEmotion.value || 3,
+          emotionId: selectedEmotion.value || 3,
         };
 
         let response;
-        if (currentDreamId.value) {
-          // 수정
-          response = await dreamService.updateDream(currentDreamId.value, dreamData);
+        if (existingDreamId) {
+          // 수정 (기존 dreamId가 있으면 업데이트)
+          response = await dreamService.updateDream(existingDreamId, dreamData);
+          currentDreamId.value = existingDreamId;
         } else {
           // 새로 생성
           response = await dreamService.createDream(dreamData);
@@ -176,7 +180,7 @@ export const useDreamEntriesStore = defineStore('dreamEntries', () => {
             dreamId: dream.dreamId,
             title: dream.title,
             content: dream.content,
-            emotion: dream.emotionScore,
+            emotion: dream.emotionId,
             color: dream.luckyColor || getLuckyColorById(getRandomLuckyColorId()).hex,
             luckyColorId: dream.luckyColorId || getRandomLuckyColorId(),
             luckyColorName: dream.luckyColorName || ''
