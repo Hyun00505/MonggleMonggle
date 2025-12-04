@@ -22,8 +22,7 @@
         <div class="section dream-section">
           <h3>🌌 꿈 해몽</h3>
           <p class="result-text">
-            오늘의 꿈(살인마에게 쫓기는 도주)은 외부의 압박감과 내부의 불안이 겹치며 변화를 촉구하는 신호입니다. 꿈 해몽에서 보인 '관재 및 경영사에 변동'의 기운과 맞물려, 현재 맡은 일이나 책임 영역에
-            작은 이동이나 재배치가 일어날 수 있으나 결과적으로는 순조롭고 원만하게 마무리될 가능성이 큽니다.
+            {{ analysisResult?.dreamInterpretation || '분석 결과를 불러오는 중...' }}
           </p>
         </div>
 
@@ -31,19 +30,22 @@
 
         <div class="section fortune-section">
           <h3>🍀 오늘의 운세</h3>
+          <p v-if="analysisResult?.todayFortuneSummary" class="result-text fortune-summary">
+            {{ analysisResult.todayFortuneSummary }}
+          </p>
           <div class="fortune-grid">
-            <div class="fortune-card color-card" :style="{ '--fortune-color': currentLuckyColor.hex }">
+            <div class="fortune-card color-card" :style="{ '--fortune-color': displayLuckyColor.hex }">
               <div class="fortune-card-header">
                 <span class="fortune-label">행운의 색</span>
                 <span class="fortune-pill">Lucky Color</span>
               </div>
               <div class="color-highlight">
-                <div class="color-swatch" :style="{ background: currentLuckyColor.hex }"></div>
+                <div class="color-swatch" :style="{ background: displayLuckyColor.hex }"></div>
                 <div class="color-text">
-                  <strong class="fortune-value">{{ currentLuckyColor.name }}</strong>
+                  <strong class="fortune-value">{{ displayLuckyColor.name }}</strong>
                 </div>
               </div>
-              <p class="fortune-reason">{{ currentLuckyColor.reason }}</p>
+              <p class="fortune-reason">{{ displayLuckyColor.reason || analysisResult?.luckyColor?.reason }}</p>
             </div>
 
             <div class="fortune-card item-card">
@@ -63,9 +65,9 @@
                   />
                   <path d="M32 34l-4 20" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
                 </svg>
-                <strong class="fortune-value">다이어리</strong>
+                <strong class="fortune-value">{{ analysisResult?.luckyItem?.name || '행운의 아이템' }}</strong>
               </div>
-              <p class="fortune-reason">떠오르는 생각을 바로 기록하면 좋은 기회를 놓치지 않게 됩니다.</p>
+              <p class="fortune-reason">{{ analysisResult?.luckyItem?.reason || '분석 결과를 불러오는 중...' }}</p>
             </div>
           </div>
         </div>
@@ -148,16 +150,60 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from "vue";
-import { useRouter } from "vue-router";
+import { ref, nextTick, onMounted, computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
 import { useGalleryStore } from "../stores/galleryStore";
 
 const router = useRouter();
+const route = useRoute();
 const dreamEntriesStore = useDreamEntriesStore();
 const galleryStore = useGalleryStore();
-const { currentLuckyColor, postedDates } = storeToRefs(dreamEntriesStore);
+const { currentLuckyColor, postedDates, analysisResult, analysisDate } = storeToRefs(dreamEntriesStore);
+
+// 분석 결과에서 행운의 색상 정보 가져오기
+const displayLuckyColor = computed(() => {
+  if (analysisResult.value?.luckyColor) {
+    return {
+      name: analysisResult.value.luckyColor.name,
+      hex: getColorHex(analysisResult.value.luckyColor.name),
+      reason: analysisResult.value.luckyColor.reason,
+    };
+  }
+  return currentLuckyColor.value;
+});
+
+// 색상 이름을 HEX 코드로 변환
+function getColorHex(colorName) {
+  const colorMap = {
+    '빨간색': '#FF4444',
+    '주황색': '#FF8C00',
+    '노란색': '#FFD700',
+    '초록색': '#32CD32',
+    '파란색': '#4169E1',
+    '남색': '#191970',
+    '보라색': '#9370DB',
+    '분홍색': '#FFB6C1',
+    '하늘색': '#87CEEB',
+    '청록색': '#40E0D0',
+    '갈색': '#8B4513',
+    '회색': '#808080',
+    '검정색': '#333333',
+    '흰색': '#FFFFFF',
+    '금색': '#FFD700',
+    '은색': '#C0C0C0',
+  };
+  return colorMap[colorName] || '#CDB4DB';
+}
+
+// URL에서 날짜 복원
+onMounted(() => {
+  if (!analysisResult.value && route.query.date) {
+    // 분석 결과가 없으면 다시 write 페이지로
+    router.replace({ name: 'write', query: { date: route.query.date } });
+  }
+});
 
 // Bubble expansion state
 const isExpanding = ref(false);
@@ -191,7 +237,13 @@ const gradients = [
 const emojis = ["🌟", "✨", "💫", "🌙", "⭐", "🦋", "🌸"];
 
 function handleClose() {
-  router.push({ name: "calendar" });
+  // 날짜 정보와 함께 write 페이지로 돌아가기
+  const date = route.query.date || analysisDate.value;
+  if (date) {
+    router.push({ name: "write", query: { date } });
+  } else {
+    router.push({ name: "calendar" });
+  }
 }
 
 function handleGenerateImage() {
@@ -341,6 +393,12 @@ function saveToGallery(image) {
   padding: 1rem 1.25rem;
   border-radius: 16px;
   margin: 0;
+}
+
+.fortune-summary {
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  border-left: 3px solid #22c55e;
 }
 
 .divider {

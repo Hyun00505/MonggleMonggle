@@ -68,7 +68,8 @@
               <span v-if="!getPost(day)" class="day-number">{{ day }}</span>
               
               <!-- Star Indicator (Centered and Larger) -->
-              <div v-if="getPost(day)" class="star-indicator" :style="{ color: getPost(day).color }">
+              <!-- 해몽 완료: 행운의 색상 / 해몽 안함: 흰색 -->
+              <div v-if="getPost(day)" class="star-indicator" :style="{ color: getStarColor(day) }">
                 <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" 
                         stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
@@ -235,6 +236,20 @@ function handleDateClick(day) {
 function getPost(day) {
   const dateKey = getDateKey(day);
   return props.postedDates[dateKey];
+}
+
+// 별 색상 결정: 해몽 완료면 행운의 색상, 아니면 흰색
+function getStarColor(day) {
+  const post = getPost(day);
+  if (!post) return '#FFFFFF';
+  
+  // 해몽 결과가 있고 색상이 지정되어 있으면 그 색상 사용
+  if (post.hasResult && post.color && post.color !== '#FFFFFF') {
+    return post.color;
+  }
+  
+  // 해몽 안 했으면 흰색
+  return '#FFFFFF';
 }
 
 function isWarningVisible(day) {

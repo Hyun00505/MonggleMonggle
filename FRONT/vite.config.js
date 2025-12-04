@@ -14,7 +14,15 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    allowedHosts: [".ngrok-free.app"],
     proxy: {
+      // FastAPI AI 서버 프록시
+      "/ai-api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/ai-api/, ""),
+      },
       // Spring Boot 백엔드 API 프록시
       "/api": {
         target: "http://localhost:8080",

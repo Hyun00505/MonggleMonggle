@@ -3,6 +3,7 @@ import asyncio
 import datetime
 import os
 import requests
+from typing import AsyncGenerator
 from fastapi import HTTPException
 from services.schemas import ComprehensiveFortuneRequest, ComprehensiveFortuneResponse
 from services.dream_interprinter_service import models, generate_response
@@ -10,6 +11,12 @@ from services.Naver_fortune_api import fetch_today_fortune
 
 # GMS API 키 설정
 GMS_API_KEY = os.getenv("GMS_API_KEY", "S14P02AQ06-88cb9f96-1505-4bb8-b068-57fe14afebee")
+
+# 진행 상황 스트리밍용 함수
+async def stream_progress(step: int, total: int, message: str) -> str:
+    """SSE 형식으로 진행 상황 반환"""
+    progress = int((step / total) * 100)
+    return f"data: {json.dumps({'step': step, 'total': total, 'progress': progress, 'message': message})}\n\n"
 
 async def process_comprehensive_fortune(request: ComprehensiveFortuneRequest) -> ComprehensiveFortuneResponse:
     """

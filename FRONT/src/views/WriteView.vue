@@ -13,9 +13,12 @@ const {
   formattedSelectedDate,
   showAnalysisOption,
   selectedDate,
-  selectedEmotion
+  selectedEmotion,
+  hasExistingResult,
+  canReinterpret,
+  remainingReinterprets
 } = storeToRefs(dreamEntriesStore);
-const { saveDream, deleteDream, setEmotion, enableEditMode, resetWriteState, setSelectedDate } = dreamEntriesStore;
+const { saveDream, deleteDream, setEmotion, enableEditMode, resetWriteState, setSelectedDateWithResult } = dreamEntriesStore;
 
 const emotions = [
   { value: 1, label: '매우 나쁨', icon: '😫' },
@@ -31,13 +34,13 @@ function updateEmotion(event) {
   }
 }
 
-onMounted(() => {
-  // 새로고침 시 쿼리 파라미터에서 날짜 복원
+onMounted(async () => {
+  // 새로고침 시 쿼리 파라미터에서 날짜 복원 (해몽 결과도 함께 조회)
   if (!selectedDate.value && route.query.date) {
     const dateStr = route.query.date;
     const [year, month, day] = dateStr.split('-').map(Number);
     const restoredDate = new Date(year, month - 1, day);
-    setSelectedDate(restoredDate);
+    await setSelectedDateWithResult(restoredDate);
   }
   
   // 날짜가 여전히 없으면 캘린더로 이동
@@ -75,7 +78,33 @@ function handleEdit() {
 }
 
 function handleAnalysis() {
-  router.push({ name: 'loading' });
+  // 현재 날짜를 쿼리 파라미터로 전달
+  const dateKey = route.query.date || formatDateKey(selectedDate.value);
+  router.push({ name: 'loading', query: { date: dateKey } });
+}
+
+// 해몽 결과 보기
+function handleViewResult() {
+  const dateKey = route.query.date || formatDateKey(selectedDate.value);
+  router.push({ name: 'analysis', query: { date: dateKey } });
+}
+
+// 다시 해몽하기
+function handleReinterpret() {
+  if (!canReinterpret.value) {
+    alert('재해몽 횟수를 모두 사용했습니다. (최대 2회)');
+    return;
+  }
+  const dateKey = route.query.date || formatDateKey(selectedDate.value);
+  router.push({ name: 'loading', query: { date: dateKey } });
+}
+
+function formatDateKey(date) {
+  if (!date) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 </script>
 
@@ -156,7 +185,7 @@ function handleAnalysis() {
             </button>
           </div>
 
-          <!-- 작성 완료 시: 수정, 분석 버튼 -->
+          <!-- 작성 완료 시: 수정, 삭제, 분석 버튼 -->
           <div v-else key="view-mode" class="button-group">
             <button
               @click="handleEdit"
@@ -184,7 +213,9 @@ function handleAnalysis() {
               <span class="label">삭제하기</span>
             </button>
 
+            <!-- 해몽 결과가 없을 때: AI 꿈해몽 버튼 -->
             <button
+              v-if="!hasExistingResult"
               @click="handleAnalysis"
               class="action-btn analysis-btn"
             >
@@ -195,6 +226,37 @@ function handleAnalysis() {
               </svg>
               <span class="label">AI 꿈해몽</span>
             </button>
+
+            <!-- 해몽 결과가 있을 때: 결과 보기 + 다시 해몽하기 버튼 -->
+            <template v-if="hasExistingResult">
+              <button
+                @click="handleViewResult"
+                class="action-btn view-result-btn"
+                aria-label="해몽 결과 보기"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span class="label">결과 보기</span>
+              </button>
+
+              <button
+                @click="handleReinterpret"
+                class="action-btn reinterpret-btn"
+                :class="{ disabled: !canReinterpret }"
+                :disabled="!canReinterpret"
+                aria-label="다시 해몽하기"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 4v6h-6"></path>
+                  <path d="M1 20v-6h6"></path>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                <span class="label">다시 해몽</span>
+                <span class="remaining-count">({{ remainingReinterprets }}회 남음)</span>
+              </button>
+            </template>
           </div>
         </transition>
       </div>
@@ -590,6 +652,89 @@ function handleAnalysis() {
   border: 1px solid rgba(255, 224, 130, 0.3);
 }
 
+/* 해몽 결과 보기 버튼 - 청록/민트 톤 */
+.view-result-btn {
+  background: linear-gradient(135deg, #64B5F6, #4DD0E1);
+  color: white;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.view-result-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shine 3s infinite;
+}
+
+.view-result-btn:hover {
+  background: linear-gradient(135deg, #42A5F5, #26C6DA);
+  box-shadow: 0 8px 20px rgba(77, 208, 225, 0.35);
+}
+
+/* 다시 해몽하기 버튼 - 분홍/코랄 톤 */
+.reinterpret-btn {
+  background: linear-gradient(135deg, #F48FB1, #CE93D8);
+  color: white;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.reinterpret-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shine 4s infinite;
+}
+
+.reinterpret-btn:hover:not(.disabled) {
+  background: linear-gradient(135deg, #F06292, #BA68C8);
+  box-shadow: 0 8px 20px rgba(206, 147, 216, 0.4);
+}
+
+.reinterpret-btn .remaining-count {
+  font-size: 0.65rem;
+  opacity: 0.95;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-top: 2px;
+}
+
+.reinterpret-btn.disabled {
+  background: linear-gradient(135deg, #e0e0e0, #bdbdbd);
+  color: #9e9e9e;
+  cursor: not-allowed;
+  border: 1px solid #ccc;
+  text-shadow: none;
+}
+
+.reinterpret-btn.disabled::before {
+  display: none;
+}
+
+.reinterpret-btn.disabled:hover {
+  transform: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.reinterpret-btn.disabled .remaining-count {
+  background: rgba(0, 0, 0, 0.1);
+}
+
 /* 반짝이는 효과 */
 .analysis-btn::before {
   content: '';
@@ -669,16 +814,22 @@ function handleAnalysis() {
   }
 
   /* 꿈 분석 버튼: 남은 공간 차지 */
-  .analysis-btn {
+  .analysis-btn,
+  .view-result-btn,
+  .reinterpret-btn {
     flex: 1;
-    padding: 0 1rem;
-    gap: 0.5rem;
+    padding: 0 0.75rem;
+    gap: 0.3rem;
   }
 
   .save-btn {
     flex: 1;
     padding: 0 1rem;
     gap: 0.5rem;
+  }
+
+  .reinterpret-btn .remaining-count {
+    font-size: 0.6rem;
   }
 
   .icon {
