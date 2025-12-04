@@ -25,17 +25,31 @@ public class DreamService {
     private final DreamsDao dreamsDao;
     private final DreamsResultsDao dreamsResultsDao;
     
-    // 꿈 일기 작성
+    // 꿈 일기 작성 (같은 날짜에 이미 꿈이 있으면 업데이트)
     public DreamResponse createDream(Long userId, CreateDreamRequest request) {
-        Dream dream = Dream.builder()
-                .userId(userId)
-                .emotionId(request.getEmotionId())
-                .dreamDate(request.getDreamDate())
-                .title(request.getTitle())
-                .content(request.getContent())
-                .build();
+        // 같은 날짜에 이미 꿈이 있는지 확인
+        Dream existingDream = dreamsDao.findByUserIdAndDreamDate(userId, request.getDreamDate())
+                .orElse(null);
         
-        dreamsDao.insertDream(dream);
+        Dream dream;
+        if (existingDream != null) {
+            // 이미 존재하면 업데이트
+            existingDream.setEmotionId(request.getEmotionId());
+            existingDream.setTitle(request.getTitle());
+            existingDream.setContent(request.getContent());
+            dreamsDao.updateDream(existingDream);
+            dream = existingDream;
+        } else {
+            // 없으면 새로 생성
+            dream = Dream.builder()
+                    .userId(userId)
+                    .emotionId(request.getEmotionId())
+                    .dreamDate(request.getDreamDate())
+                    .title(request.getTitle())
+                    .content(request.getContent())
+                    .build();
+            dreamsDao.insertDream(dream);
+        }
         
         return DreamResponse.builder()
                 .dreamId(dream.getDreamId())
@@ -59,6 +73,7 @@ public class DreamService {
                     return DreamListResponse.DreamSummary.builder()
                             .dreamId(dream.getDreamId())
                             .title(dream.getTitle())
+                            .content(dream.getContent())
                             .dreamDate(dream.getDreamDate().toString())
                             .emotionId(dream.getEmotionId())
                             .emotionName(null) // XML에서 조인하여 가져올 수 있음

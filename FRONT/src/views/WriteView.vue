@@ -1,10 +1,11 @@
 <script setup>
 import { onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useDreamEntriesStore } from '../stores/dreamEntriesStore';
 
 const router = useRouter();
+const route = useRoute();
 const dreamEntriesStore = useDreamEntriesStore();
 const {
   dreamTitle,
@@ -14,7 +15,7 @@ const {
   selectedDate,
   selectedEmotion
 } = storeToRefs(dreamEntriesStore);
-const { saveDream, deleteDream, setEmotion, enableEditMode, resetWriteState } = dreamEntriesStore;
+const { saveDream, deleteDream, setEmotion, enableEditMode, resetWriteState, setSelectedDate } = dreamEntriesStore;
 
 const emotions = [
   { value: 1, label: '매우 나쁨', icon: '😫' },
@@ -31,7 +32,16 @@ function updateEmotion(event) {
 }
 
 onMounted(() => {
-  if (!selectedDate.value) {
+  // 새로고침 시 쿼리 파라미터에서 날짜 복원
+  if (!selectedDate.value && route.query.date) {
+    const dateStr = route.query.date;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const restoredDate = new Date(year, month - 1, day);
+    setSelectedDate(restoredDate);
+  }
+  
+  // 날짜가 여전히 없으면 캘린더로 이동
+  if (!selectedDate.value && !route.query.date) {
     router.replace({ name: 'calendar' });
   }
 });

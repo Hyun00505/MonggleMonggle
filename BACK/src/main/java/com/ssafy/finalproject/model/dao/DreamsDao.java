@@ -35,4 +35,10 @@ public interface DreamsDao {
             @Param("year") Integer year,
             @Param("month") Integer month
     );
+    
+    // 사용자의 특정 날짜 꿈 조회 (중복 방지용)
+    Optional<Dream> findByUserIdAndDreamDate(
+            @Param("userId") Long userId,
+            @Param("dreamDate") java.time.LocalDate dreamDate
+    );
 }
