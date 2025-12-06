@@ -1,18 +1,31 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
+import { useAuthStore } from "./authStore";
 
-const STORAGE_KEY = "dreamGalleryStore";
-const LEGACY_KEY = "dreamStore";
+const STORAGE_PREFIX = "dreamGallery_";
+const LEGACY_KEY = "dreamGalleryStore";
 
 export const useGalleryStore = defineStore("gallery", () => {
   const gallery = ref([]);
+  const authStore = useAuthStore();
 
   const galleryImages = computed(() => gallery.value);
 
+  // 현재 사용자의 스토리지 키 생성
+  function getStorageKey() {
+    // authStore.currentUser는 computed, user는 ref라 .value 접근 필요
+    const userId = authStore.currentUser?.value?.userId ?? authStore.user?.value?.userId ?? authStore.currentUser?.userId ?? authStore.user?.userId;
+    return userId ? `${STORAGE_PREFIX}${userId}` : null;
+  }
+
   function addToGallery(image) {
+    // 동일 ID가 이미 있으면 업데이트
+    const existingIndex = gallery.value.findIndex((img) => img.id === (image.id ?? image.dreamId));
+    const entryId = image.id ?? image.dreamId ?? Date.now();
+
     const entry = {
       // 기본 정보
-      id: image.id ?? Date.now(),
+      id: entryId,
       dreamId: image.dreamId ?? null,
       dreamDate: image.dreamDate ?? null,
 
@@ -43,7 +56,12 @@ export const useGalleryStore = defineStore("gallery", () => {
       savedAt: image.savedAt ?? new Date().toISOString(),
     };
 
-    gallery.value = [...gallery.value, entry];
+    if (existingIndex >= 0) {
+      // 기존 항목 병합 업데이트
+      gallery.value.splice(existingIndex, 1, { ...gallery.value[existingIndex], ...entry });
+    } else {
+      gallery.value = [...gallery.value, entry];
+    }
     persistGallery();
   }
 
@@ -69,50 +87,104 @@ export const useGalleryStore = defineStore("gallery", () => {
 
   function persistGallery() {
     if (typeof window === "undefined") return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(gallery.value));
+
+    const key = getStorageKey();
+    if (key) {
+      localStorage.setItem(key, JSON.stringify(gallery.value));
+    }
   }
 
   function hydrateFromLocalStorage() {
     if (typeof window === "undefined") return;
 
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      // 기존 데이터에 새 필드 기본값 추가
-      gallery.value = JSON.parse(saved).map((img) => ({
-        ...img,
-        dreamId: img.dreamId ?? null,
-        dreamDate: img.dreamDate ?? null,
-        title: img.title ?? img.caption ?? "",
-        content: img.content ?? "",
-        interpretation: img.interpretation ?? null,
-        fortuneSummary: img.fortuneSummary ?? null,
-        luckyColor: img.luckyColor ?? null,
-        luckyItem: img.luckyItem ?? null,
-        likes: typeof img.likes === "number" ? img.likes : 0,
-        liked: img.liked ?? false,
-      }));
+    const key = getStorageKey();
+
+    // 로그인하지 않은 경우 빈 배열로 초기화
+    if (!key) {
+      gallery.value = [];
       return;
     }
 
+    // 현재 사용자의 갤러리 데이터 로드
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        gallery.value = JSON.parse(saved).map((img) => ({
+          ...img,
+          dreamId: img.dreamId ?? null,
+          dreamDate: img.dreamDate ?? null,
+          title: img.title ?? img.caption ?? "",
+          content: img.content ?? "",
+          interpretation: img.interpretation ?? null,
+          fortuneSummary: img.fortuneSummary ?? null,
+          luckyColor: img.luckyColor ?? null,
+          luckyItem: img.luckyItem ?? null,
+          likes: typeof img.likes === "number" ? img.likes : 0,
+          liked: img.liked ?? false,
+        }));
+        return;
+      } catch (e) {
+        console.error("갤러리 데이터 파싱 실패:", e);
+      }
+    }
+
+    // 레거시 데이터 마이그레이션 (처음 로그인 시)
+    migrateLegacyData(key);
+  }
+
+  // 기존 데이터 마이그레이션
+  function migrateLegacyData(userKey) {
     const legacy = localStorage.getItem(LEGACY_KEY);
     if (legacy) {
-      const data = JSON.parse(legacy);
-      gallery.value = (data.gallery || []).map((img) => ({
-        ...img,
-        dreamId: null,
-        dreamDate: null,
-        title: img.caption || "",
-        content: "",
-        interpretation: null,
-        fortuneSummary: null,
-        luckyColor: null,
-        luckyItem: null,
-        likes: typeof img.likes === "number" ? img.likes : Math.floor(Math.random() * 20),
-        liked: img.liked ?? false,
-      }));
+      try {
+        const data = JSON.parse(legacy);
+        const legacyGallery = Array.isArray(data) ? data : data.gallery || [];
+
+        gallery.value = legacyGallery.map((img) => ({
+          ...img,
+          dreamId: null,
+          dreamDate: null,
+          title: img.caption || "",
+          content: "",
+          interpretation: null,
+          fortuneSummary: null,
+          luckyColor: null,
+          luckyItem: null,
+          likes: typeof img.likes === "number" ? img.likes : Math.floor(Math.random() * 20),
+          liked: img.liked ?? false,
+        }));
+
+        // 새 키로 저장하고 레거시 키 삭제
+        localStorage.setItem(userKey, JSON.stringify(gallery.value));
+        localStorage.removeItem(LEGACY_KEY);
+        console.log("✅ 레거시 갤러리 데이터 마이그레이션 완료");
+      } catch (e) {
+        console.error("레거시 데이터 마이그레이션 실패:", e);
+        gallery.value = [];
+      }
+    } else {
+      gallery.value = [];
     }
   }
 
+  // 사용자 변경 감지하여 갤러리 데이터 다시 로드
+  function onUserChange() {
+    hydrateFromLocalStorage();
+  }
+
+  // authStore의 user 변경 감지
+  watch(
+    () => authStore.currentUser?.value?.userId ?? authStore.user?.value?.userId,
+    (newUserId, oldUserId) => {
+      if (newUserId !== oldUserId) {
+        console.log("👤 사용자 변경 감지 - 갤러리 리로드:", newUserId);
+        hydrateFromLocalStorage();
+      }
+    },
+    { immediate: true }
+  );
+
+  // 초기화
   hydrateFromLocalStorage();
 
   return {
@@ -123,5 +195,7 @@ export const useGalleryStore = defineStore("gallery", () => {
     toggleImageLike,
     resetGallery,
     persistGallery,
+    hydrateFromLocalStorage,
+    onUserChange,
   };
 });

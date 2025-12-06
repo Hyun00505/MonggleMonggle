@@ -73,10 +73,13 @@
 
       <!-- 이미지 그리드 -->
       <div v-if="filteredImages.length > 0" :class="['gallery-grid', viewMode]">
-        <div v-for="image in filteredImages" :key="image.id" :class="['gallery-item', { tall: viewMode === 'masonry' && image.id % 3 === 0 }]" @click="openImageDetail(image)">
+        <div v-for="image in filteredImages" :key="image.id" class="gallery-item" @click="openImageDetail(image)">
           <!-- 실제 이미지가 있는 경우 -->
           <div v-if="image.imageSrc" class="image-container real-image">
             <img :src="image.imageSrc" :alt="image.caption" class="gallery-image" />
+            <div class="image-hover-overlay">
+              <span class="hover-icon">🔍</span>
+            </div>
           </div>
           <!-- 기존 gradient/emoji 표시 (이전 형식 호환) -->
           <div v-else class="image-container" :style="{ background: image.gradient }">
@@ -137,115 +140,171 @@
     </div>
 
     <!-- 이미지 상세 모달 -->
-    <div v-if="selectedImage" class="modal-overlay" @click="closeImageDetail">
-      <div class="modal-content" @click.stop>
-        <button @click="closeImageDetail" class="modal-close">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-        <!-- 실제 이미지가 있는 경우 -->
-        <div v-if="selectedImage.imageSrc" class="modal-image real-image">
-          <img :src="selectedImage.imageSrc" :alt="selectedImage.caption" class="modal-actual-image" />
-        </div>
-        <!-- 기존 gradient/emoji 표시 -->
-        <div v-else class="modal-image" :style="{ background: selectedImage.gradient }">
-          <span class="modal-emoji">{{ selectedImage.emoji }}</span>
-        </div>
-        <div class="modal-info">
-          <!-- 제목과 날짜 -->
-          <div class="modal-header-info">
-            <h2>{{ selectedImage.title || selectedImage.caption }}</h2>
-            <div class="modal-meta">
-              <span class="meta-badge date">📅 {{ formatDreamDate(selectedImage.dreamDate) || formatDate(selectedImage.createdAt) }}</span>
-              <span class="meta-badge style">🎨 {{ selectedImage.style }}</span>
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div v-if="selectedImage" class="modal-overlay" @click="closeImageDetail">
+          <!-- 이전 이미지 버튼 -->
+          <button v-if="hasPrevImage" @click.stop="goToPrevImage" class="nav-btn nav-prev">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+
+          <div class="modal-content" @click.stop>
+            <button @click="closeImageDetail" class="modal-close">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+
+            <div class="modal-layout">
+              <!-- 왼쪽: 액자에 담긴 이미지 -->
+              <div class="modal-image-section">
+                <div class="frame-container">
+                  <div class="frame-outer">
+                    <div class="frame-inner">
+                      <div v-if="selectedImage.imageSrc" class="framed-image">
+                        <img :src="selectedImage.imageSrc" :alt="selectedImage.caption" />
+                      </div>
+                      <div v-else class="framed-placeholder" :style="{ background: selectedImage.gradient }">
+                        <span class="placeholder-emoji">{{ selectedImage.emoji }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- 액자 장식 -->
+                  <div class="frame-shadow"></div>
+                </div>
+                <!-- 액자 아래 스타일 뱃지 -->
+                <div class="style-label">
+                  <span class="style-icon">🎨</span>
+                  {{ selectedImage.style }}
+                </div>
+              </div>
+
+              <!-- 오른쪽: 정보 섹션 -->
+              <div class="modal-info-section">
+                <!-- 제목과 날짜 -->
+                <div class="modal-header-info">
+                  <h2>{{ selectedImage.title || selectedImage.caption }}</h2>
+                  <div class="modal-meta">
+                    <span class="meta-badge date">
+                      <span class="badge-icon">📅</span>
+                      {{ formatDreamDate(selectedImage.dreamDate) || formatDate(selectedImage.createdAt) }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 스크롤 가능한 컨텐츠 영역 -->
+                <div class="modal-scrollable">
+                  <!-- 꿈 일기 본문 -->
+                  <div v-if="selectedImage.content" class="modal-section dream-content-section">
+                    <h3 class="section-title">
+                      <span class="section-icon">📝</span>
+                      꿈 일기 내용
+                    </h3>
+                    <p class="dream-content-text">{{ selectedImage.content }}</p>
+                  </div>
+
+                  <!-- 꿈 해석 -->
+                  <div v-if="selectedImage.interpretation" class="modal-section interpretation-section">
+                    <h3 class="section-title">
+                      <span class="section-icon">🔮</span>
+                      꿈 해석
+                    </h3>
+                    <p class="interpretation-text">{{ selectedImage.interpretation }}</p>
+                  </div>
+
+                  <!-- 오늘의 운세 요약 -->
+                  <div v-if="selectedImage.fortuneSummary" class="modal-section fortune-section">
+                    <h3 class="section-title">
+                      <span class="section-icon">✨</span>
+                      오늘의 운세
+                    </h3>
+                    <p class="fortune-text">{{ selectedImage.fortuneSummary }}</p>
+                  </div>
+
+                  <!-- 행운 정보 -->
+                  <div v-if="selectedImage.luckyColor || selectedImage.luckyItem" class="modal-section lucky-section">
+                    <div class="lucky-items">
+                      <div v-if="selectedImage.luckyColor" class="lucky-item">
+                        <span class="lucky-label">행운의 색상</span>
+                        <span class="lucky-value color-value">
+                          <span class="color-dot" :style="{ background: getLuckyColorHex(selectedImage.luckyColor.name) }"></span>
+                          {{ selectedImage.luckyColor.name }}
+                        </span>
+                      </div>
+                      <div v-if="selectedImage.luckyItem" class="lucky-item">
+                        <span class="lucky-label">행운의 아이템</span>
+                        <span class="lucky-value">{{ selectedImage.luckyItem.name }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 액션 버튼 -->
+                <div class="modal-actions">
+                  <button @click="openOriginalImage(selectedImage)" class="modal-action-btn ghost">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <polyline points="9 21 3 21 3 15"></polyline>
+                      <line x1="21" y1="3" x2="14" y2="10"></line>
+                      <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                    원본 보기
+                  </button>
+                  <button @click="downloadImage(selectedImage)" class="modal-action-btn primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    다운로드
+                  </button>
+                  <button @click="deleteImage(selectedImage)" class="modal-action-btn danger">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    삭제
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- 꿈 일기 본문 -->
-          <div v-if="selectedImage.content" class="modal-section dream-content-section">
-            <h3 class="section-title">
-              <span class="section-icon">📝</span>
-              꿈 일기 내용
-            </h3>
-            <p class="dream-content-text">{{ selectedImage.content }}</p>
-          </div>
-
-          <!-- 꿈 해석 -->
-          <div v-if="selectedImage.interpretation" class="modal-section interpretation-section">
-            <h3 class="section-title">
-              <span class="section-icon">🔮</span>
-              꿈 해석
-            </h3>
-            <p class="interpretation-text">{{ selectedImage.interpretation }}</p>
-          </div>
-
-          <!-- 오늘의 운세 요약 -->
-          <div v-if="selectedImage.fortuneSummary" class="modal-section fortune-section">
-            <h3 class="section-title">
-              <span class="section-icon">✨</span>
-              오늘의 운세
-            </h3>
-            <p class="fortune-text">{{ selectedImage.fortuneSummary }}</p>
-          </div>
-
-          <!-- 행운 정보 -->
-          <div v-if="selectedImage.luckyColor || selectedImage.luckyItem" class="modal-section lucky-section">
-            <div class="lucky-items">
-              <div v-if="selectedImage.luckyColor" class="lucky-item">
-                <span class="lucky-label">행운의 색상</span>
-                <span class="lucky-value color-value">
-                  <span class="color-dot" :style="{ background: getLuckyColorHex(selectedImage.luckyColor.name) }"></span>
-                  {{ selectedImage.luckyColor.name }}
-                </span>
-              </div>
-              <div v-if="selectedImage.luckyItem" class="lucky-item">
-                <span class="lucky-label">행운의 아이템</span>
-                <span class="lucky-value">{{ selectedImage.luckyItem.name }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 액션 버튼 -->
-          <div class="modal-actions">
-            <button @click="downloadImage(selectedImage)" class="modal-action-btn primary">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-              </svg>
-              다운로드
-            </button>
-            <button @click="deleteImage(selectedImage)" class="modal-action-btn danger">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-              삭제
-            </button>
-          </div>
+          <!-- 다음 이미지 버튼 -->
+          <button v-if="hasNextImage" @click.stop="goToNextImage" class="nav-btn nav-next">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
         </div>
-      </div>
-    </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useGalleryStore } from "../stores/galleryStore";
 import { imageService } from "../services/imageService";
+import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
+import { dreamResultService } from "../services/dreamResultService";
 
 const router = useRouter();
 const galleryStore = useGalleryStore();
 const { galleryImages } = storeToRefs(galleryStore);
+const dreamEntriesStore = useDreamEntriesStore();
+const { posts } = storeToRefs(dreamEntriesStore);
 
 const searchQuery = ref("");
 const activeFilter = ref("all");
 const viewMode = ref("grid");
 const selectedImage = ref(null);
+const syncing = ref(false);
 
 const filters = [
   { id: "all", label: "전체", emoji: "🎨" },
@@ -253,6 +312,19 @@ const filters = [
   { id: "liked", label: "좋아요", emoji: "❤️" },
   { id: "dreamy", label: "몽환적", emoji: "🌙" },
 ];
+
+// 컴포넌트 마운트 시 갤러리 데이터 새로고침
+onMounted(async () => {
+  galleryStore.hydrateFromLocalStorage();
+  await syncFromServer();
+  // 키보드 네비게이션 이벤트 추가
+  window.addEventListener("keydown", handleKeydown);
+});
+
+// 언마운트 시 이벤트 제거
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeydown);
+});
 
 // 필터링된 이미지
 const filteredImages = computed(() => {
@@ -386,14 +458,109 @@ function downloadImage(image) {
 
 function openImageDetail(image) {
   selectedImage.value = image;
+  document.body.style.overflow = "hidden";
 }
 
 function closeImageDetail() {
   selectedImage.value = null;
+  document.body.style.overflow = "";
+}
+
+// 현재 이미지 인덱스
+const currentImageIndex = computed(() => {
+  if (!selectedImage.value) return -1;
+  return filteredImages.value.findIndex((img) => img.id === selectedImage.value.id);
+});
+
+// 이전/다음 이미지 존재 여부
+const hasPrevImage = computed(() => currentImageIndex.value > 0);
+const hasNextImage = computed(() => currentImageIndex.value < filteredImages.value.length - 1);
+
+// 이전 이미지로 이동
+function goToPrevImage() {
+  if (hasPrevImage.value) {
+    selectedImage.value = filteredImages.value[currentImageIndex.value - 1];
+  }
+}
+
+// 다음 이미지로 이동
+function goToNextImage() {
+  if (hasNextImage.value) {
+    selectedImage.value = filteredImages.value[currentImageIndex.value + 1];
+  }
+}
+
+// 키보드 네비게이션
+function handleKeydown(e) {
+  if (!selectedImage.value) return;
+  if (e.key === "ArrowLeft") goToPrevImage();
+  if (e.key === "ArrowRight") goToNextImage();
+  if (e.key === "Escape") closeImageDetail();
+}
+
+function openOriginalImage(image) {
+  if (!image?.imageSrc) return;
+  window.open(image.imageSrc, "_blank");
+}
+
+// 서버에 저장된 꿈/이미지로 갤러리 채우기 (최대 최근 6개월)
+async function syncFromServer() {
+  if (syncing.value) return;
+  syncing.value = true;
+  try {
+    const now = new Date();
+    const seenDreamIds = new Set(galleryImages.value.map((img) => img.dreamId).filter(Boolean));
+
+    // 최근 6개월 꿈 데이터 불러오기
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1; // 1-12
+      try {
+        await dreamEntriesStore.fetchDreamsByMonth(year, month);
+      } catch (e) {
+        console.warn("월별 꿈 불러오기 실패:", year, month, e?.message);
+      }
+    }
+
+    // posts에 있는 dreamId로 결과 조회 후 갤러리에 채우기
+    const entries = Object.entries(posts.value || {});
+    for (const [dateKey, entry] of entries) {
+      if (!entry?.dreamId || seenDreamIds.has(entry.dreamId)) continue;
+      try {
+        const result = await dreamEntriesStore.fetchDreamResult(entry.dreamId);
+        if (result?.imageUrl) {
+          galleryStore.addToGallery({
+            id: result.id ?? entry.dreamId,
+            dreamId: entry.dreamId,
+            dreamDate: dateKey,
+            title: entry.title,
+            content: entry.content,
+            interpretation: result.dreamInterpretation,
+            fortuneSummary: result.todayFortuneSummary,
+            luckyColor: result.luckyColor,
+            luckyItem: result.luckyItem,
+            style: result.imageStyle || "꿈 이미지",
+            caption: entry.title || "꿈 이미지",
+            imageSrc: result.imageUrl,
+            mimeType: "image/png",
+            createdAt: result.createdAt || entry.createdAt || new Date().toISOString(),
+            savedAt: new Date().toISOString(),
+          });
+          seenDreamIds.add(entry.dreamId);
+        }
+      } catch (e) {
+        console.warn("꿈 결과 불러오기 실패:", entry.dreamId, e?.message);
+      }
+    }
+  } finally {
+    syncing.value = false;
+  }
 }
 </script>
 
 <style scoped>
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Dongle:wght@300;400;700&display=swap");
 
@@ -571,7 +738,6 @@ function closeImageDetail() {
 
 .gallery-grid.masonry {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  grid-auto-rows: 250px;
 }
 
 .gallery-item {
@@ -588,13 +754,9 @@ function closeImageDetail() {
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
 }
 
-.gallery-item.tall {
-  grid-row: span 2;
-}
-
 .image-container {
   width: 100%;
-  height: 200px;
+  aspect-ratio: 1 / 1;
   position: relative;
   overflow: hidden;
 }
@@ -606,16 +768,36 @@ function closeImageDetail() {
 .gallery-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
   transition: transform 0.3s ease;
 }
 
 .gallery-item:hover .gallery-image {
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
-.gallery-item.tall .image-container {
-  height: 100%;
+.image-hover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(102, 126, 234, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.gallery-item:hover .image-hover-overlay {
+  opacity: 1;
+}
+
+.hover-icon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .image-overlay {
@@ -640,6 +822,10 @@ function closeImageDetail() {
   font-size: 1.1rem;
   color: #333;
   font-weight: 700;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .image-meta {
@@ -728,150 +914,6 @@ function closeImageDetail() {
   box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
 }
 
-/* 모달 스타일 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 2rem;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 30px;
-  max-width: 800px;
-  width: 100%;
-  max-height: 90vh;
-  overflow: auto;
-  position: relative;
-}
-
-.modal-close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  transition: all 0.2s;
-  z-index: 1;
-}
-
-.modal-close:hover {
-  background: white;
-  transform: scale(1.1);
-}
-
-.modal-image {
-  width: 100%;
-  height: 400px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 30px 30px 0 0;
-  overflow: hidden;
-}
-
-.modal-image.real-image {
-  background: linear-gradient(135deg, #f3e8ff, #e8f4ff);
-}
-
-.modal-actual-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.modal-emoji {
-  font-size: 8rem;
-  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2));
-}
-
-.modal-info {
-  padding: 2rem;
-}
-
-.modal-info h2 {
-  margin: 0 0 1rem 0;
-  color: #333;
-}
-
-.modal-meta {
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  color: #999;
-}
-
-.modal-prompt {
-  padding: 1rem;
-  background: #f8faff;
-  border-radius: 15px;
-  color: #666;
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 1rem;
-}
-
-.modal-action-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 2rem;
-  border: 2px solid #e8f0fe;
-  background: white;
-  border-radius: 15px;
-  font-weight: 600;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.modal-action-btn:hover {
-  border-color: #a2d2ff;
-  background: #f8f9ff;
-  transform: translateY(-2px);
-}
-
-.modal-action-btn.primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border: none;
-}
-
-.modal-action-btn.primary:hover {
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-}
-
-.modal-action-btn.danger {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
-  border: none;
-}
-
-.modal-action-btn.danger:hover {
-  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
-}
-
 /* 갤러리 아이템 메타 뱃지 */
 .meta-item.date-badge {
   color: #667eea;
@@ -887,75 +929,347 @@ function closeImageDetail() {
   font-weight: 600;
 }
 
-/* 모달 헤더 정보 */
+/* ===== 모달 스타일 - 투명 배경 ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1.5rem;
+  gap: 1rem;
+}
+
+/* 네비게이션 버튼 (이전/다음) */
+.nav-btn {
+  position: relative;
+  z-index: 10;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.nav-btn:hover {
+  background: white;
+  transform: scale(1.1);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+}
+
+.nav-btn:active {
+  transform: scale(0.95);
+}
+
+.modal-content {
+  background: transparent;
+  border-radius: 0;
+  max-width: 1100px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 1;
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.3s;
+  z-index: 10;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+/* 모달 레이아웃 */
+.modal-layout {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  gap: 0;
+  border-radius: 20px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+}
+
+/* 왼쪽: 미술관 벽 & 액자 섹션 */
+.modal-image-section {
+  flex: 0 0 55%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 2rem;
+  position: relative;
+  min-width: 0;
+  /* 미술관 벽면 효과 */
+  background: linear-gradient(180deg, #2d2d3d 0%, #252535 30%, #1e1e2c 70%, #1a1a28 100%);
+  border-radius: 20px 0 0 20px;
+}
+
+/* 미술관 스포트라이트 효과 (위에서 비추는 빛) */
+.modal-image-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 60%;
+  background: radial-gradient(ellipse at center top, rgba(255, 250, 230, 0.15) 0%, rgba(255, 250, 230, 0.06) 35%, transparent 65%);
+  pointer-events: none;
+}
+
+/* 바닥 반사광 */
+.modal-image-section::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 25%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.25) 0%, transparent 100%);
+  pointer-events: none;
+  border-radius: 0 0 0 20px;
+}
+
+/* 액자 컨테이너 */
+.frame-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+}
+
+/* 고급 목재 액자 */
+.frame-outer {
+  background: linear-gradient(145deg, #c9a66b 0%, #9a7b3c 8%, #6b5a2a 20%, #4a3f20 50%, #6b5a2a 80%, #9a7b3c 92%, #c9a66b 100%);
+  padding: 16px;
+  border-radius: 4px;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7), 0 15px 35px rgba(0, 0, 0, 0.5), inset 0 2px 3px rgba(255, 255, 255, 0.35), inset 0 -2px 3px rgba(0, 0, 0, 0.4), inset 3px 0 4px rgba(0, 0, 0, 0.25),
+    inset -3px 0 4px rgba(0, 0, 0, 0.25);
+}
+
+/* 액자 내부 금장 테두리 */
+.frame-inner {
+  background: linear-gradient(145deg, #d4af37 0%, #c4a030 25%, #a8892a 50%, #c4a030 75%, #d4af37 100%);
+  padding: 6px;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5), inset 0 -1px 2px rgba(0, 0, 0, 0.35), 0 0 12px rgba(212, 175, 55, 0.25);
+}
+
+.framed-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #0c0c12, #14141c);
+  border-radius: 1px;
+  overflow: hidden;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+.framed-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.framed-placeholder {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1px;
+  background: linear-gradient(145deg, #0c0c12, #14141c);
+}
+
+.placeholder-emoji {
+  font-size: 5rem;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+}
+
+/* 액자 바닥 그림자 */
+.frame-shadow {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  height: 30px;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.5), transparent 70%);
+  z-index: 0;
+}
+
+/* 작품 정보 플레이트 (미술관 스타일) */
+.style-label {
+  margin-top: 1.5rem;
+  padding: 0.65rem 1.6rem;
+  background: linear-gradient(145deg, #28282f, #1c1c22);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+}
+
+.style-icon {
+  font-size: 0.9rem;
+}
+
+/* 오른쪽: 정보 섹션 - 깔끔한 카드 스타일 */
+.modal-info-section {
+  flex: 0 0 45%;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: white;
+  border-radius: 0 20px 20px 0;
+}
+
 .modal-header-info {
-  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 2px solid rgba(102, 78, 50, 0.12);
+  margin-bottom: 1.25rem;
+  flex-shrink: 0;
 }
 
 .modal-header-info h2 {
-  margin: 0 0 0.75rem 0;
-  color: #333;
-  font-size: 1.5rem;
+  margin: 0 0 0.85rem 0;
+  font-family: "Playfair Display", serif;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #2a2520;
+  line-height: 1.35;
+  word-break: keep-all;
 }
 
 .modal-meta {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
 .meta-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.4rem 0.8rem;
+  gap: 0.35rem;
+  padding: 0.45rem 0.95rem;
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
 }
 
 .meta-badge.date {
-  background: #f0f4ff;
-  color: #667eea;
+  background: linear-gradient(135deg, #f0ebe4, #e8e2d9);
+  color: #6b5a4a;
+  border: 1px solid rgba(107, 90, 74, 0.15);
 }
 
-.meta-badge.style {
-  background: linear-gradient(135deg, #c77dff20, #6fa7ff20);
-  color: #764ba2;
+.badge-icon {
+  font-size: 0.9rem;
 }
 
-/* 모달 섹션 */
+/* 스크롤 가능 영역 */
+.modal-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  margin-bottom: 1rem;
+  min-height: 0;
+}
+
+.modal-scrollable::-webkit-scrollbar {
+  width: 5px;
+}
+
+.modal-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-scrollable::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.25);
+  border-radius: 5px;
+}
+
+.modal-scrollable::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.4);
+}
+
+/* 모달 섹션 - 가독성 개선 */
 .modal-section {
-  margin-bottom: 1.5rem;
-  padding: 1rem 1.25rem;
-  border-radius: 16px;
+  margin-bottom: 0.85rem;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  transition: transform 0.2s;
 }
 
 .section-title {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
+  gap: 0.4rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: #333;
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.6rem 0;
 }
 
 .section-icon {
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 /* 꿈 일기 내용 섹션 */
 .dream-content-section {
   background: linear-gradient(135deg, #faf5ff, #f3e8ff);
-  border-left: 4px solid #a855f7;
+  border-left: 3px solid #a855f7;
 }
 
 .dream-content-text {
   margin: 0;
-  color: #555;
-  line-height: 1.7;
-  font-size: 0.95rem;
+  color: #444;
+  line-height: 1.75;
+  font-size: 0.9rem;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -963,34 +1277,37 @@ function closeImageDetail() {
 /* 꿈 해석 섹션 */
 .interpretation-section {
   background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
-  border-left: 4px solid #0ea5e9;
+  border-left: 3px solid #0ea5e9;
 }
 
 .interpretation-text {
   margin: 0;
   color: #0c4a6e;
-  line-height: 1.7;
-  font-size: 0.95rem;
+  line-height: 1.75;
+  font-size: 0.9rem;
   white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* 오늘의 운세 섹션 */
 .fortune-section {
   background: linear-gradient(135deg, #fffbeb, #fef3c7);
-  border-left: 4px solid #f59e0b;
+  border-left: 3px solid #f59e0b;
 }
 
 .fortune-text {
   margin: 0;
   color: #78350f;
-  line-height: 1.7;
-  font-size: 0.95rem;
+  line-height: 1.75;
+  font-size: 0.9rem;
+  word-break: break-word;
 }
 
 /* 행운 정보 섹션 */
 .lucky-section {
-  background: #f8faff;
-  padding: 1rem;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border-left: 3px solid #22c55e;
+  padding: 0.85rem 1.1rem;
 }
 
 .lucky-items {
@@ -1002,27 +1319,27 @@ function closeImageDetail() {
 .lucky-item {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
 }
 
 .lucky-label {
-  font-size: 0.75rem;
-  color: #888;
-  font-weight: 600;
+  font-size: 0.7rem;
+  color: #16a34a;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .lucky-value {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: #333;
+  color: #166534;
 }
 
 .lucky-value.color-value {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .color-dot {
@@ -1030,65 +1347,353 @@ function closeImageDetail() {
   height: 16px;
   border-radius: 50%;
   border: 2px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* 모달 내용 스크롤 */
-.modal-info {
-  padding: 1.5rem 2rem;
-  max-height: calc(90vh - 400px);
-  overflow-y: auto;
+/* 액션 버튼 - 컴팩트하게 */
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
 }
 
-.modal-info::-webkit-scrollbar {
-  width: 6px;
+.modal-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.85rem 1rem;
+  flex: 1;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.modal-info::-webkit-scrollbar-track {
-  background: transparent;
+.modal-action-btn.ghost {
+  background: white;
+  color: #4a5568;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.modal-info::-webkit-scrollbar-thumb {
-  background: rgba(102, 126, 234, 0.3);
-  border-radius: 6px;
+.modal-action-btn.ghost:hover {
+  background: #f8f9fa;
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
-/* 반응형 */
-@media (max-width: 768px) {
-  .modal-content {
-    max-width: 95%;
-    margin: 1rem;
-    max-height: 95vh;
+.modal-action-btn.primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 3px 12px rgba(102, 126, 234, 0.25);
+}
+
+.modal-action-btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+}
+
+.modal-action-btn.danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 3px 12px rgba(239, 68, 68, 0.25);
+}
+
+.modal-action-btn.danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+}
+
+/* 모달 애니메이션 */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-from .modal-content,
+.modal-fade-leave-to .modal-content {
+  transform: scale(0.95) translateY(20px);
+}
+
+.modal-fade-enter-active .modal-content,
+.modal-fade-leave-active .modal-content {
+  transition: transform 0.3s ease;
+}
+
+/* ===== 반응형 - 태블릿 ===== */
+@media (max-width: 950px) {
+  .modal-overlay {
+    padding: 1rem;
+    flex-direction: row;
   }
 
-  .modal-image {
-    height: 280px;
+  .nav-btn {
+    width: 48px;
+    height: 48px;
   }
 
-  .modal-info {
-    padding: 1.25rem;
-    max-height: calc(95vh - 320px);
+  .modal-layout {
+    flex-direction: column;
+    overflow-y: auto;
+    border-radius: 20px;
+  }
+
+  .modal-image-section {
+    flex: none;
+    padding: 2rem 1.5rem;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .modal-image-section::before {
+    width: 60%;
+    height: 50%;
+  }
+
+  .modal-image-section::after {
+    border-radius: 0;
+  }
+
+  .frame-container {
+    max-width: 300px;
+  }
+
+  .modal-info-section {
+    flex: none;
+    padding: 1.5rem;
+    max-height: none;
+    overflow: visible;
+    border-radius: 0 0 20px 20px;
+  }
+
+  .modal-scrollable {
+    overflow: visible;
+    max-height: none;
   }
 
   .modal-header-info h2 {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
+  }
+}
+
+/* ===== 반응형 - 모바일 ===== */
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: 0.75rem;
+    flex-direction: row;
+    gap: 0.5rem;
   }
 
+  .nav-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .nav-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .modal-content {
+    max-height: 90vh;
+  }
+
+  .modal-close {
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 36px;
+    height: 36px;
+  }
+
+  .modal-layout {
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: calc(90vh - 20px);
+    border-radius: 16px;
+  }
+
+  /* 모바일: 이미지 섹션 - 미술관 느낌 유지 */
+  .modal-image-section {
+    padding: 1.5rem 1rem;
+    flex-shrink: 0;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .modal-image-section::before {
+    width: 80%;
+    height: 45%;
+  }
+
+  .modal-image-section::after {
+    border-radius: 0;
+  }
+
+  .frame-container {
+    max-width: 220px;
+  }
+
+  .frame-outer {
+    padding: 10px;
+  }
+
+  .frame-inner {
+    padding: 4px;
+  }
+
+  .placeholder-emoji {
+    font-size: 3.5rem;
+  }
+
+  .frame-shadow {
+    bottom: -18px;
+    height: 18px;
+  }
+
+  .style-label {
+    font-size: 0.75rem;
+    padding: 0.45rem 1rem;
+    margin-top: 1rem;
+  }
+
+  /* 모바일: 정보 섹션 - 가독성 최적화 */
+  .modal-info-section {
+    padding: 1.25rem;
+    border-radius: 0 0 16px 16px;
+    background: white;
+  }
+
+  .modal-header-info {
+    padding-bottom: 0.85rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .modal-header-info h2 {
+    font-size: 1.15rem;
+    margin-bottom: 0.6rem;
+    line-height: 1.4;
+  }
+
+  .meta-badge {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .badge-icon {
+    font-size: 0.85rem;
+  }
+
+  /* 모바일: 섹션 패딩 최적화 */
   .modal-section {
-    padding: 0.875rem 1rem;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 12px;
   }
 
   .section-title {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .section-icon {
     font-size: 0.9rem;
   }
 
   .dream-content-text,
   .interpretation-text,
   .fortune-text {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    line-height: 1.7;
+  }
+
+  /* 모바일: 행운 정보 가로 배치 */
+  .lucky-section {
+    padding: 0.75rem 1rem;
   }
 
   .lucky-items {
-    gap: 1rem;
+    gap: 1.25rem;
+  }
+
+  .lucky-label {
+    font-size: 0.65rem;
+  }
+
+  .lucky-value {
+    font-size: 0.9rem;
+  }
+
+  .color-dot {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* 모바일: 액션 버튼 가로 유지, 컴팩트 */
+  .modal-actions {
+    gap: 0.6rem;
+    padding-top: 0.85rem;
+    flex-wrap: wrap;
+  }
+
+  .modal-action-btn {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.8rem;
+    gap: 0.3rem;
+    border-radius: 10px;
+  }
+
+  .modal-action-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* ===== 반응형 - 작은 모바일 ===== */
+@media (max-width: 400px) {
+  .nav-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .nav-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .frame-container {
+    max-width: 180px;
+  }
+
+  .frame-outer {
+    padding: 8px;
+  }
+
+  .frame-inner {
+    padding: 3px;
+  }
+
+  .modal-info-section {
+    padding: 1rem;
+  }
+
+  .modal-header-info h2 {
+    font-size: 1rem;
+  }
+
+  .modal-section {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .dream-content-text,
+  .interpretation-text,
+  .fortune-text {
+    font-size: 0.8rem;
   }
 
   .modal-actions {
@@ -1099,21 +1704,37 @@ function closeImageDetail() {
   .modal-action-btn {
     width: 100%;
     justify-content: center;
+    padding: 0.7rem 0.75rem;
+    font-size: 0.78rem;
   }
 }
 
+/* ===== 갤러리 카드 반응형 ===== */
 @media (max-width: 480px) {
-  .modal-image {
-    height: 220px;
+  .gallery-card {
+    padding: 1.5rem;
+    border-radius: 30px;
   }
 
-  .meta-badge {
-    font-size: 0.75rem;
-    padding: 0.3rem 0.6rem;
+  .page-title {
+    font-size: 2rem;
   }
 
-  .modal-meta {
+  .gallery-grid {
+    gap: 1.5rem;
+  }
+
+  .gallery-grid.grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-buttons {
     gap: 0.5rem;
+  }
+
+  .filter-btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
   }
 }
 </style>

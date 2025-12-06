@@ -29,6 +29,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // 업로드된 이미지 정적 파일 프록시
+      "/uploads": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });
