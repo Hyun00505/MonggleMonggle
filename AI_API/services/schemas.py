@@ -25,7 +25,7 @@ class ComprehensiveFortuneResponse(BaseModel):
 
 class DreamImageRequest(BaseModel):
     dream_prompt: str = Field(..., description="꿈 내용 프롬프트 (예: '똥통에 빠지는 꿈을 꿨어')")
-    style: str = Field("몽환적", description="이미지 스타일 (몽환적, 수채화, 애니메이션, 사실적, 판타지, 추상적)")
+    style: str = Field("몽환적", description="이미지 스타일 (몽환적, 수채화, 애니메이션, 판타지)")
 
 class GeneratedImage(BaseModel):
     image_data: str = Field(..., description="Base64로 인코딩된 이미지 데이터")

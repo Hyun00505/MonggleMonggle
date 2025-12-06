@@ -2,9 +2,6 @@ import json
 import asyncio
 import os
 import requests
-import base64
-import uuid
-from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import HTTPException
@@ -23,14 +20,12 @@ async def process_dream_image(request: DreamImageRequest) -> DreamImageResponse:
     Gemini 2.0 Flash Exp Image Generation 모델 사용
     """
     
-    # 스타일별 프롬프트 키워드 정의
+    # 스타일별 프롬프트 키워드 정의 (프론트엔드에서 사용하는 4가지 스타일)
     STYLE_PROMPTS = {
-        "몽환적": "몽환적이고 신비로운 분위기, dreamlike, mystical atmosphere, ethereal",
-        "수채화": "부드러운 수채화 스타일, watercolor painting style, soft colors, artistic",
-        "애니메이션": "애니메이션 작화 스타일, anime style, vivid colors, 2D rendering",
-        "사실적": "고화질 실사 스타일, photorealistic, high quality, cinematic lighting, 4k",
-        "판타지": "판타지 아트 스타일, fantasy art, epic, magical, detailed",
-        "추상적": "추상적인 예술 스타일, abstract art, unique shapes, modern art"
+        "몽환적": "몽환적이고 신비로운 분위기, dreamlike, mystical atmosphere, ethereal, soft glow",
+        "수채화": "부드러운 수채화 스타일, watercolor painting style, soft colors, artistic, delicate brushstrokes",
+        "애니메이션": "애니메이션 작화 스타일, anime style, vivid colors, 2D rendering, Japanese animation",
+        "판타지": "판타지 아트 스타일, fantasy art, epic, magical, detailed, enchanted atmosphere",
     }
 
     # 선택된 스타일에 맞는 키워드 가져오기 (기본값: 몽환적)
@@ -98,10 +93,6 @@ async def process_dream_image(request: DreamImageRequest) -> DreamImageResponse:
         generated_images = []
         model_text = None
         
-        # 저장 경로 설정 (./img 폴더가 없으면 생성)
-        save_dir = "./img"
-        os.makedirs(save_dir, exist_ok=True)
-        
         # parts 리스트를 순회하며 텍스트와 이미지를 분리 처리
         for part in parts:
             # 텍스트가 있는 경우 저장
@@ -114,27 +105,7 @@ async def process_dream_image(request: DreamImageRequest) -> DreamImageResponse:
                 mime_type = part['inlineData'].get('mimeType', 'image/png')
                 image_data_b64 = part['inlineData']['data']
                 
-                # 이미지 디코딩 및 로컬 저장
-                try:
-                    image_data = base64.b64decode(image_data_b64)
-                    
-                    # 파일명 생성: 타임스탬프_UUID일부.확장자
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    unique_id = str(uuid.uuid4())[:8]
-                    # MIME 타입에서 확장자 추출 (예: image/png -> png)
-                    ext = mime_type.split('/')[-1] if '/' in mime_type else 'png'
-                    
-                    filename = f"{timestamp}_{unique_id}.{ext}"
-                    filepath = os.path.join(save_dir, filename)
-                    
-                    with open(filepath, "wb") as f:
-                        f.write(image_data)
-                    
-                    print(f"[이미지 저장 완료]: {filepath}")
-                    
-                except Exception as e:
-                    print(f"⚠️ 이미지 저장 실패: {e}")
-                
+                # Base64 데이터만 응답에 추가 (파일 저장은 Spring Boot에서 처리)
                 generated_images.append(GeneratedImage(
                     image_data=image_data_b64,
                     mime_type=mime_type

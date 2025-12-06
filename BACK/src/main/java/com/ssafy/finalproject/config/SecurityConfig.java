@@ -42,6 +42,8 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/swagger-ui.html"
                         ).permitAll()
+                        // 업로드된 이미지 접근 허용 (인증 불필요)
+                        .requestMatchers("/uploads/**").permitAll()
                         // 나머지 API는 인증 필요
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
