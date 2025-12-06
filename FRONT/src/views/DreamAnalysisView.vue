@@ -22,7 +22,7 @@
         <div class="section dream-section">
           <h3>🌌 꿈 해몽</h3>
           <p class="result-text">
-            {{ analysisResult?.dreamInterpretation || '분석 결과를 불러오는 중...' }}
+            {{ analysisResult?.dreamInterpretation || "분석 결과를 불러오는 중..." }}
           </p>
         </div>
 
@@ -65,9 +65,9 @@
                   />
                   <path d="M32 34l-4 20" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
                 </svg>
-                <strong class="fortune-value">{{ analysisResult?.luckyItem?.name || '행운의 아이템' }}</strong>
+                <strong class="fortune-value">{{ analysisResult?.luckyItem?.name || "행운의 아이템" }}</strong>
               </div>
-              <p class="fortune-reason">{{ analysisResult?.luckyItem?.reason || '분석 결과를 불러오는 중...' }}</p>
+              <p class="fortune-reason">{{ analysisResult?.luckyItem?.reason || "분석 결과를 불러오는 중..." }}</p>
             </div>
           </div>
         </div>
@@ -105,8 +105,13 @@
         <div class="vis-body">
           <!-- 꿈 정보 -->
           <div class="vis-preview" v-if="selectedDream">
-            <span class="preview-tag">꿈 내용</span>
-            <p class="preview-text">{{ selectedDream.title }}</p>
+            <div class="preview-header">
+              <span class="preview-tag">꿈 내용</span>
+              <h3 class="preview-title">{{ selectedDream.title }}</h3>
+            </div>
+            <div class="preview-content-wrapper">
+              <p class="preview-text">{{ selectedDream.content }}</p>
+            </div>
           </div>
 
           <!-- 스타일 선택 -->
@@ -177,31 +182,31 @@ const displayLuckyColor = computed(() => {
 // 색상 이름을 HEX 코드로 변환
 function getColorHex(colorName) {
   const colorMap = {
-    '빨간색': '#FF4444',
-    '주황색': '#FF8C00',
-    '노란색': '#FFD700',
-    '초록색': '#32CD32',
-    '파란색': '#4169E1',
-    '남색': '#191970',
-    '보라색': '#9370DB',
-    '분홍색': '#FFB6C1',
-    '하늘색': '#87CEEB',
-    '청록색': '#40E0D0',
-    '갈색': '#8B4513',
-    '회색': '#808080',
-    '검정색': '#333333',
-    '흰색': '#FFFFFF',
-    '금색': '#FFD700',
-    '은색': '#C0C0C0',
+    빨간색: "#FF4444",
+    주황색: "#FF8C00",
+    노란색: "#FFD700",
+    초록색: "#32CD32",
+    파란색: "#4169E1",
+    남색: "#191970",
+    보라색: "#9370DB",
+    분홍색: "#FFB6C1",
+    하늘색: "#87CEEB",
+    청록색: "#40E0D0",
+    갈색: "#8B4513",
+    회색: "#808080",
+    검정색: "#333333",
+    흰색: "#FFFFFF",
+    금색: "#FFD700",
+    은색: "#C0C0C0",
   };
-  return colorMap[colorName] || '#CDB4DB';
+  return colorMap[colorName] || "#CDB4DB";
 }
 
 // URL에서 날짜 복원
 onMounted(() => {
   if (!analysisResult.value && route.query.date) {
     // 분석 결과가 없으면 다시 write 페이지로
-    router.replace({ name: 'write', query: { date: route.query.date } });
+    router.replace({ name: "write", query: { date: route.query.date } });
   }
 });
 
@@ -782,9 +787,21 @@ function saveToGallery(image) {
 
 .vis-preview {
   background: linear-gradient(135deg, #faf5ff, #f3e8ff);
-  padding: 1rem;
+  padding: 1rem 1.25rem;
   border-radius: 14px;
   border-left: 3px solid #a855f7;
+  max-height: 200px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+  flex-shrink: 0;
 }
 
 .preview-tag {
@@ -795,11 +812,45 @@ function saveToGallery(image) {
   letter-spacing: 0.05em;
 }
 
+.preview-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #4c2b7b;
+  margin: 0;
+  line-height: 1.3;
+  word-break: keep-all;
+}
+
+.preview-content-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.preview-content-wrapper::-webkit-scrollbar {
+  width: 4px;
+}
+
+.preview-content-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.preview-content-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.3);
+  border-radius: 4px;
+}
+
+.preview-content-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.5);
+}
+
 .preview-text {
-  font-size: 0.95rem;
-  color: #333;
-  margin: 0.25rem 0 0;
-  font-weight: 500;
+  font-size: 0.9rem;
+  color: #555;
+  margin: 0;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .style-chips {
@@ -1095,6 +1146,20 @@ function saveToGallery(image) {
 
   .vis-card {
     padding: 1.25rem;
+  }
+
+  .vis-preview {
+    padding: 0.875rem 1rem;
+    max-height: 180px;
+  }
+
+  .preview-title {
+    font-size: 0.95rem;
+  }
+
+  .preview-text {
+    font-size: 0.85rem;
+    line-height: 1.5;
   }
 }
 </style>
