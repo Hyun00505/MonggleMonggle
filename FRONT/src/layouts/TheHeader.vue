@@ -13,7 +13,7 @@
           </span>
           <span class="btn-text">메뉴</span>
         </button>
-        
+
         <div v-if="showMenu" class="dropdown-menu">
           <router-link to="/calendar" class="menu-item" @click="closeMenu">
             <span class="menu-icon">📅</span>
@@ -35,7 +35,7 @@
       </nav>
 
       <div class="spacer"></div>
-      
+
       <button @click="$emit('logout')" class="logout-btn" aria-label="Logout">
         <span class="btn-text">Logout</span>
         <div class="btn-icon">
@@ -61,9 +61,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref } from "vue";
 
-defineEmits(['navigate-mypage', 'logout']);
+defineEmits(["navigate-mypage", "logout"]);
 
 const showMenu = ref(false);
 
@@ -126,6 +126,7 @@ function closeMenu() {
   min-width: 200px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   animation: slideDown 0.2s ease;
+  z-index: 1000;
 }
 
 @keyframes slideDown {
@@ -147,18 +148,18 @@ function closeMenu() {
   border-radius: 12px;
   text-decoration: none;
   color: #333;
-  font-family: 'Nunito', sans-serif;
+  font-family: "Nunito", sans-serif;
   font-weight: 600;
   transition: all 0.2s;
 }
 
 .menu-item:hover {
-  background: linear-gradient(135deg, #F8F9FF, #E8F0FE);
+  background: linear-gradient(135deg, #f8f9ff, #e8f0fe);
   transform: translateX(5px);
 }
 
 .menu-item.router-link-active {
-  background: linear-gradient(135deg, #A2D2FF, #BDE0FE);
+  background: linear-gradient(135deg, #a2d2ff, #bde0fe);
   color: white;
 }
 
@@ -170,7 +171,8 @@ function closeMenu() {
   flex: 1;
 }
 
-.profile-btn, .logout-btn {
+.profile-btn,
+.logout-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -185,13 +187,14 @@ function closeMenu() {
   height: 42px;
 }
 
-.profile-btn:hover, .logout-btn:hover {
+.profile-btn:hover,
+.logout-btn:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
 }
 
 .btn-text {
-  font-family: 'Nunito', sans-serif;
+  font-family: "Nunito", sans-serif;
   font-weight: 700;
   font-size: 0.9rem;
 }
@@ -206,21 +209,56 @@ function closeMenu() {
   .app-header {
     padding: 1rem;
   }
-  
+
   .btn-text {
     display: none;
   }
-  
-  .menu-btn, .profile-btn, .logout-btn {
+
+  .menu-btn,
+  .profile-btn,
+  .logout-btn {
     padding: 0.5rem;
     border-radius: 50%;
     width: 42px;
   }
-  
+
   .dropdown-menu {
-    right: 0;
-    left: auto;
+    left: 0;
+    right: auto;
+    min-width: 180px;
+    max-width: calc(100vw - 2rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 0.75rem;
+  }
+
+  .header-content {
+    gap: 0.5rem;
+  }
+
+  .menu-btn,
+  .profile-btn,
+  .logout-btn {
+    width: 38px;
+    height: 38px;
+    padding: 0.4rem;
+  }
+
+  .dropdown-menu {
+    min-width: 160px;
+    padding: 0.4rem;
+  }
+
+  .menu-item {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .menu-icon {
+    font-size: 1.1rem;
   }
 }
 </style>
-

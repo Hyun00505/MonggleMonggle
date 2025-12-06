@@ -10,6 +10,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApiResponse {
+    private boolean success;
     private String message;
+    
+    // 기존 코드 호환을 위한 생성자
+    public ApiResponse(String message) {
+        this.success = true;
+        this.message = message;
+    }
 }
 

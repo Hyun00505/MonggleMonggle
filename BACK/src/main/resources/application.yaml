@@ -33,6 +33,11 @@ jwt:
   secret: ${JWT_SECRET:your-secret-key-here-must-be-at-least-256-bits-long-for-HS256-algorithm}
   expiration: ${JWT_EXPIRATION:86400000} # 24시간 (밀리초)
 
+# 파일 업로드 경로 설정
+file:
+  upload-dir: ${FILE_UPLOAD_DIR:uploads/images}
+  base-url: ${FILE_BASE_URL:/uploads/images}
+
 # FastAPI 연동 설정
 fastapi:
   url: ${FASTAPI_URL:http://localhost:8000}
