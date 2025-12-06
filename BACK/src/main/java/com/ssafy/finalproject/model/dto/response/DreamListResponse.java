@@ -28,6 +28,9 @@ public class DreamListResponse {
         private Integer emotionId;
         private String emotionName;
         private Boolean hasResult;
+        // 해몽 결과의 행운의 색상 정보 (hasResult가 true일 때만 값이 있음)
+        private String luckyColorName;
+        private Integer luckyColorNumber;
     }
 }
 

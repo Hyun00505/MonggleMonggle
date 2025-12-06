@@ -2,12 +2,18 @@ import json
 import os
 import asyncio
 import requests
+from pathlib import Path
+from dotenv import load_dotenv
 from fastapi import HTTPException
 from typing import List
 from services.schemas import MonthlyAnalysisRequest, MonthlyAnalysisResponse
 
-# GMS API 키 설정
-GMS_API_KEY = os.getenv("GMS_API_KEY", "S14P02AQ06-88cb9f96-1505-4bb8-b068-57fe14afebee")
+# .env 파일에서 환경변수 로드 (현재 파일 기준 상위 폴더의 .env)
+ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(ENV_PATH, override=True)
+
+# GMS API 키 설정 (환경변수에서만 참조)
+GMS_API_KEY = os.getenv("GMS_API_KEY")
 
 def create_compact_monthly_prompt(request: MonthlyAnalysisRequest) -> tuple[str, dict]:
     """

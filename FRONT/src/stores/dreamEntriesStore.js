@@ -274,14 +274,27 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
       if (response.dreams && Array.isArray(response.dreams)) {
         response.dreams.forEach((dream) => {
           const dateKey = dream.dreamDate;
+
+          // 해몽 결과가 있으면 서버에서 받은 색상 사용, 없으면 흰색
+          const hasResult = dream.hasResult || false;
+          let starColor = "#FFFFFF"; // 기본값: 흰색 (해몽 안함)
+
+          if (hasResult && dream.luckyColorName) {
+            // 서버에서 받은 색상 이름을 HEX로 변환
+            starColor = getColorHex(dream.luckyColorName);
+          }
+
           posts.value[dateKey] = {
             dreamId: dream.dreamId,
             title: dream.title,
             content: dream.content,
             emotion: dream.emotionId,
-            color: dream.luckyColor || getLuckyColorById(getRandomLuckyColorId()).hex,
-            luckyColorId: dream.luckyColorId || getRandomLuckyColorId(),
+            // 해몽 결과 여부와 색상 정보
+            hasResult: hasResult,
+            color: starColor,
             luckyColorName: dream.luckyColorName || "",
+            luckyColorNumber: dream.luckyColorNumber || null,
+            reinterpretCount: 0, // 서버에서 받아와야 하지만 일단 기본값
           };
         });
         persistEntries();

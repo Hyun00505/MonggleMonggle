@@ -3,14 +3,20 @@ import asyncio
 import datetime
 import os
 import requests
+from pathlib import Path
 from typing import AsyncGenerator
+from dotenv import load_dotenv
 from fastapi import HTTPException
 from services.schemas import ComprehensiveFortuneRequest, ComprehensiveFortuneResponse
 from services.dream_interprinter_service import models, generate_response
 from services.Naver_fortune_api import fetch_today_fortune
 
-# GMS API 키 설정
-GMS_API_KEY = os.getenv("GMS_API_KEY", "S14P02AQ06-88cb9f96-1505-4bb8-b068-57fe14afebee")
+# .env 파일에서 환경변수 로드 (현재 파일 기준 상위 폴더의 .env)
+ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(ENV_PATH, override=True)
+
+# GMS API 키 설정 (환경변수에서만 참조)
+GMS_API_KEY = os.getenv("GMS_API_KEY")
 
 # 진행 상황 스트리밍용 함수
 async def stream_progress(step: int, total: int, message: str) -> str:

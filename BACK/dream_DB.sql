@@ -1,4 +1,4 @@
--- Active: 1764825127477@@127.0.0.1@3306@dream_db
+-- Active: 1764908874666@@127.0.0.1@3306@dream_db
 -- 1. 데이터베이스 생성
 CREATE DATABASE IF NOT EXISTS `dream_db`
     DEFAULT CHARACTER SET utf8mb4

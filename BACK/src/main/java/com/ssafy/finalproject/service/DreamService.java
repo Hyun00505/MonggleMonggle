@@ -69,7 +69,19 @@ public class DreamService {
         
         List<DreamListResponse.DreamSummary> summaries = dreams.stream()
                 .map(dream -> {
-                    boolean hasResult = dreamsResultsDao.existsByDreamId(dream.getDreamId());
+                    // 해몽 결과 조회
+                    var dreamResultOpt = dreamsResultsDao.findByDreamId(dream.getDreamId());
+                    boolean hasResult = dreamResultOpt.isPresent();
+                    
+                    // 해몽 결과가 있으면 색상 정보도 함께 반환
+                    String luckyColorName = null;
+                    Integer luckyColorNumber = null;
+                    if (hasResult) {
+                        var dreamResult = dreamResultOpt.get();
+                        luckyColorName = dreamResult.getLuckyColorName();
+                        luckyColorNumber = dreamResult.getLuckyColorNumber();
+                    }
+                    
                     return DreamListResponse.DreamSummary.builder()
                             .dreamId(dream.getDreamId())
                             .title(dream.getTitle())
@@ -78,6 +90,8 @@ public class DreamService {
                             .emotionId(dream.getEmotionId())
                             .emotionName(null) // XML에서 조인하여 가져올 수 있음
                             .hasResult(hasResult)
+                            .luckyColorName(luckyColorName)
+                            .luckyColorNumber(luckyColorNumber)
                             .build();
                 })
                 .collect(Collectors.toList());

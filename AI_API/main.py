@@ -19,11 +19,13 @@ from services.comprehensive_service import process_comprehensive_fortune
 from services.image_service import process_dream_image
 from services.monthly_analysis_service import process_monthly_analysis
 
-# .env 파일 로드
-load_dotenv()
+# .env 파일 로드 (프로젝트 루트의 .env 파일을 항상 로드)
+load_dotenv(override=True)
 
 # GMS API 키 설정 (필요 시 확인용, 실제 사용은 서비스 모듈에서)
-GMS_API_KEY = os.getenv("GMS_API_KEY", "S14P02AQ06-88cb9f96-1505-4bb8-b068-57fe14afebee")
+GMS_API_KEY = os.getenv("GMS_API_KEY")
+if not GMS_API_KEY:
+    raise ValueError("GMS_API_KEY 환경변수가 설정되지 않았습니다. .env 파일을 확인해주세요.")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
