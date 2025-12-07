@@ -15,7 +15,12 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:3000", "http://localhost:5173")
+                .allowedOriginPatterns(
+                        "http://localhost:3000", 
+                        "http://localhost:5173",
+                        "https://*.ngrok-free.app",  // ngrok 무료 도메인
+                        "https://*.ngrok.io"         // ngrok 기존 도메인
+                )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
@@ -23,7 +28,12 @@ public class WebConfig implements WebMvcConfigurer {
         
         // 업로드 이미지에 대한 CORS 설정
         registry.addMapping("/uploads/**")
-                .allowedOrigins("http://localhost:3000", "http://localhost:5173")
+                .allowedOriginPatterns(
+                        "http://localhost:3000", 
+                        "http://localhost:5173",
+                        "https://*.ngrok-free.app",
+                        "https://*.ngrok.io"
+                )
                 .allowedMethods("GET")
                 .maxAge(3600);
     }

@@ -29,6 +29,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> {})  // WebConfig의 CORS 설정 사용
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> 
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
