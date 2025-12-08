@@ -1,21 +1,7 @@
 import { ref } from 'vue';
 
 const STORAGE_KEY = 'dreamUsers';
-const USER_INFO_KEY = 'userInfo'; // Currently MyPage uses 'userInfo' (single user) while AuthView uses 'dreamUsers' (array). 
-// We should unify this or handle both. 
-// AuthView logic:
-// - loadUsers: reads 'dreamUsers' array.
-// - saveUsers: writes 'dreamUsers' array.
-// - login: finds user in 'dreamUsers'.
-// 
-// MyPageView logic:
-// - reads/writes 'userInfo' object directly. This seems to be the "current logged in user" session storage.
-// 
-// Ideally:
-// 'dreamUsers' is the database.
-// 'userInfo' is the session.
-//
-// I will implement functions to manage the "Database" (dreamUsers) and the "Session" (userInfo).
+const USER_INFO_KEY = 'currentUser'; // 로그인 시 authService에서 저장하는 키와 동일하게 통일
 
 export function useUserStorage() {
   

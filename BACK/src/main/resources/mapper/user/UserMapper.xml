@@ -45,6 +45,9 @@
         SET name = #{name},
             birth_date = #{birthDate},
             gender = #{gender},
+            <if test="calendarType != null">
+                calendar_type = #{calendarType},
+            </if>
             <if test="password != null">
                 password = #{password},
             </if>

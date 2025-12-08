@@ -78,6 +78,7 @@ public class AuthService {
         // 응답 생성
         return LoginResponse.builder()
                 .userId(user.getUserId())
+                .loginId(user.getLoginId())
                 .name(user.getName())
                 .birthDate(user.getBirthDate())
                 .gender(user.getGender())
@@ -112,6 +113,11 @@ public class AuthService {
         user.setName(request.getName());
         user.setBirthDate(request.getBirthDate());
         user.setGender(request.getGender());
+        
+        // 달력 유형이 제공된 경우에만 변경
+        if (request.getCalendarType() != null && !request.getCalendarType().isEmpty()) {
+            user.setCalendarType(request.getCalendarType());
+        }
         
         // 비밀번호가 제공된 경우에만 변경
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {

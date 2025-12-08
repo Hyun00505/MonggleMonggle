@@ -15,6 +15,7 @@ public class UpdateUserRequest {
     private String name;
     private LocalDate birthDate;
     private String gender;
+    private String calendarType; // 양력(solar) / 음력(lunar)
     private String password; // optional
 }
 
