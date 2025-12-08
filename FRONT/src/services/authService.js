@@ -28,6 +28,7 @@ export const authService = {
     // 사용자 정보 저장 (응답 데이터 자체가 user 정보 포함)
     const userData = {
       userId: response.data.userId,
+      loginId: response.data.loginId,
       name: response.data.name,
       birthDate: response.data.birthDate,
       gender: response.data.gender,

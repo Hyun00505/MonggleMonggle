@@ -75,6 +75,7 @@ export const useAuthStore = defineStore("auth", () => {
       // 응답 데이터 자체가 user 정보 포함
       user.value = {
         userId: response.userId,
+        loginId: response.loginId,
         name: response.name,
         birthDate: response.birthDate,
         gender: response.gender,

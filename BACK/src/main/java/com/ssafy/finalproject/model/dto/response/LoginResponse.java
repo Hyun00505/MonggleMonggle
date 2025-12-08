@@ -13,6 +13,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class LoginResponse {
     private Long userId;
+    private String loginId;
     private String name;
     private LocalDate birthDate;
     private String gender;

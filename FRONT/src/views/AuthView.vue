@@ -25,6 +25,19 @@
           </div>
 
           <div v-if="!isLogin" class="input-group">
+            <div class="radio-group calendar-type-group">
+              <label class="radio-label">
+                <input type="radio" v-model="calendarBase" value="solar" class="custom-radio" required />
+                <span class="radio-label-text">양력</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" v-model="calendarBase" value="lunar" class="custom-radio" required />
+                <span class="radio-label-text">음력</span>
+              </label>
+            </div>
+          </div>
+
+          <div v-if="!isLogin" class="input-group">
             <label class="input-label">성별</label>
             <div class="radio-group">
               <label class="radio-label">
@@ -34,20 +47,6 @@
               <label class="radio-label">
                 <input type="radio" v-model="gender" value="female" class="custom-radio" required />
                 <span class="radio-label-text">여</span>
-              </label>
-            </div>
-          </div>
-
-          <div v-if="!isLogin" class="input-group">
-            <label class="input-label">생년월일 달력 유형</label>
-            <div class="radio-group calendar-type-group">
-              <label class="radio-label">
-                <input type="radio" v-model="calendarBase" value="solar" class="custom-radio" required />
-                <span class="radio-label-text">양력</span>
-              </label>
-              <label class="radio-label">
-                <input type="radio" v-model="calendarBase" value="lunar" class="custom-radio" required />
-                <span class="radio-label-text">음력</span>
               </label>
             </div>
           </div>

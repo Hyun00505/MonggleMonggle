@@ -30,6 +30,30 @@
         />
       </div>
 
+      <!-- 달력 유형 (양력/음력) -->
+      <div class="input-group">
+        <div class="radio-group">
+          <label class="radio-label">
+            <input 
+              type="radio" 
+              v-model="userInfo.calendarType" 
+              value="solar" 
+              class="custom-radio"
+            />
+            <span class="radio-text">양력</span>
+          </label>
+          <label class="radio-label">
+            <input 
+              type="radio" 
+              v-model="userInfo.calendarType" 
+              value="lunar" 
+              class="custom-radio"
+            />
+            <span class="radio-text">음력</span>
+          </label>
+        </div>
+      </div>
+
       <!-- 성별 -->
       <div class="input-group labeled">
         <label class="input-label">성별</label>
@@ -55,7 +79,7 @@
         </div>
       </div>
 
-      <!-- 아이디 -->
+      <!-- 아이디 (변경 불가) -->
       <div class="input-group labeled">
         <label class="input-label">아이디</label>
         <input 
@@ -63,17 +87,18 @@
           type="text" 
           class="custom-input"
           placeholder="아이디"
-          @input="allowOnlyAlphaNumeric"
+          disabled
         />
       </div>
 
-      <!-- 비밀번호 -->
-      <div class="input-group">
+      <!-- 비밀번호 (변경 시에만 입력) -->
+      <div class="input-group labeled">
+        <label class="input-label">비밀번호 변경</label>
         <input 
           v-model="userInfo.password" 
           type="password" 
           class="custom-input"
-          placeholder="비밀번호"
+          placeholder="새 비밀번호 (변경 시에만 입력)"
           @input="allowOnlyAlphaNumeric"
         />
       </div>
@@ -84,14 +109,14 @@
           v-model="userInfo.confirmPassword" 
           type="password" 
           class="custom-input"
-          placeholder="비밀번호 확인"
+          placeholder="새 비밀번호 확인"
           @input="allowOnlyAlphaNumeric"
         />
         <p v-if="passwordError" class="error-text">{{ passwordError }}</p>
       </div>
 
-      <button class="submit-btn" @click="saveUserInfo">
-        수정 완료
+      <button class="submit-btn" @click="saveUserInfo" :disabled="isLoading">
+        {{ isLoading ? '처리 중...' : '수정 완료' }}
       </button>
 
       <div class="footer-actions">
@@ -115,7 +140,7 @@ const router = useRouter();
 const dreamEntriesStore = useDreamEntriesStore();
 const authStore = useAuthStore();
 const { resetAll } = dreamEntriesStore;
-const { setSessionUser, clearSessionUser, getSessionUser, updateUserInDb } = useUserStorage();
+const { clearSessionUser } = useUserStorage();
 const { allowOnlyAlphaNumeric } = useInputValidation();
 
 const userInfo = reactive({
@@ -124,10 +149,12 @@ const userInfo = reactive({
   confirmPassword: '',
   name: '',
   birthDate: '',
-  gender: ''
+  gender: '',
+  calendarType: 'solar'
 });
 
 const originalLoginId = ref('');
+const isLoading = ref(false);
 
 // Create refs for validation composable
 const passwordRef = toRef(userInfo, 'password');
@@ -153,40 +180,36 @@ function handleBack() {
   router.push({ name: 'calendar' });
 }
 
-function saveUserInfo() {
+async function saveUserInfo() {
   if (!isFormComplete()) {
     alert('모든 항목을 입력해주세요.');
     return;
   }
 
   // 비밀번호 변경 시에만 검증
-  if (!validateMatch()) {
+  if (userInfo.password && !validateMatch()) {
     alert('비밀번호가 일치하지 않습니다.');
     return;
   }
 
-  // 변경할 데이터 준비
-  const dataToSave = { ...userInfo };
-  delete dataToSave.confirmPassword; // 확인용 필드 제거
-
-  // 비밀번호를 입력하지 않았다면 기존 비밀번호 유지해야 함
-  // 이를 위해 세션(또는 DB)에서 현재 사용자 정보를 다시 가져와야 할 수 있음
-  // 여기서는 userInfo에 password가 비어있으면 기존 정보를 유지하는 로직이 필요
-  
-  const currentUser = getSessionUser();
-  if (!userInfo.password && currentUser) {
-    dataToSave.password = currentUser.password;
-  }
+  isLoading.value = true;
   
   try {
-    // DB 업데이트 (기존 아이디 기준)
-    updateUserInDb(dataToSave, originalLoginId.value);
+    // 백엔드 API 호출을 위한 데이터 준비
+    const updateData = {
+      name: userInfo.name,
+      birthDate: userInfo.birthDate,
+      gender: userInfo.gender === 'male' ? 'M' : 'F',
+      calendarType: userInfo.calendarType,
+    };
     
-    // 세션 업데이트
-    setSessionUser(dataToSave);
+    // 비밀번호가 입력된 경우에만 포함
+    if (userInfo.password) {
+      updateData.password = userInfo.password;
+    }
     
-    // 성공 시 원본 아이디 업데이트
-    originalLoginId.value = dataToSave.loginId;
+    // 백엔드 API를 통해 정보 수정
+    await authStore.updateUser(updateData);
     
     // 비밀번호 필드 초기화
     userInfo.password = '';
@@ -195,18 +218,23 @@ function saveUserInfo() {
     alert('정보가 수정되었습니다.');
     router.push({ name: 'calendar' });
   } catch (error) {
-    alert(error.message);
+    alert(authStore.error || '정보 수정에 실패했습니다.');
+  } finally {
+    isLoading.value = false;
   }
 }
 
 function isFormComplete() {
+  // 비밀번호는 변경하려는 경우에만 필수
+  const passwordValid = !userInfo.password || (userInfo.password && userInfo.confirmPassword);
+  
   return (
     userInfo.name?.trim() &&
     userInfo.birthDate &&
     userInfo.gender &&
+    userInfo.calendarType &&
     userInfo.loginId?.trim() &&
-    userInfo.password &&
-    userInfo.confirmPassword
+    passwordValid
   );
 }
 
@@ -224,15 +252,34 @@ async function handleWithdraw() {
   }
 }
 
-onMounted(() => {
-  const savedInfo = getSessionUser();
-  if (savedInfo) {
-    // Merge saved info
-    Object.assign(userInfo, savedInfo);
-    // 비밀번호 필드는 비워둠 (보안 및 UX)
-    userInfo.password = '';
-    userInfo.confirmPassword = '';
-    originalLoginId.value = savedInfo.loginId;
+onMounted(async () => {
+  isLoading.value = true;
+  
+  try {
+    // 백엔드에서 최신 사용자 정보 가져오기
+    const response = await authStore.fetchCurrentUser();
+    
+    if (response) {
+      // gender 변환: 백엔드는 'M'/'F', 프론트엔드는 'male'/'female'
+      const genderMapping = { 'M': 'male', 'F': 'female' };
+      
+      userInfo.loginId = response.loginId || '';
+      userInfo.name = response.name || '';
+      userInfo.birthDate = response.birthDate || '';
+      userInfo.gender = genderMapping[response.gender] || response.gender || '';
+      userInfo.calendarType = response.calendarType || 'solar';
+      
+      // 비밀번호 필드는 비워둠 (보안 및 UX)
+      userInfo.password = '';
+      userInfo.confirmPassword = '';
+      originalLoginId.value = response.loginId || '';
+    }
+  } catch (error) {
+    console.error('사용자 정보 조회 실패:', error);
+    // 토큰이 없거나 유효하지 않은 경우 로그인 페이지로 이동
+    router.push({ name: 'auth' });
+  } finally {
+    isLoading.value = false;
   }
 });
 </script>
