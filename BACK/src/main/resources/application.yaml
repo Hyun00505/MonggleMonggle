@@ -30,7 +30,7 @@ mybatis:
 
 # JWT 설정
 jwt:
-  secret: ${JWT_SECRET:your-secret-key-here-must-be-at-least-256-bits-long-for-HS256-algorithm}
+  secret: ${JWT_SECRET:monggle-monggle-dream-diary-ssafy-final-project-2025-JiminHyunbin}
   expiration: ${JWT_EXPIRATION:86400000} # 24시간 (밀리초)
 
 # 파일 업로드 경로 설정

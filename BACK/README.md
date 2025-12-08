@@ -1,1439 +1,1155 @@
-# 꿈 일기 & AI 해몽 서비스 API 명세서
+# 🌙 몽글몽글 (MonggleMonggle) - 꿈 일기 & AI 해몽 서비스
 
-## 프로젝트 개요
+> **SSAFY Final Project** - 캘린더 기반 꿈 일기 작성 및 AI 해몽, 운세, 행운의 색 제공 서비스
 
-캘린더 기반 꿈 일기 작성 및 AI 해몽, 운세, 행운의 색 제공 서비스
+<div align="center">
 
-### 기술 스택
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.8-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![Java](https://img.shields.io/badge/Java-17-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![MyBatis](https://img.shields.io/badge/MyBatis-3.0.3-DC382D?style=for-the-badge)
+![JWT](https://img.shields.io/badge/JWT-0.12.3-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 
-- **Backend**: Java Spring Boot
-- **AI Service**: FastAPI (Python)
-- **Database**: MySQL
-
----
-
-## 시스템 아키텍처
-
-```
-                ┌─────────────┐
-                │  Frontend   │
-                └──────┬──────┘
-                       │
-        ┌──────────────┼──────────────┐
-        │              │              │
-        ▼              ▼              ▼
-  [일일 운세]     [이미지 생성]  [데이터 CRUD]
-        │              │              │
-        │              │              │
-        ▼              ▼              ▼
-┌─────────────┐   ┌─────────────┐   ┌─────────────┐
-│   FastAPI   │   │   FastAPI   │   │ Spring Boot │
-│  (AI 직접)  │   │  (AI 직접)  │   │  (백엔드)   │
-└─────────────┘   └─────────────┘   └──────┬──────┘
-                                            │
-                                            ▼
-                                     ┌─────────────┐
-                                     │    MySQL    │
-                                     │(데이터베이스)│
-                                     └─────────────┘
-                                            ▲
-                                            │
-[월간 분석]                                 │
-프론트 → Spring Boot ──→ FastAPI            │
-         (데이터 조회)     (AI 분석)        │
-              │ ←─────────── ┘              │
-              └─────────────────────────────┘
-                   (결과 저장)
-```
-
-### 통신 구조
-
-1. **프론트 → Spring Boot (데이터 관리)**
-
-   - 회원 인증 (로그인/회원가입)
-   - 꿈 일기 CRUD
-   - AI 분석 결과 저장 및 조회
-   - **월별 분석 요청 및 조회** ⭐
-   - 월별 메모 CRUD
-
-2. **프론트 → FastAPI (AI 직접 통신)**
-
-   - AI 꿈 해몽 및 운세 분석 (일일)
-   - 꿈 이미지 생성
-
-3. **Spring Boot → FastAPI (서버 간 통신)**
-   - 월간 리포트 생성 요청 ⭐
+</div>
 
 ---
 
-## 목차
+## 📚 목차
 
-### Spring Boot API (데이터 관리)
-
-1. [인증 API](#1-인증-api-spring-boot)
-2. [꿈 일기 API](#2-꿈-일기-api-spring-boot)
-3. [AI 분석 결과 저장 API](#3-ai-분석-결과-저장-api-spring-boot)
-4. [감정 점수 API](#4-감정-점수-api-spring-boot)
-5. [월별 분석 API](#5-월별-분석-api-spring-boot)
-6. [월별 메모 API](#6-월별-메모-api-spring-boot)
-
-### FastAPI (AI 서비스)
-
-7. [AI 통합 운세 API](#7-ai-통합-운세-api-fastapi)
-8. [AI 이미지 생성 API](#8-ai-이미지-생성-api-fastapi)
-9. [AI 월간 분석 API](#9-ai-월간-분석-api-fastapi)
+1. [프로젝트 개요](#-프로젝트-개요)
+2. [기술 스택](#-기술-스택)
+3. [시스템 아키텍처](#-시스템-아키텍처)
+4. [프로젝트 구조](#-프로젝트-구조)
+5. [데이터베이스 설계](#-데이터베이스-설계)
+6. [API 명세서](#-api-명세서)
+7. [환경 설정](#-환경-설정)
+8. [실행 방법](#-실행-방법)
+9. [주요 기능 상세](#-주요-기능-상세)
+10. [보안](#-보안)
+11. [코드 상세 설명](#-코드-상세-설명)
 
 ---
 
-# Spring Boot API (데이터 관리)
+## 🎯 프로젝트 개요
 
-## 1. 인증 API (Spring Boot)
+### 서비스 소개
 
-### 1.1 회원가입
+**몽글몽글**은 사용자가 매일의 꿈을 기록하고, AI를 통해 꿈 해몽과 오늘의 운세를 받아볼 수 있는 서비스입니다.
 
-- **URL**: `/api/auth/signup`
-- **Method**: `POST`
-- **Description**: 새로운 사용자 회원가입
-- **Request Body**:
+### 주요 기능
 
-```json
-{
-  "loginId": "string",
-  "password": "string",
-  "name": "string",
-  "birthDate": "YYYY-MM-DD",
-  "gender": "m | f",
-  "calendarType": "solar | lunarGeneral | lunarLeap"
-}
-```
-
-- **Response**:
-
-```json
-{
-  "userId": 1,
-  "loginId": "string",
-  "name": "string",
-  "gender": "M",
-  "birthDate": "YYYY-MM-DD",
-  "calendarType": "solar",
-  "message": "회원가입이 완료되었습니다."
-}
-```
-
-- **Status Codes**:
-  - `201 Created`: 회원가입 성공
-  - `400 Bad Request`: 잘못된 입력 데이터
-  - `409 Conflict`: 이미 존재하는 아이디
-
-### 1.2 로그인
-
-- **URL**: `/api/auth/login`
-- **Method**: `POST`
-- **Description**: 사용자 로그인
-- **Request Body**:
-
-```json
-{
-  "loginId": "string",
-  "password": "string"
-}
-```
-
-- **Response**:
-
-```json
-{
-  "userId": 1,
-  "name": "string",
-  "birthDate": "YYYY-MM-DD",
-  "gender": "M",
-  "calendarType": "solar",
-  "token": "jwt_token_here",
-  "message": "로그인 성공"
-}
-```
-
-- **Status Codes**:
-  - `200 OK`: 로그인 성공
-  - `401 Unauthorized`: 인증 실패
-  - `404 Not Found`: 사용자를 찾을 수 없음
-
-### 1.3 로그아웃
-
-- **URL**: `/api/auth/logout`
-- **Method**: `POST`
-- **Description**: 사용자 로그아웃
-- **Headers**: `Authorization: Bearer {token}`
-- **Response**:
-
-```json
-{
-  "message": "로그아웃 성공"
-}
-```
-
-- **Status Codes**:
-  - `200 OK`: 로그아웃 성공
-
-### 1.4 사용자 정보 조회
-
-- **URL**: `/api/auth/me`
-- **Method**: `GET`
-- **Description**: 현재 로그인한 사용자 정보 조회
-- **Headers**: `Authorization: Bearer {token}`
-- **Response**:
-
-```json
-{
-  "userId": 1,
-  "loginId": "string",
-  "name": "string",
-  "birthDate": "YYYY-MM-DD",
-  "gender": "M",
-  "calendarType": "solar",
-  "createdDate": "YYYY-MM-DD HH:mm:ss"
-}
-```
-
-- **Status Codes**:
-  - `200 OK`: 조회 성공
-  - `401 Unauthorized`: 인증 실패
-
-### 1.5 사용자 정보 수정
-
-- **URL**: `/api/auth/me`
-- **Method**: `PUT`
-- **Description**: 사용자 정보 수정
-- **Headers**: `Authorization: Bearer {token}`
-- **Request Body**:
-
-```json
-{
-  "name": "string",
-  "birthDate": "YYYY-MM-DD",
-  "gender": "M | F",
-  "password": "string (optional)"
-}
-```
-
-- **Response**:
-
-```json
-{
-  "message": "사용자 정보가 수정되었습니다."
-}
-```
-
-- **Status Codes**:
-  - `200 OK`: 수정 성공
-  - `401 Unauthorized`: 인증 실패
-
-### 1.6 회원 탈퇴
-
-- **URL**: `/api/auth/me`
-- **Method**: `DELETE`
-- **Description**: 회원 탈퇴
-- **Headers**: `Authorization: Bearer {token}`
-- **Response**:
-
-```json
-{
-  "message": "회원 탈퇴가 완료되었습니다."
-}
-```
-
-- **Status Codes**:
-  - `200 OK`: 탈퇴 성공
-  - `401 Unauthorized`: 인증 실패
+| 기능 | 설명 |
+|------|------|
+| 🔐 **회원 관리** | 회원가입, 로그인, 정보 수정, 회원 탈퇴 (Soft Delete) |
+| 📖 **꿈 일기** | 꿈 일기 작성, 조회, 수정, 삭제 (월별/상세) |
+| 🤖 **AI 분석** | FastAPI 연동 꿈 해몽, 운세, 행운의 색/아이템 제공 |
+| 📊 **월별 분석** | 월별 꿈 통계 및 AI 리포트 생성 |
+| 📝 **월별 메모** | 월별 개인 메모 작성 |
+| 🖼️ **이미지 관리** | Base64 이미지 업로드 및 삭제 |
+| 😊 **감정 점수** | 5가지 감정 (기쁨/만족/평범/불안/슬픔) |
 
 ---
 
-## 2. 꿈 일기 API (Spring Boot)
+## 🛠 기술 스택
 
-### 2.1 꿈 일기 작성
-
-- **URL**: `/api/dreams`
-- **Method**: `POST`
-- **Description**: 새로운 꿈 일기 작성
-- **Headers**: `Authorization: Bearer {token}`
-- **Request Body**:
-
-```json
-{
-  "emotionId": 1,
-  "dreamDate": "YYYY-MM-DD",
-  "title": "string",
-  "content": "string"
-}
+### Backend Framework
+```
+Spring Boot 3.5.8
+├── spring-boot-starter-web          # REST API
+├── spring-boot-starter-security     # 보안 (JWT 인증)
+├── spring-boot-starter-validation   # Bean Validation
+├── spring-boot-starter-webflux      # WebClient (FastAPI 연동)
+└── spring-boot-devtools             # 개발 편의
 ```
 
-- **Response**:
-
-```json
-{
-  "dreamId": 1,
-  "title": "string",
-  "content": "string",
-  "dreamDate": "YYYY-MM-DD",
-  "emotionId": 1,
-  "createdDate": "YYYY-MM-DD HH:mm:ss",
-  "message": "꿈 일기가 저장되었습니다."
-}
+### Database & ORM
+```
+MySQL 8.0
+└── MyBatis 3.0.3
+    ├── Mapper XML
+    └── Type Aliases
 ```
 
-- **Status Codes**:
-  - `201 Created`: 작성 성공
-  - `400 Bad Request`: 잘못된 입력 데이터
-  - `401 Unauthorized`: 인증 실패
-
-> **📌 참고**: 꿈 일기 작성 후, 프론트엔드에서 FastAPI의 `/api/v1/fortune/comprehensive`를 직접 호출하여 AI 분석을 받고, 결과를 Spring Boot의 `/api/dreams/{dreamId}/result`로 저장해야 합니다.
-
-### 2.2 꿈 일기 목록 조회 (월별)
-
-- **URL**: `/api/dreams`
-- **Method**: `GET`
-- **Description**: 특정 월의 꿈 일기 목록 조회
-- **Headers**: `Authorization: Bearer {token}`
-- **Query Parameters**:
-  - `year`: 연도 (required)
-  - `month`: 월 (required)
-- **Response**:
-
-```json
-{
-  "year": 2025,
-  "month": 11,
-  "dreams": [
-    {
-      "dreamId": 1,
-      "title": "string",
-      "dreamDate": "YYYY-MM-DD",
-      "emotionId": 1,
-      "emotionName": "string",
-      "hasResult": true
-    }
-  ]
-}
+### Security
+```
+Spring Security 6.x
+├── JWT (jjwt 0.12.3)
+│   ├── jjwt-api
+│   ├── jjwt-impl
+│   └── jjwt-jackson
+└── BCrypt Password Encoder
 ```
 
-- **Status Codes**:
-  - `200 OK`: 조회 성공
-  - `401 Unauthorized`: 인증 실패
-
-### 2.3 꿈 일기 상세 조회
-
-- **URL**: `/api/dreams/{dreamId}`
-- **Method**: `GET`
-- **Description**: 특정 꿈 일기 상세 조회
-- **Headers**: `Authorization: Bearer {token}`
-- **Path Parameters**:
-  - `dreamId`: 꿈 일기 ID
-- **Response**:
-
-```json
-{
-  "dreamId": 1,
-  "userId": 1,
-  "emotionId": 1,
-  "emotionName": "string",
-  "dreamDate": "YYYY-MM-DD",
-  "title": "string",
-  "content": "string",
-  "createdDate": "YYYY-MM-DD HH:mm:ss",
-  "deletedDate": null
-}
+### Documentation
+```
+Swagger/OpenAPI
+└── springdoc-openapi-starter-webmvc-ui 2.7.0
 ```
 
-- **Status Codes**:
-  - `200 OK`: 조회 성공
-  - `401 Unauthorized`: 인증 실패
-  - `403 Forbidden`: 권한 없음
-  - `404 Not Found`: 일기를 찾을 수 없음
-
-### 2.4 꿈 일기 수정
-
-- **URL**: `/api/dreams/{dreamId}`
-- **Method**: `PUT`
-- **Description**: 꿈 일기 수정
-- **Headers**: `Authorization: Bearer {token}`
-- **Path Parameters**:
-  - `dreamId`: 꿈 일기 ID
-- **Request Body**:
-
-```json
-{
-  "emotionId": 1,
-  "title": "string",
-  "content": "string"
-}
+### Utilities
 ```
-
-- **Response**:
-
-```json
-{
-  "dreamId": 1,
-  "message": "꿈 일기가 수정되었습니다."
-}
+Lombok          # 보일러플레이트 코드 제거
+Gradle          # 빌드 도구
 ```
-
-- **Status Codes**:
-  - `200 OK`: 수정 성공
-  - `400 Bad Request`: 잘못된 입력 데이터
-  - `401 Unauthorized`: 인증 실패
-  - `403 Forbidden`: 권한 없음
-  - `404 Not Found`: 일기를 찾을 수 없음
-
-### 2.5 꿈 일기 삭제
-
-- **URL**: `/api/dreams/{dreamId}`
-- **Method**: `DELETE`
-- **Description**: 꿈 일기 삭제 (Soft Delete)
-- **Headers**: `Authorization: Bearer {token}`
-- **Path Parameters**:
-  - `dreamId`: 꿈 일기 ID
-- **Response**:
-
-```json
-{
-  "message": "꿈 일기가 삭제되었습니다."
-}
-```
-
-- **Status Codes**:
-  - `200 OK`: 삭제 성공
-  - `401 Unauthorized`: 인증 실패
-  - `403 Forbidden`: 권한 없음
-  - `404 Not Found`: 일기를 찾을 수 없음
 
 ---
 
-## 3. AI 분석 결과 저장 API (Spring Boot)
+## 🏗 시스템 아키텍처
 
-### 3.1 AI 분석 결과 저장
+### 전체 워크플로우
 
-- **URL**: `/api/dreams/{dreamId}/result`
-- **Method**: `POST`
-- **Description**: FastAPI에서 받은 AI 분석 결과 저장
-- **Headers**: `Authorization: Bearer {token}`
-- **Path Parameters**:
-  - `dreamId`: 꿈 일기 ID
-- **Request Body**:
-
-```json
-{
-  "dreamInterpretation": "AI 해몽 결과 텍스트",
-  "todayFortuneSummary": "오늘의 운세 종합 텍스트",
-  "luckyColor": {
-    "name": "파란색",
-    "number": 3,
-    "reason": "색상 추천 이유"
-  },
-  "luckyItem": {
-    "name": "은색 반지",
-    "reason": "아이템 추천 이유"
-  },
-  "imageUrl": "string (optional)"
-}
+```
+┌──────────────┐     HTTP/REST      ┌──────────────────┐
+│   Frontend   │◄──────────────────►│   Spring Boot    │
+│   (Vue.js)   │     JSON + JWT     │   Backend (8080) │
+└──────────────┘                    └────────┬─────────┘
+                                             │
+                    ┌────────────────────────┼────────────────────────┐
+                    │                        │                        │
+                    ▼                        ▼                        ▼
+           ┌───────────────┐        ┌───────────────┐        ┌───────────────┐
+           │    MySQL      │        │   FastAPI     │        │  File System  │
+           │  (dream_db)   │        │ AI Server     │        │   (uploads/)  │
+           └───────────────┘        │   (8000)      │        └───────────────┘
+                                    └───────────────┘
 ```
 
-- **Response**:
+### API 연동 워크플로우
 
-```json
-{
-  "resultId": 1,
-  "dreamId": 1,
-  "message": "AI 분석 결과가 저장되었습니다."
-}
 ```
-
-- **Status Codes**:
-  - `201 Created`: 저장 성공
-  - `400 Bad Request`: 잘못된 입력 데이터
-  - `401 Unauthorized`: 인증 실패
-  - `404 Not Found`: 꿈 일기를 찾을 수 없음
-  - `409 Conflict`: 이미 분석 결과가 존재함
-
-### 3.2 AI 분석 결과 조회
-
-- **URL**: `/api/dreams/{dreamId}/result`
-- **Method**: `GET`
-- **Description**: 특정 꿈 일기의 AI 분석 결과 조회
-- **Headers**: `Authorization: Bearer {token}`
-- **Path Parameters**:
-  - `dreamId`: 꿈 일기 ID
-- **Response**:
-
-```json
-{
-  "id": 1,
-  "dreamId": 1,
-  "dreamInterpretation": "AI 해몽 결과 텍스트",
-  "todayFortuneSummary": "오늘의 운세 종합 텍스트",
-  "luckyColor": {
-    "name": "파란색",
-    "number": 3,
-    "reason": "색상 추천 이유"
-  },
-  "luckyItem": {
-    "name": "은색 반지",
-    "reason": "아이템 추천 이유"
-  },
-  "imageUrl": "string",
-  "createdDate": "YYYY-MM-DD HH:mm:ss",
-  "deletedDate": null
-}
+┌────────────────────────────────────────────────────────────────┐
+│                        AI 분석 플로우                          │
+├────────────────────────────────────────────────────────────────┤
+│                                                                │
+│   1. 꿈 일기 작성                                              │
+│      └─► POST /api/dreams                                      │
+│                                                                │
+│   2. AI 분석 요청 (Frontend → FastAPI)                         │
+│      └─► FastAPI가 꿈 내용 분석 후 결과 반환                   │
+│                                                                │
+│   3. AI 분석 결과 저장                                         │
+│      └─► POST /api/dreams/{dreamId}/result                     │
+│          (해몽, 운세, 행운의 색/아이템)                        │
+│                                                                │
+│   4. 이미지 업로드 (선택)                                      │
+│      └─► POST /api/images/upload                               │
+│          (AI 생성 이미지 Base64 저장)                          │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
 ```
-
-- **Status Codes**:
-  - `200 OK`: 조회 성공
-  - `401 Unauthorized`: 인증 실패
-  - `403 Forbidden`: 권한 없음
-  - `404 Not Found`: 분석 결과를 찾을 수 없음
-
-### 3.3 AI 분석 결과 수정
-
-- **URL**: `/api/dreams/{dreamId}/result`
-- **Method**: `PUT`
-- **Description**: AI 분석 결과 수정 (이미지 URL 업데이트 등)
-- **Headers**: `Authorization: Bearer {token}`
-- **Path Parameters**:
-  - `dreamId`: 꿈 일기 ID
-- **Request Body**:
-
-```json
-{
-  "imageUrl": "string"
-}
-```
-
-- **Response**:
-
-```json
-{
-  "message": "AI 분석 결과가 수정되었습니다."
-}
-```
-
-- **Status Codes**:
-  - `200 OK`: 수정 성공
-  - `401 Unauthorized`: 인증 실패
-  - `404 Not Found`: 분석 결과를 찾을 수 없음
-
-### 3.4 AI 분석 결과 삭제
-
-- **URL**: `/api/dreams/{dreamId}/result`
-- **Method**: `DELETE`
-- **Description**: AI 분석 결과 삭제 (재분석을 위한 초기화)
-- **Headers**: `Authorization: Bearer {token}`
-- **Path Parameters**:
-  - `dreamId`: 꿈 일기 ID
-- **Response**:
-
-```json
-{
-  "message": "AI 분석 결과가 삭제되었습니다."
-}
-```
-
-- **Status Codes**:
-  - `200 OK`: 삭제 성공
-  - `401 Unauthorized`: 인증 실패
-  - `404 Not Found`: 분석 결과를 찾을 수 없음
 
 ---
 
-## 4. 감정 점수 API (Spring Boot)
+## 📁 프로젝트 구조
 
-### 4.1 감정 점수 목록 조회
+```
+BACK/
+├── 📄 build.gradle                    # Gradle 빌드 설정
+├── 📄 settings.gradle                 # Gradle 설정
+├── 📄 dream_DB.sql                    # 데이터베이스 스키마
+├── 📄 gradlew / gradlew.bat           # Gradle Wrapper
+├── 📁 gradle/
+│   └── wrapper/
+│       ├── gradle-wrapper.jar
+│       └── gradle-wrapper.properties
+├── 📁 img/                            # 문서용 이미지
+│   ├── AI_API_Workflow.png
+│   ├── Database.png
+│   ├── Total_workflow.png
+│   └── Usercase.png
+├── 📁 uploads/                        # 업로드 이미지 저장소
+│   └── images/
+│       └── dream/
+│           └── {userId}/              # 사용자별 폴더
+└── 📁 src/
+    ├── 📁 main/
+    │   ├── 📁 java/com/ssafy/finalproject/
+    │   │   ├── 📄 FinalProjectApplication.java      # 메인 클래스
+    │   │   │
+    │   │   ├── 📁 config/                           # 설정 클래스
+    │   │   │   ├── SecurityConfig.java              # Spring Security 설정
+    │   │   │   ├── SwaggerConfig.java               # Swagger/OpenAPI 설정
+    │   │   │   ├── WebClientConfig.java             # WebClient 설정
+    │   │   │   └── WebConfig.java                   # CORS, 리소스 핸들러
+    │   │   │
+    │   │   ├── 📁 controller/                       # REST 컨트롤러
+    │   │   │   ├── AuthController.java              # 인증 API
+    │   │   │   ├── DreamController.java             # 꿈 일기 API
+    │   │   │   ├── DreamResultController.java       # AI 분석 결과 API
+    │   │   │   ├── EmotionController.java           # 감정 점수 API
+    │   │   │   ├── ImageController.java             # 이미지 API
+    │   │   │   ├── MonthlyAnalysisController.java   # 월별 분석 API
+    │   │   │   └── MonthlyMemoController.java       # 월별 메모 API
+    │   │   │
+    │   │   ├── 📁 service/                          # 비즈니스 로직
+    │   │   │   ├── AuthService.java
+    │   │   │   ├── DreamService.java
+    │   │   │   ├── DreamResultService.java
+    │   │   │   ├── EmotionService.java
+    │   │   │   ├── ImageService.java
+    │   │   │   ├── MonthlyAnalysisService.java
+    │   │   │   └── MonthlyMemoService.java
+    │   │   │
+    │   │   ├── 📁 model/
+    │   │   │   ├── 📁 entity/                       # 도메인 엔티티
+    │   │   │   │   ├── User.java                    # 사용자
+    │   │   │   │   ├── Dream.java                   # 꿈 일기
+    │   │   │   │   ├── DreamResult.java             # AI 분석 결과
+    │   │   │   │   ├── EmotionScore.java            # 감정 점수
+    │   │   │   │   ├── MonthlyAnalysis.java         # 월별 분석
+    │   │   │   │   └── MonthlyMemo.java             # 월별 메모
+    │   │   │   │
+    │   │   │   ├── 📁 dao/                          # MyBatis Mapper 인터페이스
+    │   │   │   │   ├── UserDao.java
+    │   │   │   │   ├── DreamsDao.java
+    │   │   │   │   ├── DreamsResultsDao.java
+    │   │   │   │   ├── EmotionDao.java
+    │   │   │   │   ├── MonthlyAnalysisDao.java
+    │   │   │   │   └── MonthlyMemoDao.java
+    │   │   │   │
+    │   │   │   └── 📁 dto/
+    │   │   │       ├── 📁 request/                  # 요청 DTO
+    │   │   │       │   ├── SignupRequest.java
+    │   │   │       │   ├── LoginRequest.java
+    │   │   │       │   ├── UpdateUserRequest.java
+    │   │   │       │   ├── CreateDreamRequest.java
+    │   │   │       │   ├── UpdateDreamRequest.java
+    │   │   │       │   ├── SaveDreamResultRequest.java
+    │   │   │       │   ├── UpdateDreamResultRequest.java
+    │   │   │       │   ├── MonthlyAnalysisRequest.java
+    │   │   │       │   └── SaveMemoRequest.java
+    │   │   │       │
+    │   │   │       ├── 📁 response/                 # 응답 DTO
+    │   │   │       │   ├── ApiResponse.java
+    │   │   │       │   ├── ErrorResponse.java
+    │   │   │       │   ├── SignupResponse.java
+    │   │   │       │   ├── LoginResponse.java
+    │   │   │       │   ├── UserInfoResponse.java
+    │   │   │       │   ├── DreamResponse.java
+    │   │   │       │   ├── DreamListResponse.java
+    │   │   │       │   ├── DreamResultResponse.java
+    │   │   │       │   ├── EmotionListResponse.java
+    │   │   │       │   ├── MonthlyAnalysisResponse.java
+    │   │   │       │   └── MonthlyMemoResponse.java
+    │   │   │       │
+    │   │   │       └── 📁 fastapi/                  # FastAPI 연동 DTO
+    │   │   │           ├── MonthlyAnalysisRequestDto.java
+    │   │   │           └── MonthlyAnalysisResponseDto.java
+    │   │   │
+    │   │   ├── 📁 security/                         # 보안 컴포넌트
+    │   │   │   ├── JwtUtil.java                     # JWT 토큰 유틸
+    │   │   │   └── JwtAuthenticationFilter.java     # JWT 인증 필터
+    │   │   │
+    │   │   ├── 📁 exception/                        # 예외 처리
+    │   │   │   ├── CustomException.java             # 기본 예외 클래스
+    │   │   │   ├── BadRequestException.java         # 400
+    │   │   │   ├── UnauthorizedException.java       # 401
+    │   │   │   ├── ForbiddenException.java          # 403
+    │   │   │   ├── ResourceNotFoundException.java   # 404
+    │   │   │   ├── ConflictException.java           # 409
+    │   │   │   ├── ServiceUnavailableException.java # 503
+    │   │   │   └── GlobalExceptionHandler.java      # 전역 예외 핸들러
+    │   │   │
+    │   │   └── 📁 util/
+    │   │       └── SecurityUtil.java                # 보안 유틸리티
+    │   │
+    │   └── 📁 resources/
+    │       ├── 📄 application.yaml                  # 애플리케이션 설정
+    │       ├── 📄 mybatis-config.xml                # MyBatis 설정
+    │       └── 📁 mapper/                           # MyBatis Mapper XML
+    │           ├── 📁 user/
+    │           │   └── UserMapper.xml
+    │           ├── 📁 dream/
+    │           │   ├── DreamsMapper.xml
+    │           │   ├── DreamResultsMapper.xml
+    │           │   └── EmotionMapper.xml
+    │           └── 📁 monthly/
+    │               ├── MonthlyAnalysisMapper.xml
+    │               └── MonthlyMemoMapper.xml
+    │
+    └── 📁 test/                                     # 테스트 코드
+        └── java/com/ssafy/finalproject/
+            └── FinalProjectApplicationTests.java
+```
 
-- **URL**: `/api/emotions`
-- **Method**: `GET`
-- **Description**: 사용 가능한 감정 점수 목록 조회
-- **Headers**: `Authorization: Bearer {token}`
-- **Response**:
+---
 
+## 🗄 데이터베이스 설계
+
+### ERD (Entity Relationship Diagram)
+
+```
+┌───────────────────────────────────────────────────────────────────────────┐
+│                              dream_db                                     │
+└───────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────┐       ┌─────────────────────┐
+│       users         │       │   emotion_scores    │
+├─────────────────────┤       ├─────────────────────┤
+│ PK user_id (BIGINT) │       │ PK emotion_id (INT) │
+│    login_id         │       │    emotion_name     │
+│    password         │       │    score            │
+│    name             │       └──────────┬──────────┘
+│    birth_date       │                  │
+│    gender           │                  │
+│    calendar_type    │                  │
+│    created_date     │                  │
+│    updated_date     │                  │
+│    deleted_date     │                  │
+└──────────┬──────────┘                  │
+           │                             │
+           │ 1:N                         │ 1:N
+           │                             │
+           ▼                             ▼
+┌─────────────────────────────────────────────────┐
+│                    dreams                       │
+├─────────────────────────────────────────────────┤
+│ PK dream_id (BIGINT)                            │
+│ FK user_id (BIGINT) ─────────────────► users    │
+│ FK emotion_id (INT) ─────────────────► emotion  │
+│    dream_date                                   │
+│    title                                        │
+│    content                                      │
+│    created_date                                 │
+│    deleted_date                                 │
+└──────────┬──────────────────────────────────────┘
+           │
+           │ 1:1
+           │
+           ▼
+┌─────────────────────────────────────────────────┐
+│                dream_results                    │
+├─────────────────────────────────────────────────┤
+│ PK id (BIGINT)                                  │
+│ FK dream_id (BIGINT) ────────────────► dreams   │
+│    dream_interpretation                         │
+│    today_fortune_summary                        │
+│    lucky_color_name                             │
+│    lucky_color_number                           │
+│    lucky_color_reason                           │
+│    lucky_item_name                              │
+│    lucky_item_reason                            │
+│    image_url                                    │
+│    created_date                                 │
+│    deleted_date                                 │
+└─────────────────────────────────────────────────┘
+
+┌─────────────────────┐       ┌─────────────────────┐
+│ users               │       │ dream_monthly_memo  │
+└──────────┬──────────┘       └──────────┬──────────┘
+           │                             │
+           │ 1:N                         │ 1:1
+           │                             │
+           ▼                             ▼
+┌─────────────────────────────────────────────────┐
+│            dream_monthly_analysis               │
+├─────────────────────────────────────────────────┤
+│ PK analysis_id (BIGINT)                         │
+│ FK user_id (BIGINT) ─────────────────► users    │
+│    year                                         │
+│    month                                        │
+│    dream_count                                  │
+│    avg_emotion_score                            │
+│    monthly_report (LONGTEXT)                    │
+│    created_date                                 │
+│    updated_date                                 │
+└─────────────────────────────────────────────────┘
+```
+
+### 테이블 상세 설명
+
+#### 1. users (회원 정보)
+| 컬럼명 | 타입 | 설명 | 비고 |
+|--------|------|------|------|
+| user_id | BIGINT | 사용자 ID | PK, AUTO_INCREMENT |
+| login_id | VARCHAR(255) | 로그인 아이디 | UNIQUE |
+| password | VARCHAR(255) | 비밀번호 | BCrypt 암호화 |
+| name | VARCHAR(100) | 이름 | |
+| birth_date | DATE | 생년월일 | |
+| gender | CHAR(1) | 성별 | 'M' 또는 'F' |
+| calendar_type | VARCHAR(20) | 달력 유형 | solar/lunarGeneral/lunarLeap |
+| created_date | DATETIME | 가입일 | |
+| updated_date | DATETIME | 수정일 | |
+| deleted_date | DATETIME | 삭제일 | Soft Delete |
+
+#### 2. emotion_scores (감정 점수)
+| 컬럼명 | 타입 | 설명 | 비고 |
+|--------|------|------|------|
+| emotion_id | TINYINT | 감정 ID | PK |
+| emotion_name | VARCHAR(20) | 감정 이름 | 기쁨/만족/평범/불안/슬픔 |
+| score | INT | 감정 점수 | 1~5 |
+
+**초기 데이터:**
+| emotion_id | emotion_name | score |
+|------------|--------------|-------|
+| 1 | 기쁨 | 5 |
+| 2 | 만족 | 4 |
+| 3 | 평범 | 3 |
+| 4 | 불안 | 2 |
+| 5 | 슬픔 | 1 |
+
+#### 3. dreams (꿈 기록)
+| 컬럼명 | 타입 | 설명 | 비고 |
+|--------|------|------|------|
+| dream_id | BIGINT | 꿈 ID | PK, AUTO_INCREMENT |
+| user_id | BIGINT | 사용자 ID | FK → users |
+| emotion_id | TINYINT | 감정 ID | FK → emotion_scores |
+| dream_date | DATE | 꿈 꾼 날짜 | |
+| title | TEXT | 꿈 제목 | |
+| content | TEXT | 꿈 내용 | |
+| created_date | DATETIME | 생성일 | |
+| deleted_date | DATETIME | 삭제일 | Soft Delete |
+
+#### 4. dream_results (AI 분석 결과)
+| 컬럼명 | 타입 | 설명 | 비고 |
+|--------|------|------|------|
+| id | BIGINT | 결과 ID | PK, AUTO_INCREMENT |
+| dream_id | BIGINT | 꿈 ID | FK → dreams, UNIQUE |
+| dream_interpretation | TEXT | AI 꿈 해몽 결과 | |
+| today_fortune_summary | TEXT | 오늘의 운세 종합 | |
+| lucky_color_name | VARCHAR(50) | 행운의 색 이름 | |
+| lucky_color_number | INT | 행운의 색 번호 | 1~7 |
+| lucky_color_reason | TEXT | 행운의 색 추천 이유 | |
+| lucky_item_name | VARCHAR(100) | 행운의 아이템 이름 | |
+| lucky_item_reason | TEXT | 행운의 아이템 추천 이유 | |
+| image_url | VARCHAR(255) | 꿈 이미지 URL | Nullable |
+| created_date | DATETIME | 생성일 | |
+| deleted_date | DATETIME | 삭제일 | Soft Delete |
+
+#### 5. dream_monthly_analysis (월별 분석)
+| 컬럼명 | 타입 | 설명 | 비고 |
+|--------|------|------|------|
+| analysis_id | BIGINT | 분석 ID | PK, AUTO_INCREMENT |
+| user_id | BIGINT | 사용자 ID | FK → users |
+| year | INT | 연도 | |
+| month | INT | 월 | |
+| dream_count | INT | 꿈 개수 | |
+| avg_emotion_score | DECIMAL(5,2) | 평균 감정 점수 | |
+| monthly_report | LONGTEXT | AI 월간 리포트 | Markdown |
+| created_date | DATETIME | 생성일 | |
+| updated_date | DATETIME | 수정일 | |
+
+#### 6. dream_monthly_memo (월별 메모)
+| 컬럼명 | 타입 | 설명 | 비고 |
+|--------|------|------|------|
+| memo_id | BIGINT | 메모 ID | PK, AUTO_INCREMENT |
+| analysis_id | BIGINT | 분석 ID | FK → monthly_analysis, UNIQUE |
+| memo_content | TEXT | 메모 내용 | |
+| created_date | DATETIME | 생성일 | |
+| updated_date | DATETIME | 수정일 | |
+| deleted_date | DATETIME | 삭제일 | Soft Delete |
+
+---
+
+## 📡 API 명세서
+
+### Base URL
+```
+http://localhost:8080
+```
+
+### Swagger UI
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+---
+
+### 1️⃣ 인증 API (`/api/auth`)
+
+| Method | Endpoint | 설명 | 인증 |
+|--------|----------|------|------|
+| POST | `/api/auth/signup` | 회원가입 | ❌ |
+| POST | `/api/auth/login` | 로그인 | ❌ |
+| POST | `/api/auth/logout` | 로그아웃 | ✅ |
+| GET | `/api/auth/me` | 사용자 정보 조회 | ✅ |
+| PUT | `/api/auth/me` | 사용자 정보 수정 | ✅ |
+| DELETE | `/api/auth/me` | 회원 탈퇴 | ✅ |
+
+#### 1.1 회원가입
+```http
+POST /api/auth/signup
+Content-Type: application/json
+
+{
+    "loginId": "testuser",
+    "password": "password123",
+    "name": "홍길동",
+    "birthDate": "1990-01-15",
+    "gender": "M",
+    "calendarType": "solar"
+}
+```
+
+**Response (201 Created):**
 ```json
 {
-  "emotions": [
-    {
-      "emotionId": 1,
-      "emotionName": "기쁨",
-      "score": 5
+    "userId": 1,
+    "loginId": "testuser",
+    "name": "홍길동",
+    "gender": "M",
+    "birthDate": "1990-01-15",
+    "calendarType": "solar",
+    "message": "회원가입이 완료되었습니다."
+}
+```
+
+#### 1.2 로그인
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+    "loginId": "testuser",
+    "password": "password123"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+    "userId": 1,
+    "loginId": "testuser",
+    "name": "홍길동",
+    "birthDate": "1990-01-15",
+    "gender": "M",
+    "calendarType": "solar",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "message": "로그인 성공"
+}
+```
+
+---
+
+### 2️⃣ 꿈 일기 API (`/api/dreams`)
+
+| Method | Endpoint | 설명 | 인증 |
+|--------|----------|------|------|
+| POST | `/api/dreams` | 꿈 일기 작성 | ✅ |
+| GET | `/api/dreams?year={year}&month={month}` | 월별 목록 조회 | ✅ |
+| GET | `/api/dreams/{dreamId}` | 상세 조회 | ✅ |
+| PUT | `/api/dreams/{dreamId}` | 수정 | ✅ |
+| DELETE | `/api/dreams/{dreamId}` | 삭제 | ✅ |
+
+#### 2.1 꿈 일기 작성
+```http
+POST /api/dreams
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+    "emotionId": 1,
+    "dreamDate": "2025-12-08",
+    "title": "신비로운 숲 속의 꿈",
+    "content": "오늘 밤 신비로운 숲 속을 걸어다녔습니다..."
+}
+```
+
+**Response (201 Created):**
+```json
+{
+    "dreamId": 1,
+    "userId": 1,
+    "emotionId": 1,
+    "dreamDate": "2025-12-08",
+    "title": "신비로운 숲 속의 꿈",
+    "content": "오늘 밤 신비로운 숲 속을 걸어다녔습니다...",
+    "createdDate": "2025-12-08T10:30:00"
+}
+```
+
+#### 2.2 월별 목록 조회
+```http
+GET /api/dreams?year=2025&month=12
+Authorization: Bearer {token}
+```
+
+**Response (200 OK):**
+```json
+{
+    "year": 2025,
+    "month": 12,
+    "dreams": [
+        {
+            "dreamId": 1,
+            "title": "신비로운 숲 속의 꿈",
+            "content": "오늘 밤 신비로운 숲 속을...",
+            "dreamDate": "2025-12-08",
+            "emotionId": 1,
+            "emotionName": "기쁨",
+            "hasResult": true,
+            "luckyColorName": "파란색",
+            "luckyColorNumber": 3
+        }
+    ]
+}
+```
+
+---
+
+### 3️⃣ AI 분석 결과 API (`/api/dreams/{dreamId}/result`)
+
+| Method | Endpoint | 설명 | 인증 |
+|--------|----------|------|------|
+| POST | `/api/dreams/{dreamId}/result` | 결과 저장 | ✅ |
+| GET | `/api/dreams/{dreamId}/result` | 결과 조회 | ✅ |
+| PUT | `/api/dreams/{dreamId}/result` | 결과 수정 | ✅ |
+| DELETE | `/api/dreams/{dreamId}/result` | 결과 삭제 | ✅ |
+
+#### 3.1 AI 분석 결과 저장
+```http
+POST /api/dreams/1/result
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+    "dreamInterpretation": "숲은 내면의 탐험을 상징합니다...",
+    "todayFortuneSummary": "오늘은 새로운 시작에 좋은 날입니다...",
+    "luckyColor": {
+        "name": "초록색",
+        "number": 4,
+        "reason": "자연의 힘을 받을 수 있습니다"
     },
-    {
-      "emotionId": 2,
-      "emotionName": "만족",
-      "score": 4
+    "luckyItem": {
+        "name": "나뭇잎 모양 액세서리",
+        "reason": "자연과의 연결을 강화합니다"
     },
-    {
-      "emotionId": 3,
-      "emotionName": "평범",
-      "score": 3
-    },
-    {
-      "emotionId": 4,
-      "emotionName": "불안",
-      "score": 2
-    },
-    {
-      "emotionId": 5,
-      "emotionName": "슬픔",
-      "score": 1
-    }
-  ]
+    "imageUrl": "/uploads/images/dream/1/20251208_abc123.png"
 }
 ```
 
-- **Status Codes**:
-  - `200 OK`: 조회 성공
-  - `401 Unauthorized`: 인증 실패
+**Response (201 Created):**
+```json
+{
+    "resultId": 1,
+    "dreamId": 1,
+    "message": "AI 분석 결과가 저장되었습니다."
+}
+```
 
 ---
 
-## 5. 월별 분석 API (Spring Boot)
+### 4️⃣ 감정 점수 API (`/api/emotions`)
 
-### 5.1 월별 꿈 통계 조회
+| Method | Endpoint | 설명 | 인증 |
+|--------|----------|------|------|
+| GET | `/api/emotions` | 감정 목록 조회 | ✅ |
 
-- **URL**: `/api/analysis/monthly`
-- **Method**: `GET`
-- **Description**: 특정 월의 꿈 통계 및 기본 분석 결과 조회
-- **Headers**: `Authorization: Bearer {token}`
-- **Query Parameters**:
-  - `year`: 연도 (required)
-  - `month`: 월 (required)
-- **Response**:
-
+**Response (200 OK):**
 ```json
 {
-  "analysisId": 1,
-  "year": 2025,
-  "month": 11,
-  "dreamCount": 15,
-  "avgEmotionScore": 3.5,
-  "monthlyReport": "월간 AI 분석 리포트 전문 (optional)",
-  "createdDate": "YYYY-MM-DD HH:mm:ss",
-  "updatedDate": "YYYY-MM-DD HH:mm:ss"
+    "emotions": [
+        { "emotionId": 1, "emotionName": "기쁨", "score": 5 },
+        { "emotionId": 2, "emotionName": "만족", "score": 4 },
+        { "emotionId": 3, "emotionName": "평범", "score": 3 },
+        { "emotionId": 4, "emotionName": "불안", "score": 2 },
+        { "emotionId": 5, "emotionName": "슬픔", "score": 1 }
+    ]
 }
 ```
-
-- **Status Codes**:
-  - `200 OK`: 조회 성공
-  - `401 Unauthorized`: 인증 실패
-  - `404 Not Found`: 분석 데이터 없음
-
-### 5.2 월별 AI 리포트 생성 요청
-
-- **URL**: `/api/analysis/monthly`
-- **Method**: `POST`
-- **Description**: 특정 월의 AI 리포트 생성 요청 (Spring Boot가 FastAPI를 호출)
-- **Headers**: `Authorization: Bearer {token}`
-- **Request Body**:
-
-```json
-{
-  "year": 2025,
-  "month": 11
-}
-```
-
-- **처리 과정**:
-
-  1. Spring Boot가 해당 월의 꿈 일기 및 AI 결과 조회 (MySQL)
-  2. Spring Boot가 FastAPI의 `/api/v1/fortune/monthly-analysis` 호출
-  3. FastAPI가 AI 리포트 생성 후 반환
-  4. Spring Boot가 리포트를 `dream_monthly_analysis` 테이블에 저장
-
-- **Response**:
-
-```json
-{
-  "analysisId": 1,
-  "year": 2025,
-  "month": 11,
-  "dreamCount": 15,
-  "avgEmotionScore": 3.5,
-  "monthlyReport": "AI가 생성한 월간 리포트 전문",
-  "message": "월별 AI 리포트가 생성되었습니다."
-}
-```
-
-- **Status Codes**:
-  - `200 OK`: 갱신 성공
-  - `201 Created`: 생성 성공
-  - `400 Bad Request`: 해당 월에 꿈 일기가 없음
-  - `401 Unauthorized`: 인증 실패
-  - `503 Service Unavailable`: FastAPI 서비스 오류
-
-> **📌 참고**: 프론트엔드는 이 API만 호출하면 됩니다. Spring Boot가 자동으로 FastAPI를 호출하여 AI 리포트를 생성합니다.
 
 ---
 
-## 6. 월별 메모 API (Spring Boot)
+### 5️⃣ 월별 분석 API (`/api/analysis/monthly`)
 
-### 6.1 월별 메모 조회
+| Method | Endpoint | 설명 | 인증 |
+|--------|----------|------|------|
+| GET | `/api/analysis/monthly?year={year}&month={month}` | 통계 조회 | ✅ |
+| POST | `/api/analysis/monthly` | AI 리포트 생성 | ✅ |
 
-- **URL**: `/api/memo/monthly`
-- **Method**: `GET`
-- **Description**: 특정 월의 메모 조회
-- **Headers**: `Authorization: Bearer {token}`
-- **Query Parameters**:
-  - `year`: 연도 (required)
-  - `month`: 월 (required)
-- **Response**:
+#### 5.2 월별 AI 리포트 생성
+```http
+POST /api/analysis/monthly
+Authorization: Bearer {token}
+Content-Type: application/json
 
-```json
 {
-  "memoId": 1,
-  "analysisId": 1,
-  "year": 2025,
-  "month": 11,
-  "memoContent": "이번 달 꿈 일기 메모 내용",
-  "createdDate": "YYYY-MM-DD HH:mm:ss",
-  "updatedDate": "YYYY-MM-DD HH:mm:ss"
+    "year": 2025,
+    "month": 12
 }
 ```
 
-- **Status Codes**:
-  - `200 OK`: 조회 성공
-  - `401 Unauthorized`: 인증 실패
-  - `404 Not Found`: 메모 없음
-
-### 6.2 월별 메모 작성/수정
-
-- **URL**: `/api/memo/monthly`
-- **Method**: `POST`
-- **Description**: 특정 월의 메모 작성 또는 수정
-- **Headers**: `Authorization: Bearer {token}`
-- **Request Body**:
-
+**Response (201 Created):**
 ```json
 {
-  "analysisId": 1,
-  "memoContent": "메모 내용"
+    "analysisId": 1,
+    "year": 2025,
+    "month": 12,
+    "dreamCount": 15,
+    "avgEmotionScore": 3.67,
+    "monthlyReport": "## 12월 꿈 분석 리포트\n\n이번 달은 전반적으로...",
+    "createdDate": "2025-12-08T10:30:00",
+    "updatedDate": null
 }
 ```
-
-- **Response**:
-
-```json
-{
-  "memoId": 1,
-  "message": "메모가 저장되었습니다."
-}
-```
-
-- **Status Codes**:
-  - `200 OK`: 수정 성공
-  - `201 Created`: 작성 성공
-  - `401 Unauthorized`: 인증 실패
-
-### 6.3 월별 메모 삭제
-
-- **URL**: `/api/memo/monthly/{memoId}`
-- **Method**: `DELETE`
-- **Description**: 월별 메모 삭제
-- **Headers**: `Authorization: Bearer {token}`
-- **Path Parameters**:
-  - `memoId`: 메모 ID
-- **Response**:
-
-```json
-{
-  "message": "메모가 삭제되었습니다."
-}
-```
-
-- **Status Codes**:
-  - `200 OK`: 삭제 성공
-  - `401 Unauthorized`: 인증 실패
-  - `403 Forbidden`: 권한 없음
-  - `404 Not Found`: 메모를 찾을 수 없음
 
 ---
 
-# FastAPI (AI 서비스)
+### 6️⃣ 월별 메모 API (`/api/memo/monthly`)
 
-## 7. AI 통합 운세 API (FastAPI)
-
-### 7.1 통합 운세 분석
-
-- **URL**: `{FASTAPI_URL}/api/v1/fortune/comprehensive`
-- **Method**: `POST`
-- **Description**: 꿈 해몽, 네이버 운세, 종합 분석, 행운의 색/아이템 제공
-- **인증**: 불필요 (프론트에서 직접 호출)
-- **Process**:
-
-  1. 로컬 LLM으로 꿈 해몽
-  2. 네이버 운세 크롤링 (생년월일 기반)
-  3. Upstage API로 종합 분석 및 행운의 색상/아이템 추천
-
-- **Request Body**:
-
-```json
-{
-  "name": "string",
-  "dream_content": "string",
-  "gender": "m | f",
-  "calendar_type": "solar | lunarGeneral | lunarLeap",
-  "birth_date": "YYYY-MM-DD"
-}
-```
-
-**필드 설명:**
-
-- `name`: 사용자 이름
-- `dream_content`: 꿈 내용 텍스트
-- `gender`: 성별 (`m`: 남성, `f`: 여성)
-- `calendar_type`: 생년월일 유형
-  - `solar`: 양력
-  - `lunarGeneral`: 음력 (평달)
-  - `lunarLeap`: 음력 (윤달)
-- `birth_date`: 생년월일 (YYYY-MM-DD 형식)
-
-- **Response (200 OK)**:
-
-```json
-{
-  "dream_interpretation": "꿈 해몽 결과 텍스트",
-  "today_fortune_summary": "오늘의 운세 종합 요약",
-  "lucky_color": {
-    "name": "색상 이름",
-    "number": 3,
-    "reason": "해당 색상을 추천하는 이유"
-  },
-  "lucky_item": {
-    "name": "아이템 이름",
-    "reason": "해당 아이템을 추천하는 이유"
-  }
-}
-```
-
-**필드 설명:**
-
-- `dream_interpretation`: 로컬 LLM의 꿈 해몽 결과
-- `today_fortune_summary`: 네이버 운세 + 꿈 해몽을 종합한 오늘의 운세
-- `lucky_color`: 오늘의 행운의 색
-  - `name`: 색상 이름 (한글)
-  - `number`: 색상 번호 (1-7)
-  - `reason`: 추천 이유
-- `lucky_item`: 오늘의 행운의 아이템
-
-  - `name`: 아이템 이름
-  - `reason`: 추천 이유
-
-- **Status Codes**:
-  - `200 OK`: 정상 응답
-  - `422 Unprocessable Entity`: 유효성 검증 실패
-  - `500 Internal Server Error`: AI 서비스 오류
+| Method | Endpoint | 설명 | 인증 |
+|--------|----------|------|------|
+| GET | `/api/memo/monthly?year={year}&month={month}` | 메모 조회 | ✅ |
+| POST | `/api/memo/monthly` | 메모 저장/수정 | ✅ |
+| DELETE | `/api/memo/monthly/{memoId}` | 메모 삭제 | ✅ |
 
 ---
 
-## 8. AI 이미지 생성 API (FastAPI)
+### 7️⃣ 이미지 API (`/api/images`)
 
-### 8.1 꿈 이미지 생성
+| Method | Endpoint | 설명 | 인증 |
+|--------|----------|------|------|
+| POST | `/api/images/upload` | Base64 이미지 업로드 | ✅ |
+| DELETE | `/api/images?imageUrl={url}` | 이미지 삭제 | ✅ |
 
-- **URL**: `{FASTAPI_URL}/api/v1/dream/generate-image`
-- **Method**: `POST`
-- **Description**: 꿈 내용을 기반으로 AI 이미지 생성
-- **Model**: Gemini 2.0 Flash Exp Image Generation
-- **인증**: 불필요 (프론트에서 직접 호출)
+#### 7.1 이미지 업로드
+```http
+POST /api/images/upload
+Authorization: Bearer {token}
+Content-Type: application/json
 
-- **Request Body**:
+{
+    "imageData": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
+    "dreamId": 1
+}
+```
 
+**Response (200 OK):**
 ```json
 {
-  "dream_prompt": "string",
-  "style": "string (optional)"
+    "success": true,
+    "message": "이미지가 성공적으로 업로드되었습니다.",
+    "imageUrl": "/uploads/images/dream/1/20251208_abc123.png"
 }
 ```
-
-**필드 설명:**
-
-- `dream_prompt`: 꿈 내용 또는 이미지 생성 프롬프트
-- `style`: 이미지 스타일 (선택사항, 기본값: "몽환적")
-
-**지원되는 스타일 옵션:**
-
-- `몽환적` (기본값): 신비롭고 몽환적인 분위기
-- `수채화`: 부드러운 터치의 수채화 그림 스타일
-- `애니메이션`: 2D 애니메이션/만화 작화 스타일
-- `사실적`: 고화질 실사(Photo-realistic) 스타일
-- `판타지`: 판타지 소설 표지 같은 웅장한 아트 스타일
-- `추상적`: 현대 미술 같은 추상적인 스타일
-
-- **Response (200 OK)**:
-
-```json
-{
-  "success": true,
-  "message": "N개의 이미지가 생성되었습니다.",
-  "images": [
-    {
-      "image_data": "base64_encoded_image_data",
-      "mime_type": "image/png"
-    }
-  ],
-  "model_text": "모델 응답 텍스트 (optional)"
-}
-```
-
-**필드 설명:**
-
-- `success`: 생성 성공 여부
-- `message`: 응답 메시지
-- `images`: 생성된 이미지 배열
-  - `image_data`: Base64로 인코딩된 이미지 데이터
-  - `mime_type`: 이미지 MIME 타입 (image/png)
-- `model_text`: AI 모델의 추가 응답 텍스트 (있을 경우)
-
-> **📌 참고**: 프론트에서 Base64 이미지를 받아 S3 등에 업로드한 후, Spring Boot의 `/api/dreams/{dreamId}/result`로 이미지 URL을 저장합니다.
-
-- **Status Codes**:
-  - `200 OK`: 정상 응답
-  - `422 Unprocessable Entity`: 유효성 검증 실패
-  - `500 Internal Server Error`: 이미지 생성 실패
 
 ---
-
-## 9. AI 월간 분석 API (FastAPI)
-
-### 9.1 월간 꿈 리포트 생성
-
-- **URL**: `{FASTAPI_URL}/api/v1/fortune/monthly-analysis`
-- **Method**: `POST`
-- **Description**: 한 달 동안의 꿈과 운세 데이터를 종합 분석하여 감동적인 리포트 생성
-- **호출자**: Spring Boot (서버 간 통신)
-- **인증**: 불필요
-- **Process**:
-
-  1. Spring Boot로부터 31일간의 꿈과 운세 데이터 수신
-  2. 감정 흐름 및 패턴 분석
-  3. 심리적 통찰 제공
-  4. 다음 달을 위한 조언 제공
-  5. 마크다운 형식의 리포트 생성
-
-- **Request Body**:
-
-```json
-{
-  "user_name": "string",
-  "birth_date": "YYYY-MM-DD",
-  "daily_data": [
-    {
-      "date": "YYYY-MM-DD",
-      "dream_content": "string",
-      "today_fortune_summary": "string",
-      "emotion_score": 3
-    }
-  ]
-}
-```
-
-**필드 설명:**
-
-- `user_name`: 사용자 이름
-- `birth_date`: 생년월일
-- `daily_data`: 일별 데이터 배열 (최대 31일)
-
-  - `date`: 날짜 (YYYY-MM-DD)
-  - `dream_content`: 꿈 내용
-  - `today_fortune_summary`: 오늘의 운세 요약
-  - `emotion_score`: 감정 점수 (1-5)
-
-- **Response (200 OK)**:
-
-```json
-{
-  "period": "YYYY-MM",
-  "user_name": "string",
-  "report": "월간 분석 리포트 전문 (마크다운 형식)",
-  "statistics": {
-    "total_dreams": 15,
-    "avg_emotion_score": 3.5,
-    "emotion_distribution": {
-      "1": 2,
-      "2": 3,
-      "3": 5,
-      "4": 3,
-      "5": 2
-    },
-    "most_common_themes": ["성장", "관계", "도전"]
-  },
-  "metadata": {
-    "generated_at": "YYYY-MM-DD HH:mm:ss",
-    "model": "solar-pro",
-    "version": "1.0"
-  }
-}
-```
-
-**필드 설명:**
-
-- `period`: 분석 기간 (YYYY-MM)
-- `user_name`: 사용자 이름
-- `report`: 월간 분석 리포트 전문 (마크다운 형식, 프론트에서 렌더링)
-- `statistics`: 통계 정보
-  - `total_dreams`: 총 꿈 개수
-  - `avg_emotion_score`: 평균 감정 점수
-  - `emotion_distribution`: 감정 점수 분포
-  - `most_common_themes`: 주요 테마
-- `metadata`: 메타데이터
-  - `generated_at`: 생성 시각
-  - `model`: 사용된 AI 모델
-  - `version`: API 버전
-
-> **📌 참고**: 이 API는 Spring Boot에서만 호출됩니다. 프론트엔드는 Spring Boot의 `/api/analysis/monthly`를 호출하면 됩니다.
-
-- **Status Codes**:
-  - `200 OK`: 정상 응답
-  - `422 Unprocessable Entity`: 유효성 검증 실패
-  - `500 Internal Server Error`: 분석 생성 실패
-
----
-
-## 프론트엔드 통신 플로우
-
-### 시나리오 1: 꿈 일기 작성 및 AI 분석
-
-```
-1. [프론트] → [Spring Boot] POST /api/dreams
-   꿈 일기 저장
-   ↓
-   Response: { dreamId, ... }
-
-2. [프론트] → [FastAPI] POST /api/v1/fortune/comprehensive
-   AI 운세 분석 요청
-   ↓
-   Response: { dream_interpretation, today_fortune_summary, lucky_color, lucky_item }
-
-3. [프론트] → [Spring Boot] POST /api/dreams/{dreamId}/result
-   AI 분석 결과 저장
-   ↓
-   Response: { resultId, message }
-
-4. [프론트] 사용자에게 완료 메시지 표시
-```
-
-### 시나리오 2: 꿈 이미지 생성
-
-```
-1. [프론트] → [FastAPI] POST /api/v1/dream/generate-image
-   이미지 생성 요청
-   ↓
-   Response: { images: [{ image_data, mime_type }] }
-
-2. [프론트] Base64 이미지를 Blob으로 변환 후 S3 업로드
-   ↓
-   imageUrl 획득
-
-3. [프론트] → [Spring Boot] PUT /api/dreams/{dreamId}/result
-   이미지 URL 업데이트
-   ↓
-   Response: { message }
-```
-
-### 시나리오 3: 월간 리포트 생성
-
-```
-1. [프론트] → [Spring Boot] POST /api/analysis/monthly
-   월간 AI 리포트 생성 요청 (year, month 포함)
-   ↓
-
-2. [Spring Boot] 내부 처리:
-   - MySQL에서 해당 월의 꿈 일기 조회
-   - 각 꿈의 AI 분석 결과 조회
-   - daily_data 배열 구성
-   ↓
-
-3. [Spring Boot] → [FastAPI] POST /api/v1/fortune/monthly-analysis
-   AI 리포트 생성 요청
-   ↓
-
-4. [FastAPI] → [Spring Boot]
-   AI 리포트 반환 (report, statistics, metadata)
-   ↓
-
-5. [Spring Boot]
-   - MySQL에 월간 리포트 저장
-   - 통계 정보 업데이트
-   ↓
-
-6. [프론트] ← [Spring Boot]
-   완료 응답 (analysisId, dreamCount, avgEmotionScore, monthlyReport)
-```
-
-**장점:**
-
-- 프론트엔드 로직이 단순함 (1번의 API 호출만)
-- 데이터가 서버 간에만 이동 (보안 향상)
-- 트랜잭션 관리가 용이함
-- 에러 핸들링이 일관적
-
----
-
-## CORS 및 보안 설정
-
-### FastAPI CORS 설정
-
-```python
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://your-frontend-domain.com"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-```
-
-### Spring Boot CORS 설정
-
-```java
-@Configuration
-public class WebConfig implements WebMvcConfigurer {
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:3000", "https://your-frontend-domain.com")
-                .allowedMethods("GET", "POST", "PUT", "DELETE")
-                .allowedHeaders("*")
-                .allowCredentials(true);
-    }
-}
-```
-
-### 인증 처리
-
-- **Spring Boot**: JWT 토큰 기반 인증
-- **FastAPI**: 인증 불필요 (공개 AI 서비스)
-- 프론트엔드에서 Spring Boot API 호출 시에만 `Authorization: Bearer {token}` 헤더 추가
-
----
-
-## 공통 사항
 
 ### 에러 응답 형식
 
-**Spring Boot:**
-
 ```json
 {
-  "error": "error_code",
-  "message": "에러 메시지",
-  "timestamp": "YYYY-MM-DD HH:mm:ss"
+    "error": "ERROR_CODE",
+    "message": "에러 메시지",
+    "timestamp": "2025-12-08T10:30:00"
 }
 ```
 
-**FastAPI:**
-
-```json
-{
-  "detail": "에러 메시지"
-}
-```
-
-### 공통 Status Codes
-
-- `400 Bad Request`: 잘못된 요청
-- `401 Unauthorized`: 인증 토큰이 없거나 유효하지 않음 (Spring Boot만)
-- `403 Forbidden`: 접근 권한 없음
-- `404 Not Found`: 리소스를 찾을 수 없음
-- `422 Unprocessable Entity`: 유효성 검증 실패 (FastAPI)
-- `500 Internal Server Error`: 서버 오류
-- `503 Service Unavailable`: 외부 서비스 오류
+| HTTP Status | Error Code | 설명 |
+|-------------|------------|------|
+| 400 | BAD_REQUEST | 잘못된 요청 |
+| 400 | VALIDATION_ERROR | 유효성 검증 실패 |
+| 401 | UNAUTHORIZED | 인증 실패 |
+| 403 | FORBIDDEN | 접근 권한 없음 |
+| 404 | NOT_FOUND | 리소스 없음 |
+| 409 | CONFLICT | 중복 데이터 |
+| 503 | SERVICE_UNAVAILABLE | 외부 서비스 오류 |
 
 ---
 
-## 데이터베이스 테이블 구조
+## ⚙ 환경 설정
 
-### users (회원 정보)
+### application.yaml
 
-- user_id (BIGINT, PK, NOT NULL)
-- name (VARCHAR(100), NOT NULL)
-- birth_date (DATE, NOT NULL)
-- gender (CHAR(1), NOT NULL) - 'M': 남성, 'F': 여성
-- calendar_type (VARCHAR(20), NOT NULL) - 'solar': 양력, 'lunarGeneral': 음력(평달), 'lunarLeap': 음력(윤달)
-- login_id (VARCHAR(255), NOT NULL)
-- password (VARCHAR(255), NOT NULL)
-- created_date (DATETIME, NOT NULL)
-- updated_date (DATETIME, NULL)
-- deleted_date (DATETIME, NULL)
+```yaml
+# 서버 포트
+server:
+  port: ${SERVER_PORT:8080}
 
-### dreams (꿈 기록)
+# 데이터베이스 설정
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/dream_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:ssafy}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000
 
-- dream_id (BIGINT, PK, NOT NULL)
-- user_id (BIGINT, FK, NOT NULL) → users(user_id)
-- emotion_id (TINYINT, FK, NOT NULL) → emotion_scores(emotion_id)
-- dream_date (DATE, NOT NULL)
-- title (TEXT, NOT NULL)
-- content (TEXT, NOT NULL)
-- created_date (DATETIME, NOT NULL)
-- deleted_date (DATETIME, NULL)
+  # 파일 업로드 설정
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
-### dream_results (AI 분석 결과)
+# MyBatis 설정
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.ssafy.finalproject.model.entity
+  configuration:
+    map-underscore-to-camel-case: true
 
-- id (BIGINT, PK, NOT NULL)
-- dream_id (BIGINT, FK, NOT NULL, UNIQUE) → dreams(dream_id)
-- dream_interpretation (TEXT, NOT NULL) - 꿈 해몽 결과
-- today_fortune_summary (TEXT, NOT NULL) - 오늘의 운세 종합
-- lucky_color_name (VARCHAR(50), NOT NULL) - 행운의 색 이름
-- lucky_color_number (INT, NOT NULL) - 행운의 색 번호 (1-7)
-- lucky_color_reason (TEXT, NOT NULL) - 행운의 색 추천 이유
-- lucky_item_name (VARCHAR(100), NOT NULL) - 행운의 아이템 이름
-- lucky_item_reason (TEXT, NOT NULL) - 행운의 아이템 추천 이유
-- image_url (VARCHAR(255), NULL) - 꿈 이미지 URL
-- created_date (DATETIME, NOT NULL)
-- deleted_date (DATETIME, NULL)
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET:your-secret-key-here}
+  expiration: ${JWT_EXPIRATION:86400000}  # 24시간
 
-### emotion_scores (감정 점수)
-
-- emotion_id (TINYINT, PK, NOT NULL)
-- emotion_name (VARCHAR(20), NOT NULL)
-- score (INT, NOT NULL)
-
-**초기 데이터:**
-
-```sql
-INSERT INTO emotion_scores (emotion_id, emotion_name, score) VALUES
-(1, '기쁨', 5),
-(2, '만족', 4),
-(3, '평범', 3),
-(4, '불안', 2),
-(5, '슬픔', 1);
-```
-
-### dream_monthly_analysis (월별 꿈 분석)
-
-- analysis_id (BIGINT, PK, NOT NULL)
-- user_id (BIGINT, FK, NOT NULL) → users(user_id)
-- year (INT, NOT NULL)
-- month (INT, NOT NULL)
-- dream_count (INT, NOT NULL)
-- avg_emotion_score (DECIMAL(5,2), NOT NULL)
-- monthly_report (LONGTEXT, NULL) - FastAPI에서 생성한 월간 리포트
-- created_date (DATETIME, NOT NULL)
-- updated_date (DATETIME, NULL)
-
-### dream_monthly_memo (월별 메모)
-
-- memo_id (BIGINT, PK, NOT NULL)
-- analysis_id (BIGINT, FK, NOT NULL) → dream_monthly_analysis(analysis_id)
-- memo_content (TEXT, NOT NULL)
-- created_date (DATETIME, NOT NULL)
-- updated_date (DATETIME, NULL)
-- deleted_date (DATETIME, NULL)
-
----
-
-## 개발 환경 설정
-
-### Spring Boot application.properties
-
-```properties
-# Database
-spring.datasource.url=jdbc:mysql://localhost:3306/dream_db?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8
-spring.datasource.username=your_username
-spring.datasource.password=your_password
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-
-# JPA
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.format_sql=true
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
-
-# JWT
-jwt.secret=your_secret_key_here_at_least_256_bits
-jwt.expiration=86400000
-
-# File Upload (이미지 업로드용, S3 사용 시 불필요)
-spring.servlet.multipart.max-file-size=10MB
-spring.servlet.multipart.max-request-size=10MB
-
-# Logging
-logging.level.org.springframework.web=INFO
-logging.level.com.yourpackage=DEBUG
+# 파일 업로드 경로
+file:
+  upload-dir: ${FILE_UPLOAD_DIR:uploads/images}
+  base-url: ${FILE_BASE_URL:/uploads/images}
 
 # FastAPI 연동 설정
-fastapi.url=http://localhost:8000
-fastapi.timeout=60000
+fastapi:
+  url: ${FASTAPI_URL:http://localhost:8000}
+  timeout: ${FASTAPI_TIMEOUT:60000}
+
+# 로깅 설정
+logging:
+  level:
+    com.ssafy.finalproject: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: DEBUG
 ```
 
-### Spring Boot에서 FastAPI 호출 설정
+### 환경 변수 (.env)
 
-**RestTemplate 설정 (Spring Boot):**
+```properties
+# 서버
+SERVER_PORT=8080
 
-```java
-@Configuration
-public class RestTemplateConfig {
+# 데이터베이스
+SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/dream_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+SPRING_DATASOURCE_USERNAME=root
+SPRING_DATASOURCE_PASSWORD=your_password
 
-    @Value("${fastapi.url}")
-    private String fastApiUrl;
+# JWT
+JWT_SECRET=your-very-long-secret-key-for-jwt-authentication
+JWT_EXPIRATION=86400000
 
-    @Value("${fastapi.timeout:60000}")
-    private int timeout;
+# FastAPI
+FASTAPI_URL=http://localhost:8000
+FASTAPI_TIMEOUT=60000
 
-    @Bean
-    public RestTemplate restTemplate() {
-        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
-        factory.setConnectTimeout(timeout);
-        factory.setReadTimeout(timeout);
+# 파일 업로드
+FILE_UPLOAD_DIR=uploads/images
+FILE_BASE_URL=/uploads/images
+```
 
-        return new RestTemplate(factory);
-    }
+---
+
+## 🚀 실행 방법
+
+### 1. 사전 요구사항
+
+- **Java 17** 이상
+- **MySQL 8.0** 이상
+- **Gradle 8.x** (또는 Gradle Wrapper 사용)
+
+### 2. 데이터베이스 설정
+
+```bash
+# MySQL 접속
+mysql -u root -p
+
+# 데이터베이스 및 테이블 생성
+source dream_DB.sql
+```
+
+### 3. 환경 변수 설정
+
+```bash
+# .env 파일 생성 (프로젝트 루트)
+cp .env.example .env
+
+# 환경 변수 수정
+notepad .env  # Windows
+```
+
+### 4. 빌드 및 실행
+
+```bash
+# Gradle Wrapper로 빌드
+./gradlew build
+
+# 실행
+./gradlew bootRun
+
+# 또는 JAR 파일로 실행
+java -jar build/libs/finalproject-0.0.1-SNAPSHOT.jar
+```
+
+### 5. 접속 확인
+
+```bash
+# API 테스트
+curl http://localhost:8080/api/emotions
+
+# Swagger UI
+http://localhost:8080/swagger-ui/index.html
+```
+
+---
+
+## 🎯 주요 기능 상세
+
+### 1. 회원 관리
+
+#### 회원가입 플로우
+```
+사용자 입력 → 아이디 중복 체크 → 비밀번호 BCrypt 암호화 → DB 저장
+```
+
+#### 달력 유형 (calendarType)
+| 값 | 설명 |
+|----|------|
+| `solar` | 양력 |
+| `lunarGeneral` | 음력 (평달) |
+| `lunarLeap` | 음력 (윤달) |
+
+### 2. 꿈 일기
+
+#### 같은 날짜 처리
+- 같은 날짜에 꿈 일기가 있으면 **업데이트**
+- 없으면 **새로 생성**
+
+#### Soft Delete
+- 실제 삭제 대신 `deleted_date` 컬럼에 삭제 시간 기록
+- 조회 시 `deleted_date IS NULL` 조건으로 필터링
+
+### 3. AI 분석 연동
+
+#### FastAPI 연동 구조
+```
+Spring Boot                    FastAPI (AI Server)
+    │                               │
+    │  POST /api/v1/fortune/monthly-analysis
+    │──────────────────────────────►│
+    │  {                            │
+    │    user_name: "홍길동",        │
+    │    birth_date: "1990-01-15",  │
+    │    daily_data: [...]          │
+    │  }                            │
+    │                               │
+    │◄──────────────────────────────│
+    │  {                            │
+    │    report: "## 월별 분석..."   │
+    │  }                            │
+    └───────────────────────────────┘
+```
+
+### 4. 이미지 처리
+
+#### 저장 구조
+```
+uploads/
+└── images/
+    └── dream/
+        └── {userId}/
+            └── {timestamp}_{uuid}.{ext}
+```
+
+#### 지원 형식
+- JPEG/JPG
+- PNG
+- GIF
+- WebP
+
+---
+
+## 🔒 보안
+
+### JWT 인증
+
+#### 토큰 구조
+```
+Header.Payload.Signature
+
+Payload:
+{
+    "sub": "1",           // userId
+    "loginId": "testuser",
+    "iat": 1702012800,    // 발급 시간
+    "exp": 1702099200     // 만료 시간 (24시간 후)
 }
 ```
 
-**또는 WebClient 사용 (비동기 처리 권장):**
+#### 인증 헤더
+```http
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
 
+### 인증 제외 경로
 ```java
-@Configuration
-public class WebClientConfig {
+// 인증 불필요
+/api/auth/signup
+/api/auth/login
+/swagger-ui/**
+/v3/api-docs/**
+/uploads/**
 
-    @Value("${fastapi.url}")
-    private String fastApiUrl;
+// 인증 필요
+/api/** (나머지 모든 API)
+```
 
-    @Value("${fastapi.timeout:60000}")
-    private int timeout;
+### CORS 설정
+```java
+// 허용된 Origin
+http://localhost:3000
+http://localhost:5173
+https://*.ngrok-free.app
+https://*.ngrok.io
+```
 
-    @Bean
-    public WebClient webClient() {
-        return WebClient.builder()
-            .baseUrl(fastApiUrl)
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .codecs(configurer -> configurer
-                .defaultCodecs()
-                .maxInMemorySize(16 * 1024 * 1024)) // 16MB
-            .build();
-    }
+### 비밀번호 암호화
+```java
+// BCrypt 사용 (강도 10)
+BCryptPasswordEncoder.encode(password)
+```
+
+---
+
+## 📖 코드 상세 설명
+
+### 계층 구조
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   Controller Layer                   │
+│  (REST API 엔드포인트, 요청/응답 처리)               │
+└────────────────────────┬────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────┐
+│                    Service Layer                     │
+│  (비즈니스 로직, 트랜잭션 관리)                      │
+└────────────────────────┬────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────┐
+│                      DAO Layer                       │
+│  (MyBatis Mapper Interface)                          │
+└────────────────────────┬────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────┐
+│                  Mapper XML Layer                    │
+│  (SQL 쿼리 정의)                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+### 주요 클래스 설명
+
+#### 1. SecurityConfig.java
+```java
+// Spring Security 설정
+- JWT 필터 등록
+- 인증 제외 경로 설정
+- CORS 설정 활성화
+- 세션 Stateless 설정
+- BCrypt 비밀번호 인코더 Bean 등록
+```
+
+#### 2. JwtUtil.java
+```java
+// JWT 토큰 유틸리티
+- generateToken(): 토큰 생성
+- getUserIdFromToken(): 토큰에서 userId 추출
+- validateToken(): 토큰 유효성 검증
+```
+
+#### 3. JwtAuthenticationFilter.java
+```java
+// JWT 인증 필터
+- 모든 요청에서 Authorization 헤더 확인
+- Bearer 토큰 추출 및 검증
+- SecurityContext에 인증 정보 설정
+```
+
+#### 4. GlobalExceptionHandler.java
+```java
+// 전역 예외 처리
+- @RestControllerAdvice 사용
+- 커스텀 예외별 HTTP 상태 코드 매핑
+- 통일된 에러 응답 형식 반환
+```
+
+#### 5. SecurityUtil.java
+```java
+// 현재 인증된 사용자 정보 추출
+- SecurityContextHolder에서 userId 가져오기
+- 모든 서비스에서 공통 사용
+```
+
+### MyBatis Mapper 패턴
+
+```xml
+<!-- ResultMap 정의 -->
+<resultMap id="DreamResultMap" type="Dream">
+    <id property="dreamId" column="dream_id"/>
+    <result property="userId" column="user_id"/>
+    ...
+</resultMap>
+
+<!-- 조회 쿼리 -->
+<select id="findById" resultMap="DreamResultMap">
+    SELECT * FROM dreams
+    WHERE dream_id = #{dreamId}
+      AND deleted_date IS NULL
+</select>
+
+<!-- Soft Delete -->
+<update id="deleteDream">
+    UPDATE dreams
+    SET deleted_date = NOW()
+    WHERE dream_id = #{dreamId}
+</update>
+```
+
+---
+
+## 📝 개발 규칙
+
+### 네이밍 컨벤션
+
+| 대상 | 규칙 | 예시 |
+|------|------|------|
+| 클래스 | PascalCase | `DreamController` |
+| 메서드 | camelCase | `getDreamsByMonth` |
+| 변수 | camelCase | `dreamCount` |
+| 상수 | UPPER_SNAKE_CASE | `MAX_FILE_SIZE` |
+| DB 컬럼 | snake_case | `dream_date` |
+| API 경로 | kebab-case | `/api/dreams/{id}/result` |
+
+### 응답 형식
+
+#### 성공 응답
+```json
+{
+    "데이터 필드들": "...",
+    "message": "성공 메시지"
 }
 ```
 
-### FastAPI 환경 변수 (.env)
-
-```env
-# GMS API Key (Upstage Solar)
-GMS_API_KEY=your_gms_api_key_here
-
-# Gemini API Key (이미지 생성용)
-GOOGLE_API_KEY=your_gemini_api_key_here
-
-# Server Settings
-HOST=0.0.0.0
-PORT=8000
-
-# CORS Allowed Origins (쉼표로 구분)
-CORS_ORIGINS=http://localhost:3000,https://your-frontend-domain.com
-```
-
-### FastAPI 서버 실행
-
-```bash
-cd /Users/kimhyunbin/Desktop/github_ssafy/AI-api-service
-python main.py
-```
-
-또는
-
-```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+#### 에러 응답
+```json
+{
+    "error": "ERROR_CODE",
+    "message": "에러 메시지",
+    "timestamp": "2025-12-08T10:30:00"
+}
 ```
 
 ---
 
-## API 문서 및 테스트
+## 📄 라이선스
 
-### FastAPI Swagger UI
-
-- **URL**: `http://localhost:8000/docs`
-- 모든 FastAPI 엔드포인트를 대화형으로 테스트 가능
-
-### FastAPI OpenAPI Schema
-
-- **URL**: `http://localhost:8000/openapi.json`
+Apache License 2.0
 
 ---
 
-## 참고 사항
+## 👥 팀원
 
-1. 모든 날짜는 `YYYY-MM-DD` 형식 사용
-2. 모든 날짜/시간은 `YYYY-MM-DD HH:mm:ss` 형식 사용
-3. 삭제는 Soft Delete 방식 사용 (deleted_date 컬럼 활용)
-4. 이미지는 Base64로 전송 후 S3 등 외부 저장소에 업로드 권장
-
-### 프론트엔드 통신 규칙
-
-5. **일일 운세/이미지 생성**: 프론트 → FastAPI 직접 호출 가능
-6. **월간 분석**: 프론트 → Spring Boot → FastAPI (Spring Boot를 통해서만 가능) ⭐
-7. Spring Boot API는 JWT 토큰 필수 (인증 API 제외)
-8. 프론트엔드에서 AI 분석 결과를 받은 후 반드시 Spring Boot에 저장해야 함
-
-### 기술적 고려사항
-
-9. 월간 리포트는 마크다운 형식으로 제공되므로 프론트에서 렌더링 필요
-10. FastAPI 서버는 GPU 사용을 위해 CUDA 환경 권장 (LLM 모델 로드)
-11. Spring Boot에서 FastAPI 호출 시 타임아웃 설정 필수 (60초 권장)
-12. 프로덕션 환경에서는 FastAPI와 Spring Boot 모두 HTTPS 사용 권장
-13. Spring Boot는 RestTemplate 또는 WebClient로 FastAPI 호출 (WebClient 비동기 처리 권장)
+SSAFY Final Project Team
 
 ---
 
-## 배포 고려사항
+<div align="center">
 
-### FastAPI 배포
+**Made with ❤️ by SSAFY**
 
-1. **Docker 컨테이너화**
+</div>
 
-   ```dockerfile
-   FROM python:3.10-slim
-   WORKDIR /app
-   COPY requirements.txt .
-   RUN pip install --no-cache-dir -r requirements.txt
-   COPY . .
-   CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-   ```
-
-2. **GPU 지원** (LLM 모델용)
-
-   - NVIDIA Docker Runtime 사용
-   - CUDA 11.8 이상 권장
-
-3. **로드 밸런싱**
-   - AI 처리 시간이 길 수 있으므로 타임아웃 설정 필수
-   - Nginx 리버스 프록시 권장
-
-### Spring Boot 배포
-
-1. **JAR 빌드**
-
-   ```bash
-   ./mvnw clean package
-   java -jar target/app.jar
-   ```
-
-2. **환경 변수 분리**
-   - DB 연결 정보
-   - JWT Secret Key
-   - **FastAPI URL (환경별 다름)** ⭐
-     - 개발: `http://localhost:8000`
-     - 스테이징: `http://fastapi-staging:8000`
-
-**환경별 FastAPI URL 설정 예시:**
-
-```bash
-# 개발 환경
-java -jar app.jar --fastapi.url=http://localhost:8000
-
-# 프로덕션 환경
-java -jar app.jar --fastapi.url=https://api-ai.your-domain.com
-```
-
----
-
-## 문의 및 지원
-
-- FastAPI 서버 상태 확인: `GET {FASTAPI_URL}/`
-- FastAPI 문서: `{FASTAPI_URL}/docs`
