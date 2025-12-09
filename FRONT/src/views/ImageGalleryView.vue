@@ -76,7 +76,7 @@
         <div v-for="image in filteredImages" :key="image.id" class="gallery-item" @click="openImageDetail(image)">
           <!-- 실제 이미지가 있는 경우 -->
           <div v-if="image.imageSrc" class="image-container real-image">
-            <img :src="image.imageSrc" :alt="image.caption" class="gallery-image" />
+            <img :src="resolveImageSrc(image.imageSrc)" :alt="image.caption" class="gallery-image" />
             <div class="image-hover-overlay">
               <span class="hover-icon">🔍</span>
             </div>
@@ -165,7 +165,7 @@
                   <div class="frame-outer">
                     <div class="frame-inner">
                       <div v-if="selectedImage.imageSrc" class="framed-image">
-                        <img :src="selectedImage.imageSrc" :alt="selectedImage.caption" />
+                        <img :src="resolveImageSrc(selectedImage.imageSrc)" :alt="selectedImage.caption" />
                       </div>
                       <div v-else class="framed-placeholder" :style="{ background: selectedImage.gradient }">
                         <span class="placeholder-emoji">{{ selectedImage.emoji }}</span>
@@ -351,6 +351,15 @@ const totalLikes = computed(() => {
   return galleryImages.value.reduce((sum, img) => sum + (img.likes || 0), 0);
 });
 
+// 이미지 경로를 실제 접근 가능한 URL로 정규화
+function resolveImageSrc(src) {
+  if (!src) return "";
+  if (src.startsWith("http://") || src.startsWith("https://")) return src;
+  if (src.startsWith("/")) return src;
+  // 슬래시가 없는 상대경로로 온 경우 /uploads/... 형태로 접근할 수 있게 보정
+  return `/${src}`;
+}
+
 function handleBack() {
   router.push({ name: "calendar" });
 }
@@ -407,8 +416,8 @@ async function deleteImage(image) {
   }
 
   try {
-    // 서버에 저장된 이미지인 경우 백엔드에서도 삭제
-    if (image.imageSrc && image.imageSrc.startsWith("/uploads/")) {
+    // 서버에 저장된 이미지인 경우 백엔드에서도 삭제 (절대/상대 경로 모두 허용)
+    if (image.imageSrc && image.imageSrc.includes("/uploads/images/")) {
       try {
         await imageService.deleteImage(image.imageSrc);
         console.log("✅ 서버 이미지 삭제 완료");

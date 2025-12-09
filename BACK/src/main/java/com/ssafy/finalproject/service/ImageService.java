@@ -17,6 +17,7 @@ import java.util.UUID;
 @Service
 public class ImageService {
 
+    // BACK 폴더 내 uploads/images를 기본값으로 사용
     @Value("${file.upload-dir:uploads/images}")
     private String uploadDir;
 
@@ -81,14 +82,34 @@ public class ImageService {
         if (imageUrl == null || imageUrl.isEmpty()) {
             return;
         }
-        
-        // URL에서 상대 경로 추출
-        String relativePath = imageUrl.replace(baseUrl, "");
-        Path filePath = Paths.get(uploadDir, relativePath);
-        
+
+        // URL에서 상대 경로 추출 (절대/상대 URL 모두 처리)
+        String pathPart;
+        try {
+            pathPart = java.net.URI.create(imageUrl).getPath();
+        } catch (IllegalArgumentException e) {
+            pathPart = imageUrl; // URI 파싱 실패 시 원문 사용
+        }
+
+        // baseUrl 또는 기본 경로(prefix)를 제거하여 순수 상대 경로만 남김
+        if (pathPart.startsWith(baseUrl)) {
+            pathPart = pathPart.substring(baseUrl.length());
+        } else if (pathPart.startsWith("/uploads/images")) {
+            pathPart = pathPart.substring("/uploads/images".length());
+        }
+
+        // 선행 슬래시 제거
+        if (pathPart.startsWith("/")) {
+            pathPart = pathPart.substring(1);
+        }
+
+        Path filePath = Paths.get(uploadDir, pathPart);
+
         if (Files.exists(filePath)) {
             Files.delete(filePath);
             log.info("이미지 삭제 완료: {}", filePath);
+        } else {
+            log.warn("삭제 대상 이미지가 존재하지 않습니다: {}", filePath);
         }
     }
 }
