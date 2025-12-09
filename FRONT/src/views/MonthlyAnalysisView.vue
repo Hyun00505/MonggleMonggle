@@ -10,7 +10,7 @@
         월별 분석
         <span class="title-badge">Monthly</span>
       </h2>
-      <button @click="handleBack" class="close-btn" aria-label="닫기">
+      <button @click="handleClose" class="close-btn" aria-label="닫기">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M18 6L6 18M6 6l12 12" />
         </svg>
@@ -374,6 +374,16 @@ const monthlyStats = computed(() => {
 });
 
 function handleBack() {
+  // 브라우저 히스토리가 있을 경우 뒤로가기, 없으면 캘린더로 이동
+  const historyLength = window.history.length;
+  if (historyLength > 1) {
+    router.back();
+  } else {
+    router.push({ name: "calendar" });
+  }
+}
+
+function handleClose() {
   router.push({ name: "calendar" });
 }
 
