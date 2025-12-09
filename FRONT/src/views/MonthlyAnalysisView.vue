@@ -1165,6 +1165,9 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
   font-size: 1rem;
   color: #333;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dream-info p {
@@ -1200,6 +1203,12 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
 }
 
 /* 반응형 */
+@media (max-width: 1040px) {
+  .stat-content {
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 900px) {
   .monthly-analysis-content {
     grid-template-columns: 1fr;
@@ -1212,6 +1221,10 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
 
   .right-column .memo-section {
     max-height: none;
+  }
+
+  .stat-content {
+    flex-direction: row;
   }
 }
 
