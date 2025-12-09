@@ -256,7 +256,6 @@ function changeMonth(delta) {
     currentYear.value -= 1;
   }
   updateRouteQuery();
-  loadMonthlyMemos();
 }
 
 // 라우터 쿼리와 상태 동기화
@@ -394,12 +393,25 @@ function goToDream(dateKey) {
 
 // 메모 로드
 function loadMonthlyMemos() {
-  monthlyMemos.value = memoStore.getMonthlyMemos(currentYear.value, currentMonth.value);
+  const memos = memoStore.getMonthlyMemos(currentYear.value, currentMonth.value);
+  monthlyMemos.value = sanitizeMemos(memos);
   // 상태 초기화
   isAddingMemo.value = false;
   newMemoContent.value = "";
   editingMemoId.value = null;
   editMemoContent.value = "";
+}
+
+// 내용이 비어 있는 메모 제거
+function sanitizeMemos(memos) {
+  if (!Array.isArray(memos)) return [];
+  return memos.filter((memo) => memo?.content && memo.content.trim().length > 0);
+}
+
+// 선택된 연월의 꿈 일기 서버 동기화
+function loadMonthlyDreams() {
+  if (isLockedMonth.value) return;
+  dreamEntriesStore.fetchDreamsByMonth(currentYear.value, currentMonth.value);
 }
 
 // 새 메모 추가 시작
@@ -485,7 +497,11 @@ function shouldShowExpandBtn(content) {
 
 // 초기 로드
 loadMonthlyMemos();
-watch([currentYear, currentMonth], loadMonthlyMemos);
+loadMonthlyDreams();
+watch([currentYear, currentMonth], () => {
+  loadMonthlyMemos();
+  loadMonthlyDreams();
+});
 </script>
 
 <style scoped>
