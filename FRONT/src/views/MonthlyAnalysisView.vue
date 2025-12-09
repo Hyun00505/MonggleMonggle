@@ -551,6 +551,7 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
   padding-left: 1.8rem;
   border-left: 1px solid rgba(205, 180, 219, 0.3);
   min-width: 0; /* 폭 확장으로 인한 튐 방지 */
+  height: 100%;
 }
 
 .right-column .memo-section {
@@ -1035,7 +1036,7 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
 
 .memo-empty {
   text-align: center;
-  padding: 2rem 1rem;
+  padding-top: 2rem;
   color: #aaa;
   font-style: italic;
 }
