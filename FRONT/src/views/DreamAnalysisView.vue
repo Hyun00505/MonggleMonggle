@@ -20,7 +20,10 @@
       </div>
       <div class="analysis-content">
         <div class="section dream-section">
-          <h3>🌌 꿈 해몽</h3>
+          <h3>
+            <span class="title-cloud" aria-hidden="true"></span>
+            꿈 해몽
+          </h3>
           <p class="result-text">
             {{ analysisResult?.dreamInterpretation || "분석 결과를 불러오는 중..." }}
           </p>
@@ -29,7 +32,10 @@
         <div class="divider"></div>
 
         <div class="section fortune-section">
-          <h3>🍀 오늘의 운세</h3>
+          <h3>
+            <span class="title-cloud" aria-hidden="true"></span>
+            오늘의 운세
+          </h3>
           <p v-if="analysisResult?.todayFortuneSummary" class="result-text fortune-summary">
             {{ analysisResult.todayFortuneSummary }}
           </p>
@@ -515,10 +521,46 @@ function downloadImage(image) {
 }
 
 .section h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: "Dongle", sans-serif;
+  font-size: 1.6rem;
+  font-weight: 600;
   color: #444;
   margin: 0 0 0.75rem;
+}
+
+.title-cloud {
+  position: relative;
+  display: inline-block;
+  width: 22px;
+  height: 9px;
+  background: #cdb4db;
+  border-radius: 999px;
+  transform: translateY(1px);
+}
+
+.title-cloud::before,
+.title-cloud::after {
+  content: "";
+  position: absolute;
+  background: #cdb4db;
+  border-radius: 999px;
+}
+
+.title-cloud::before {
+  width: 12px;
+  height: 12px;
+  top: -6px;
+  left: 2px;
+}
+
+.title-cloud::after {
+  width: 14px;
+  height: 14px;
+  top: -4px;
+  right: 0;
 }
 
 .result-text {
@@ -532,9 +574,7 @@ function downloadImage(image) {
 }
 
 .fortune-summary {
-  margin-bottom: 1rem;
-  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
-  border-left: 3px solid #22c55e;
+  margin-bottom: 1.25rem;
 }
 
 .divider {
@@ -564,13 +604,15 @@ function downloadImage(image) {
 }
 
 .fortune-label {
-  font-size: 0.85rem;
+  font-family: "Dongle", sans-serif;
+  font-size: 1.6rem;
   font-weight: 600;
   color: #666;
 }
 
 .fortune-pill {
-  font-size: 0.65rem;
+  font-family: "Dongle", sans-serif;
+  font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.2rem 0.5rem;
@@ -620,10 +662,10 @@ function downloadImage(image) {
 }
 
 .fortune-reason {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
   color: #666;
   margin: 0;
-  line-height: 1.5;
 }
 
 /* ===== Analysis Wrapper ===== */
@@ -1270,7 +1312,7 @@ function downloadImage(image) {
 
   .fortune-grid {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 1.25rem;
   }
 
   .fortune-card {
