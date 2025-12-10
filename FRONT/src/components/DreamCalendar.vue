@@ -287,9 +287,6 @@ function isToday(day) {
 </script>
 
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Dongle:wght@300;400;700&display=swap");
-
 .calendar-wrapper {
   display: flex;
   flex-direction: column;

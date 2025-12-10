@@ -158,9 +158,27 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
     currentDreamId.value = null;
   }
 
+  function validateRequiredFields() {
+    const hasTitle = !!dreamTitle.value?.trim();
+    const hasContent = !!dreamContent.value?.trim();
+    const hasEmotion = selectedEmotion.value !== null && selectedEmotion.value !== undefined;
+
+    if (!hasTitle || !hasContent || !hasEmotion) {
+      return { valid: false, message: "제목, 내용, 감정을 모두 입력해주세요." };
+    }
+
+    return { valid: true };
+  }
+
   // API 연동 꿈 저장
   async function saveDream() {
     if (!selectedDate.value) return false;
+
+    const validation = validateRequiredFields();
+    if (!validation.valid) {
+      error.value = validation.message;
+      return false;
+    }
 
     const dateKey = formatDateKey(selectedDate.value);
     const luckyColor = getLuckyColorById(currentLuckyColorId.value);
@@ -179,7 +197,7 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
           title: dreamTitle.value,
           content: dreamContent.value,
           dreamDate: dateKey,
-          emotionId: selectedEmotion.value || 3,
+          emotionId: selectedEmotion.value,
         };
 
         let response;
@@ -576,6 +594,7 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
     getMonthlyStats,
     persistEntries,
     fetchDreamsByMonth,
+    validateRequiredFields,
     // AI 분석 함수
     requestDreamAnalysis,
     clearAnalysisResult,

@@ -7,8 +7,8 @@ import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
 const router = useRouter();
 const route = useRoute();
 const dreamEntriesStore = useDreamEntriesStore();
-const { dreamTitle, dreamContent, formattedSelectedDate, showAnalysisOption, selectedDate, selectedEmotion, hasExistingResult, canReinterpret, remainingReinterprets } = storeToRefs(dreamEntriesStore);
-const { saveDream, deleteDream, setEmotion, enableEditMode, resetWriteState, setSelectedDateWithResult } = dreamEntriesStore;
+const { dreamTitle, dreamContent, formattedSelectedDate, showAnalysisOption, selectedDate, selectedEmotion, hasExistingResult, canReinterpret, remainingReinterprets, posts } = storeToRefs(dreamEntriesStore);
+const { saveDream, deleteDream, setEmotion, enableEditMode, resetWriteState, setSelectedDateWithResult, fetchDreamsByMonth, validateRequiredFields } = dreamEntriesStore;
 
 const emotions = [
   { value: 1, label: "매우 나쁨", icon: "😫" },
@@ -31,6 +31,20 @@ async function restoreFromQuery() {
   const [year, month, day] = String(dateStr).split("-").map(Number);
   const restoredDate = new Date(year, month - 1, day);
 
+  if (Number.isNaN(restoredDate.getTime())) {
+    router.replace({ name: "calendar" });
+    return;
+  }
+
+  // 필요한 월 데이터가 없으면 로드 (과거 작성 여부 확인용)
+  await ensureMonthData(restoredDate);
+
+  if (!isAccessibleDate(restoredDate)) {
+    alert("꿈 일기는 오늘 날짜에만 작성할 수 있습니다.");
+    router.replace({ name: "calendar" });
+    return;
+  }
+
   // 이미 선택된 날짜와 다를 때만 갱신
   const currentKey = selectedDate.value ? formatDateKey(selectedDate.value) : null;
   if (currentKey !== dateStr) {
@@ -40,6 +54,15 @@ async function restoreFromQuery() {
 
 onMounted(async () => {
   await restoreFromQuery();
+
+  if (selectedDate.value) {
+    // 새로고침 등으로 쿼리가 없더라도 선택 날짜 검증
+    if (!isAccessibleDate(selectedDate.value)) {
+      alert("꿈 일기는 오늘 날짜에만 작성할 수 있습니다.");
+      router.replace({ name: "calendar" });
+      return;
+    }
+  }
 
   // 날짜가 여전히 없으면 캘린더로 이동
   if (!selectedDate.value && !route.query.date) {
@@ -61,8 +84,9 @@ function handleBack() {
 }
 
 function handleSave() {
-  if (!dreamTitle.value?.trim() || !dreamContent.value?.trim()) {
-    alert("제목과 내용을 모두 입력해주세요.");
+  const validation = validateRequiredFields();
+  if (!validation.valid) {
+    alert(validation.message);
     return;
   }
 
@@ -111,6 +135,44 @@ function formatDateKey(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function isTodayDate(date) {
+  if (!date) return false;
+  const today = new Date();
+  return (
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+  );
+}
+
+function isFutureDate(date) {
+  const today = new Date();
+  const target = new Date(date);
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+  return target.getTime() > today.getTime();
+}
+
+function hasPostForDate(date) {
+  const key = formatDateKey(date);
+  return !!posts.value[key];
+}
+
+function isAccessibleDate(date) {
+  if (isFutureDate(date)) return false; // 미래는 작성 불가
+  if (isTodayDate(date)) return true; // 오늘은 작성 가능
+  // 과거는 작성된 일기만 허용
+  return hasPostForDate(date);
+}
+
+async function ensureMonthData(date) {
+  const key = formatDateKey(date);
+  if (posts.value[key]) return;
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  await fetchDreamsByMonth(y, m);
 }
 </script>
 

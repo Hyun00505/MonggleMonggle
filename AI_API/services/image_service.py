@@ -31,8 +31,13 @@ async def process_dream_image(request: DreamImageRequest) -> DreamImageResponse:
     # 선택된 스타일에 맞는 키워드 가져오기 (기본값: 몽환적)
     style_keyword = STYLE_PROMPTS.get(request.style, STYLE_PROMPTS["몽환적"])
 
-    # 고정된 프롬프트
-    DEFAULT_PROMPT = f"해당 꿈 내용을 읽고 꿈을 영화의 한 장면처럼 이미지를 생성해줘. 스타일은 '{style_keyword}'로 해줘. 이미지는 정사각형으로 만들어줘. 꿈 내용 : "
+    # 고정된 프롬프트 (텍스트/워터마크 금지)
+    DEFAULT_PROMPT = (
+        "다음 꿈 내용을 영화의 한 장면처럼 시각화해줘. "
+        "이미지에 글자, 자막, 숫자, 기호, 워터마크 등 어떤 텍스트도 넣지 마. "
+        "캔버스 위에 문장을 쓰지 말고 오직 장면만 그려. "
+        f"스타일은 '{style_keyword}'로, 정사각형 비율로 생성해. 꿈 내용: "
+    )
     
     # 최종 프롬프트 조합
     full_prompt = f"{DEFAULT_PROMPT}{request.dream_prompt}"

@@ -306,9 +306,6 @@ function downloadImage(image) {
 </script>
 
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Dongle:wght@300;400;700&display=swap");
-
 .visualization-card {
   background: white;
   border-radius: 40px;
