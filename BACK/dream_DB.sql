@@ -106,7 +106,7 @@ ALTER TABLE `users`
 ADD COLUMN `role` VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '권한(USER, ADMIN)'
 
 -- 10. 공지사항 테이블 (notices)
-CREATE TABLE `notices` (
+CREATE TABLE `notice` (
     `notice_id`     BIGINT          NOT NULL AUTO_INCREMENT COMMENT '공지사항 ID',
     `user_id`       BIGINT          NOT NULL COMMENT '작성자 ID (무조건 관리자 여야함)',
     `title`         TEXT            NOT NULL COMMENT '제목',
@@ -120,7 +120,7 @@ CREATE TABLE `notices` (
 ) COMMENT = '공지사항'
 
 -- 11. 공지사항 댓글 테이블 (comment)
-CREATE TABLE `comments` (
+CREATE TABLE `notice_comment` (
     `comment_id`     BIGINT          NOT NULL AUTO_INCREMENT COMMENT '댓글 ID',
     `notice_id`      BIGINT          NOT NULL COMMENT '공지사항 ID',
     `user_id`        BIGINT          NOT NULL COMMENT '작성자 ID',
@@ -128,7 +128,7 @@ CREATE TABLE `comments` (
     `created_date`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 일자',
     `deleted_date`    DATETIME        NULL COMMENT '삭제 일자(soft delete)',
     PRIMARY KEY (`comment_id`),
-    FOREIGN KEY (`notice_id`) REFERENCES `notices` (`notice_id`) ON DELETE CASCADE,
+    FOREIGN KEY (`notice_id`) REFERENCES `notice` (`notice_id`) ON DELETE CASCADE,
     FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
 ) COMMENT = '공지사항 댓글'
 
@@ -142,6 +142,6 @@ CREATE TABLE `notice_likes` (
     -- 한 유저가 하나의 공지사항에 중복 좋아요 방지
     -- 유니크 키 생성
     UNIQUE KEY `uk_notice_like_user` (notice_id , `user_id`),
-    FOREIGN KEY (`notice_id`) REFERENCES `notices` (`notice_id`) ON DELETE CASCADE,
+    FOREIGN KEY (`notice_id`) REFERENCES `notice` (`notice_id`) ON DELETE CASCADE,
     FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
 ) COMMENT = '공지사항 좋아요'

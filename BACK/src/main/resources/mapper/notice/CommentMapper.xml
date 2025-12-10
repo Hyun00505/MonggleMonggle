@@ -17,7 +17,7 @@
         SELECT *
         FROM notice_comment
         WHERE notice_id = #{noticeId}
-        AND delete_date IS NULL
+        AND deleted_date IS NULL
         ORDER BY created_date ASC
     </select>
 
