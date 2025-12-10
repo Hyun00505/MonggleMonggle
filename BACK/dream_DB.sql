@@ -80,17 +80,19 @@ CREATE TABLE `dream_monthly_analysis` (
     FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
 ) COMMENT = '월별 꿈 분석';
 
--- 7. 월별 메모 테이블 (dream_monthly_memo)
+-- 7. 월별 메모 테이블 (dream_monthly_memo) - 월별 분석과 독립적으로 동작
 CREATE TABLE `dream_monthly_memo` (
     `memo_id`      BIGINT          NOT NULL AUTO_INCREMENT COMMENT '메모 ID',
-    `analysis_id`  BIGINT          NOT NULL COMMENT '분석 ID',
+    `user_id`      BIGINT          NOT NULL COMMENT '사용자 ID',
+    `year`         INT             NOT NULL COMMENT '연도',
+    `month`        INT             NOT NULL COMMENT '월',
     `memo_content` TEXT            NOT NULL COMMENT '메모 내용',
     `created_date` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
     `updated_date` DATETIME        NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
     `deleted_date` DATETIME        NULL COMMENT '삭제일시 (Soft Delete)',
     PRIMARY KEY (`memo_id`),
-    UNIQUE KEY `uk_monthly_memo_analysis_id` (`analysis_id`),
-    FOREIGN KEY (`analysis_id`) REFERENCES `dream_monthly_analysis` (`analysis_id`) ON DELETE CASCADE
+    INDEX `idx_monthly_memo_user_yearmonth` (`user_id`, `year`, `month`),
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
 ) COMMENT = '월별 메모';
 
 -- 8. 초기 데이터 삽입 - 감정 점수

@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MonthlyMemoResponse {
     private Long memoId;
-    private Long analysisId;
     private Integer year;
     private Integer month;
     private String memoContent;

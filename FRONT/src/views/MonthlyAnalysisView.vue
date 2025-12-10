@@ -10,13 +10,7 @@
         월별 분석
         <span class="title-badge">Monthly</span>
       </h2>
-      <button
-        v-if="hasReportContent"
-        class="report-btn"
-        @click="openReport"
-        :disabled="isLockedMonth"
-        aria-label="월별 분석 리포트 열기"
-      >
+      <button v-if="hasReportContent" class="report-btn" @click="openReport" :disabled="isLockedMonth" aria-label="월별 분석 리포트 열기">
         <span v-if="isLetterUnread" class="report-badge" aria-label="새 편지 도착">1</span>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 8l9 6 9-6" />
@@ -51,7 +45,6 @@
     <div class="monthly-analysis-content" v-if="!isLockedMonth">
       <!-- 왼쪽 컬럼 -->
       <div class="left-column">
-
         <!-- 통계 카드 -->
         <div class="stats-grid">
           <div class="stat-card dreams-card">
@@ -248,15 +241,22 @@
             <div class="letter-top">
               <div class="letter-stamp">Monthly Letter</div>
               <div class="letter-tofrom">
-                <div class="letter-line"><span>To.</span> {{ currentYear }}년 {{ currentMonth }}월의 나</div>
-                <div class="letter-line"><span>From.</span> 몽글몽글</div>
+                <div class="letter-line">
+                  <span>To.</span>
+                  {{ currentYear }}년 {{ currentMonth }}월의 {{ reportReceiver }}
+                </div>
+                <div class="letter-line">
+                  <span>From.</span>
+                  몽글몽글
+                </div>
               </div>
             </div>
 
             <div class="letter-body">
-              <div class="letter-placeholder">
-                편지 내용을 여기에 담아 전달해 드릴게요.
-              </div>
+              <div v-if="isLoadingReport" class="letter-placeholder">편지를 준비하는 중이에요...</div>
+              <div v-else-if="reportError" class="letter-error">{{ reportError }}</div>
+              <div v-else-if="monthlyReport" class="letter-content" v-html="formattedReport"></div>
+              <div v-else class="letter-placeholder">편지 내용을 여기에 담아 전달해 드릴게요.</div>
             </div>
 
             <div class="letter-footer">
@@ -277,13 +277,15 @@ import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
-import { useMonthlyMemoStore } from "../stores/monthlyMemoStore";
+import { useAuthStore } from "../stores/authStore";
+import { monthlyAnalysisService } from "../services/monthlyAnalysisService";
 
 const route = useRoute();
 const router = useRouter();
 const dreamEntriesStore = useDreamEntriesStore();
-const memoStore = useMonthlyMemoStore();
+const authStore = useAuthStore();
 const { postedDates } = storeToRefs(dreamEntriesStore);
+const { currentUser } = storeToRefs(authStore);
 
 const now = ref(new Date());
 let nowTimer = null;
@@ -291,11 +293,22 @@ let nowTimer = null;
 const lastMonthDate = computed(() => new Date(now.value.getFullYear(), now.value.getMonth() - 1, 1));
 const currentYear = ref(lastMonthDate.value.getFullYear());
 const currentMonth = ref(lastMonthDate.value.getMonth() + 1);
+const selectedMonthDate = computed(() => new Date(currentYear.value, currentMonth.value - 1, 1));
+
+const monthlyReport = ref("");
+const isLoadingReport = ref(false);
+const reportError = ref("");
 
 const isLockedMonth = computed(() => {
   const selectedKey = currentYear.value * 12 + currentMonth.value;
   const currentKey = now.value.getFullYear() * 12 + (now.value.getMonth() + 1);
   return selectedKey >= currentKey;
+});
+
+const formattedReport = computed(() => (monthlyReport.value ? monthlyReport.value.replace(/\n/g, "<br />") : ""));
+const reportReceiver = computed(() => {
+  const name = currentUser.value?.name;
+  return name ? `${name} 님에게` : "나에게";
 });
 
 const nextAvailableText = computed(() => {
@@ -316,7 +329,7 @@ const expandedMemos = ref(new Set());
 const isReportOpen = ref(false);
 const letterReadStatus = ref({});
 const LETTER_READ_KEY = "monthlyReportRead";
-const hasReportContent = computed(() => monthlyDreams.value.length > 0 || monthlyMemos.value.length > 0);
+const hasReportContent = computed(() => isLoadingReport.value || !!monthlyReport.value || !!reportError.value);
 
 // 색상 클래스 배열
 const colorClasses = ["color-purple", "color-pink", "color-blue"];
@@ -404,9 +417,7 @@ const monthlyDreams = computed(() => {
 // 꿈 목록 페이지네이션 (4개씩)
 const dreamPageSize = 4;
 const currentDreamPage = ref(1);
-const totalDreamPages = computed(() =>
-  Math.max(1, Math.ceil(monthlyDreams.value.length / dreamPageSize))
-);
+const totalDreamPages = computed(() => Math.max(1, Math.ceil(monthlyDreams.value.length / dreamPageSize)));
 const visibleDreams = computed(() => {
   const start = (currentDreamPage.value - 1) * dreamPageSize;
   return monthlyDreams.value.slice(start, start + dreamPageSize);
@@ -489,15 +500,38 @@ const isLetterUnread = computed(() => {
   return !letterReadStatus.value?.[key];
 });
 
-// 메모 로드
-function loadMonthlyMemos() {
-  const memos = memoStore.getMonthlyMemos(currentYear.value, currentMonth.value);
-  monthlyMemos.value = sanitizeMemos(memos);
+// 메모 로드 (백엔드 연동)
+async function loadMonthlyMemos() {
+  if (isLockedMonth.value) {
+    monthlyMemos.value = [];
+    return;
+  }
+
   // 상태 초기화
   isAddingMemo.value = false;
   newMemoContent.value = "";
   editingMemoId.value = null;
   editMemoContent.value = "";
+
+  try {
+    const memos = await monthlyAnalysisService.getMemo(currentYear.value, currentMonth.value);
+    monthlyMemos.value = sanitizeMemos(
+      Array.isArray(memos)
+        ? memos.map((m) => ({
+            id: m.memoId,
+            content: m.memoContent,
+            createdAt: m.createdDate || m.updatedDate || new Date().toISOString(),
+          }))
+        : []
+    );
+  } catch (err) {
+    // 404면 메모 없음으로 처리
+    if (err?.response?.status === 404) {
+      monthlyMemos.value = [];
+    } else {
+      console.error("메모 조회 실패:", err);
+    }
+  }
 }
 
 // 내용이 비어 있는 메모 제거
@@ -512,6 +546,39 @@ function loadMonthlyDreams() {
   dreamEntriesStore.fetchDreamsByMonth(currentYear.value, currentMonth.value);
 }
 
+// 월간 리포트 조회(없으면 생성)
+async function fetchMonthlyReport() {
+  if (isLockedMonth.value) {
+    monthlyReport.value = "";
+    return;
+  }
+
+  isLoadingReport.value = true;
+  reportError.value = "";
+  monthlyReport.value = "";
+
+  try {
+    const response = await monthlyAnalysisService.getMonthlyAnalysis(currentYear.value, currentMonth.value);
+    monthlyReport.value = response?.monthlyReport || "";
+  } catch (err) {
+    if (err?.response?.status === 404) {
+      // 없으면 생성 시도
+      try {
+        const generated = await monthlyAnalysisService.generateMonthlyAnalysis(currentYear.value, currentMonth.value);
+        monthlyReport.value = generated?.monthlyReport || "";
+      } catch (genErr) {
+        reportError.value = genErr?.response?.data?.message || genErr.message || "월간 리포트를 생성하지 못했습니다.";
+        monthlyReport.value = "";
+      }
+    } else {
+      reportError.value = err?.response?.data?.message || err.message || "월간 리포트를 불러오지 못했습니다.";
+      monthlyReport.value = "";
+    }
+  } finally {
+    isLoadingReport.value = false;
+  }
+}
+
 // 새 메모 추가 시작
 function startAddMemo() {
   isAddingMemo.value = true;
@@ -519,10 +586,19 @@ function startAddMemo() {
 }
 
 // 새 메모 저장
-function addNewMemo() {
+async function addNewMemo() {
   if (!newMemoContent.value.trim()) return;
-  memoStore.addMemo(currentYear.value, currentMonth.value, newMemoContent.value.trim());
-  loadMonthlyMemos();
+  try {
+    await monthlyAnalysisService.saveMemo({
+      year: currentYear.value,
+      month: currentMonth.value,
+      memoContent: newMemoContent.value.trim(),
+    });
+    await loadMonthlyMemos();
+  } catch (err) {
+    console.error("메모 저장 실패:", err);
+    alert(err?.response?.data?.message || "메모 저장에 실패했습니다. 다시 시도해주세요.");
+  }
 }
 
 // 새 메모 추가 취소
@@ -538,10 +614,20 @@ function startEditMemo(memo) {
 }
 
 // 메모 수정 저장
-function saveEditMemo() {
+async function saveEditMemo() {
   if (!editMemoContent.value.trim()) return;
-  memoStore.updateMemo(currentYear.value, currentMonth.value, editingMemoId.value, editMemoContent.value.trim());
-  loadMonthlyMemos();
+  try {
+    await monthlyAnalysisService.saveMemo({
+      year: currentYear.value,
+      month: currentMonth.value,
+      memoContent: editMemoContent.value.trim(),
+      memoId: editingMemoId.value,
+    });
+    await loadMonthlyMemos();
+  } catch (err) {
+    console.error("메모 수정 실패:", err);
+    alert(err?.response?.data?.message || "메모 수정에 실패했습니다. 다시 시도해주세요.");
+  }
 }
 
 // 메모 수정 취소
@@ -551,10 +637,15 @@ function cancelEditMemo() {
 }
 
 // 메모 삭제
-function deleteMemoItem(memoId) {
+async function deleteMemoItem(memoId) {
   if (confirm("이 메모를 삭제하시겠습니까?")) {
-    memoStore.deleteMemo(currentYear.value, currentMonth.value, memoId);
-    loadMonthlyMemos();
+    try {
+      await monthlyAnalysisService.deleteMemo(memoId);
+      await loadMonthlyMemos();
+    } catch (err) {
+      console.error("메모 삭제 실패:", err);
+      alert(err?.response?.data?.message || "메모 삭제에 실패했습니다. 다시 시도해주세요.");
+    }
   }
 }
 
@@ -608,9 +699,11 @@ function closeReport() {
 // 초기 로드
 loadMonthlyMemos();
 loadMonthlyDreams();
+fetchMonthlyReport();
 watch([currentYear, currentMonth], () => {
   loadMonthlyMemos();
   loadMonthlyDreams();
+  fetchMonthlyReport();
 });
 </script>
 
@@ -1372,11 +1465,10 @@ watch([currentYear, currentMonth], () => {
 
 .lock-card {
   margin: 1.2rem auto 0;
-  padding:11.4rem 2.2rem;
+  padding: 11.4rem 2.2rem;
   border-radius: 32px;
   border: 1px solid rgba(205, 180, 219, 0.32);
-  background: radial-gradient(circle at 18% 18%, rgba(255, 200, 221, 0.22), transparent 40%),
-    radial-gradient(circle at 82% 32%, rgba(162, 210, 255, 0.22), transparent 45%),
+  background: radial-gradient(circle at 18% 18%, rgba(255, 200, 221, 0.22), transparent 40%), radial-gradient(circle at 82% 32%, rgba(162, 210, 255, 0.22), transparent 45%),
     linear-gradient(135deg, rgba(205, 180, 219, 0.2), rgba(255, 200, 221, 0.18), rgba(162, 210, 255, 0.18));
   display: flex;
   align-items: center;
@@ -1561,13 +1653,7 @@ watch([currentYear, currentMonth], () => {
   content: "";
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent,
-    transparent 26px,
-    rgba(205, 180, 219, 0.12) 27px,
-    rgba(205, 180, 219, 0.12) 28px
-  );
+  background: repeating-linear-gradient(to bottom, transparent, transparent 26px, rgba(205, 180, 219, 0.12) 27px, rgba(205, 180, 219, 0.12) 28px);
   pointer-events: none;
 }
 
@@ -1642,6 +1728,24 @@ watch([currentYear, currentMonth], () => {
   color: #5c4c79;
   font-weight: 700;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.letter-content {
+  min-height: 160px;
+  padding: 1rem;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: #4b3b67;
+}
+
+.letter-error {
+  min-height: 160px;
+  padding: 1rem;
+  background: rgba(255, 235, 230, 0.9);
+  border-radius: 10px;
+  color: #c0392b;
+  font-weight: 700;
+  line-height: 1.6;
 }
 
 .report-section {

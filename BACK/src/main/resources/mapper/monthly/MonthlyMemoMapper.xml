@@ -6,7 +6,9 @@
 
     <resultMap id="MonthlyMemoResultMap" type="com.ssafy.finalproject.model.entity.MonthlyMemo">
         <id property="memoId" column="memo_id"/>
-        <result property="analysisId" column="analysis_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="year" column="year"/>
+        <result property="month" column="month"/>
         <result property="memoContent" column="memo_content"/>
         <result property="createdDate" column="created_date"/>
         <result property="updatedDate" column="updated_date"/>
@@ -15,15 +17,26 @@
 
     <!-- 월별 메모 저장 -->
     <insert id="insertMemo" parameterType="com.ssafy.finalproject.model.entity.MonthlyMemo" useGeneratedKeys="true" keyProperty="memoId">
-        INSERT INTO dream_monthly_memo (analysis_id, memo_content, created_date)
-        VALUES (#{analysisId}, #{memoContent}, NOW())
+        INSERT INTO dream_monthly_memo (user_id, year, month, memo_content, created_date)
+        VALUES (#{userId}, #{year}, #{month}, #{memoContent}, NOW())
     </insert>
 
-    <!-- 분석 ID로 메모 조회 -->
-    <select id="findByAnalysisId" parameterType="long" resultMap="MonthlyMemoResultMap">
+    <!-- 사용자 ID, 연도, 월로 메모 목록 조회 -->
+    <select id="findByUserIdAndYearMonth" resultMap="MonthlyMemoResultMap">
         SELECT *
         FROM dream_monthly_memo
-        WHERE analysis_id = #{analysisId}
+        WHERE user_id = #{userId}
+          AND year = #{year}
+          AND month = #{month}
+          AND deleted_date IS NULL
+        ORDER BY created_date DESC
+    </select>
+    
+    <!-- 메모 ID로 조회 -->
+    <select id="findByMemoId" parameterType="long" resultMap="MonthlyMemoResultMap">
+        SELECT *
+        FROM dream_monthly_memo
+        WHERE memo_id = #{memoId}
           AND deleted_date IS NULL
     </select>
 

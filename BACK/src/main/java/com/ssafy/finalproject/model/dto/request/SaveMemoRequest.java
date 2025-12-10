@@ -13,8 +13,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SaveMemoRequest {
     
-    @NotNull(message = "분석 ID는 필수입니다.")
-    private Long analysisId;
+    // 수정 시 사용 (신규 작성 시 null)
+    private Long memoId;
+    
+    @NotNull(message = "연도는 필수입니다.")
+    private Integer year;
+    
+    @NotNull(message = "월은 필수입니다.")
+    private Integer month;
     
     @NotBlank(message = "메모 내용은 필수입니다.")
     private String memoContent;

@@ -19,10 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,16 +44,24 @@ public class MonthlyAnalysisService {
         MonthlyAnalysis analysis = monthlyAnalysisDao.findByUserIdAndYearMonth(userId, year, month)
                 .orElseThrow(() -> new ResourceNotFoundException("월별 분석 데이터가 없습니다."));
         
-        return MonthlyAnalysisResponse.builder()
-                .analysisId(analysis.getAnalysisId())
-                .year(analysis.getYear())
-                .month(analysis.getMonth())
-                .dreamCount(analysis.getDreamCount())
-                .avgEmotionScore(analysis.getAvgEmotionScore())
-                .monthlyReport(analysis.getMonthlyReport())
-                .createdDate(analysis.getCreatedDate())
-                .updatedDate(analysis.getUpdatedDate())
-                .build();
+        return toResponse(analysis);
+    }
+    
+    /**
+     * 월별 통계/리포트를 조회하고, 없으면 생성 후 반환.
+     */
+    public MonthlyAnalysisResponse getOrGenerateMonthlyAnalysis(Long userId, Integer year, Integer month) {
+        return monthlyAnalysisDao.findByUserIdAndYearMonth(userId, year, month)
+                .map(this::toResponse)
+                .orElseGet(() -> generateMonthlyReport(userId, year, month));
+    }
+    
+    /**
+     * 오늘 기준 지난달 통계/리포트를 조회하고 없으면 생성 후 반환.
+     */
+    public MonthlyAnalysisResponse getOrGeneratePreviousMonthAnalysis(Long userId) {
+        LocalDate targetDate = LocalDate.now().minusMonths(1);
+        return getOrGenerateMonthlyAnalysis(userId, targetDate.getYear(), targetDate.getMonthValue());
     }
     
     // 월별 AI 리포트 생성 요청
@@ -140,6 +148,10 @@ public class MonthlyAnalysisService {
             monthlyAnalysisDao.insertMonthlyAnalysis(analysis);
         }
         
+        return toResponse(analysis);
+    }
+    
+    private MonthlyAnalysisResponse toResponse(MonthlyAnalysis analysis) {
         return MonthlyAnalysisResponse.builder()
                 .analysisId(analysis.getAnalysisId())
                 .year(analysis.getYear())

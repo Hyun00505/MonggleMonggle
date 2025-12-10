@@ -29,6 +29,14 @@ public class MonthlyAnalysisController {
     
     private final MonthlyAnalysisService monthlyAnalysisService;
     
+    @Operation(summary = "5.0 지난달 리포트 조회/생성", description = "지난달 리포트를 조회하고, 없으면 생성하여 반환합니다.")
+    @GetMapping("/auto")
+    public ResponseEntity<MonthlyAnalysisResponse> getPreviousMonthAnalysis() {
+        Long userId = SecurityUtil.getCurrentUserId();
+        MonthlyAnalysisResponse response = monthlyAnalysisService.getOrGeneratePreviousMonthAnalysis(userId);
+        return ResponseEntity.ok(response);
+    }
+    
     @Operation(summary = "5.1 월별 꿈 통계 조회", description = "특정 월의 꿈 통계 및 분석 결과를 조회합니다.")
     @GetMapping
     public ResponseEntity<MonthlyAnalysisResponse> getMonthlyAnalysis(

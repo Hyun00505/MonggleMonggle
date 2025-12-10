@@ -13,7 +13,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MonthlyMemo {
     private Long memoId;
-    private Long analysisId;
+    private Long userId;
+    private Integer year;
+    private Integer month;
     private String memoContent;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
