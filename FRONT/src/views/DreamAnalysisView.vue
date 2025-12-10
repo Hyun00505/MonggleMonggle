@@ -183,6 +183,7 @@ const route = useRoute();
 const dreamEntriesStore = useDreamEntriesStore();
 const galleryStore = useGalleryStore();
 const { currentLuckyColor, postedDates, analysisResult, analysisDate } = storeToRefs(dreamEntriesStore);
+const { setSelectedDateWithResult, fetchDreamsByMonth } = dreamEntriesStore;
 
 // 분석 결과에서 행운의 색상 정보 가져오기
 const displayLuckyColor = computed(() => {
@@ -219,11 +220,27 @@ function getColorHex(colorName) {
   return colorMap[colorName] || "#CDB4DB";
 }
 
-// URL에서 날짜 복원
-onMounted(() => {
-  if (!analysisResult.value && route.query.date) {
-    // 분석 결과가 없으면 다시 write 페이지로
-    router.replace({ name: "write", query: { date: route.query.date } });
+// URL에서 날짜 복원 및 새로고침 시 결과 복구
+onMounted(async () => {
+  const dateKey = route.query.date?.toString();
+
+  // 기존 결과가 없다면 스토어나 서버에서 복구 시도
+  if (!analysisResult.value && dateKey) {
+    const parsed = new Date(dateKey);
+
+    if (!Number.isNaN(parsed.getTime())) {
+      // 월 데이터가 비어있다면 서버에서 해당 달 꿈 목록을 가져와서 dreamId 확보
+      if (!postedDates.value[dateKey]) {
+        await fetchDreamsByMonth(parsed.getFullYear(), parsed.getMonth() + 1);
+      }
+
+      await setSelectedDateWithResult(parsed);
+    }
+  }
+
+  // 그래도 결과가 없으면 달력으로 이동
+  if (!analysisResult.value && dateKey) {
+    router.replace({ name: "calendar" });
   }
 });
 
