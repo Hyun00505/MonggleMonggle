@@ -10,30 +10,30 @@
         월별 분석
         <span class="title-badge">Monthly</span>
       </h2>
-      <button @click="handleBack" class="close-btn" aria-label="닫기">
+      <button @click="handleClose" class="close-btn" aria-label="닫기">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M18 6L6 18M6 6l12 12" />
         </svg>
       </button>
     </div>
 
-    <div class="monthly-analysis-content">
+    <div class="month-selector-section">
+      <button @click="changeMonth(-1)" class="month-nav-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <div class="current-month">{{ currentYear }}년 {{ currentMonth }}월</div>
+      <button @click="changeMonth(1)" class="month-nav-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    </div>
+
+    <div class="monthly-analysis-content" v-if="!isLockedMonth">
       <!-- 왼쪽 컬럼 -->
       <div class="left-column">
-        <!-- 월 선택 -->
-        <div class="month-selector-section">
-          <button @click="changeMonth(-1)" class="month-nav-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
-          <div class="current-month">{{ currentYear }}년 {{ currentMonth }}월</div>
-          <button @click="changeMonth(1)" class="month-nav-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-          </button>
-        </div>
 
         <!-- 통계 카드 -->
         <div class="stats-grid">
@@ -65,44 +65,34 @@
           </div>
         </div>
 
-        <!-- 키워드 클라우드 -->
-        <div class="section-card">
-          <h3 class="section-title">
-            <span class="title-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
-              </svg>
-            </span>
-            이번 달 키워드
-          </h3>
-          <div class="keyword-cloud">
-            <span
-              v-for="keyword in keywords"
-              :key="keyword.text"
-              class="keyword-tag"
-              :style="{
-                fontSize: keyword.size + 'rem',
-              }"
-              :class="keyword.colorClass"
-            >
-              {{ keyword.text }}
-            </span>
-          </div>
-        </div>
-
         <!-- 꿈 목록 -->
         <div class="section-card">
-          <h3 class="section-title">
-            <span class="title-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              </svg>
-            </span>
-            이번 달 꿈 목록
-          </h3>
+          <div class="dream-header">
+            <h3 class="section-title">
+              <span class="title-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+              </span>
+              이번 달 꿈 목록
+            </h3>
+            <div v-if="totalDreamPages > 1" class="dream-pagination">
+              <button class="page-btn icon" @click="prevDreamPage" :disabled="currentDreamPage === 1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+              <span class="page-indicator">{{ currentDreamPage }} / {{ totalDreamPages }}</span>
+              <button class="page-btn icon" @click="nextDreamPage" :disabled="currentDreamPage === totalDreamPages">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 6 15 12 9 18"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
           <div v-if="monthlyDreams.length > 0" class="dream-list">
-            <div v-for="dream in monthlyDreams" :key="dream.date" class="dream-item" @click="goToDream(dream.date)">
+            <div v-for="dream in visibleDreams" :key="dream.date" class="dream-item" @click="goToDream(dream.date)">
               <div class="dream-date-badge" :class="dream.colorClass">{{ dream.day }}일</div>
               <div class="dream-info">
                 <h4>{{ dream.title }}</h4>
@@ -198,11 +188,19 @@
         </div>
       </div>
     </div>
+    <div v-else class="lock-card">
+      <div class="lock-text">
+        <div class="lock-caption">
+          <div class="caption-main">이 달의 꿈 기록은 {{ nextAvailableText }}에 열려요</div>
+          <div class="caption-sub">조금만 더 기다려 주세요 ✨</div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
@@ -214,8 +212,26 @@ const dreamEntriesStore = useDreamEntriesStore();
 const memoStore = useMonthlyMemoStore();
 const { postedDates } = storeToRefs(dreamEntriesStore);
 
-const currentYear = ref(new Date().getFullYear());
-const currentMonth = ref(new Date().getMonth() + 1);
+const now = ref(new Date());
+let nowTimer = null;
+
+const lastMonthDate = computed(() => new Date(now.value.getFullYear(), now.value.getMonth() - 1, 1));
+const currentYear = ref(lastMonthDate.value.getFullYear());
+const currentMonth = ref(lastMonthDate.value.getMonth() + 1);
+
+const isLockedMonth = computed(() => {
+  const selectedKey = currentYear.value * 12 + currentMonth.value;
+  const currentKey = now.value.getFullYear() * 12 + (now.value.getMonth() + 1);
+  return selectedKey >= currentKey;
+});
+
+const nextAvailableText = computed(() => {
+  // 선택된 월 기준 다음 달 1일을 안내
+  const nextMonthDate = new Date(currentYear.value, currentMonth.value, 1);
+  const y = nextMonthDate.getFullYear();
+  const m = String(nextMonthDate.getMonth() + 1).padStart(2, "0");
+  return `${y}년 ${m}월 01일`;
+});
 
 // 메모 관련 상태
 const monthlyMemos = ref([]);
@@ -240,7 +256,6 @@ function changeMonth(delta) {
     currentYear.value -= 1;
   }
   updateRouteQuery();
-  loadMonthlyMemos();
 }
 
 // 라우터 쿼리와 상태 동기화
@@ -263,6 +278,15 @@ function updateRouteQuery() {
 onMounted(() => {
   syncFromRoute();
   updateRouteQuery();
+  nowTimer = setInterval(() => {
+    now.value = new Date();
+  }, 60 * 1000);
+});
+
+onUnmounted(() => {
+  if (nowTimer) {
+    clearInterval(nowTimer);
+  }
 });
 
 watch(
@@ -274,23 +298,52 @@ watch(
 
 // 해당 월의 꿈 필터링
 const monthlyDreams = computed(() => {
+  if (isLockedMonth.value) return [];
+
   const dreams = [];
   const yearMonth = `${currentYear.value}-${String(currentMonth.value).padStart(2, "0")}`;
 
-  Object.entries(postedDates.value).forEach(([dateKey, dream], index) => {
+  const entries = postedDates.value ? Object.entries(postedDates.value) : [];
+
+  entries.forEach(([dateKey, dream], index) => {
     if (dateKey.startsWith(yearMonth)) {
       const day = parseInt(dateKey.split("-")[2]);
+      const title = dream?.title || "";
+      const content = dream?.content || "";
       dreams.push({
         date: dateKey,
         day: day,
-        title: dream.title,
-        preview: dream.content.substring(0, 50) + (dream.content.length > 50 ? "..." : ""),
+        title,
+        preview: content.substring(0, 50) + (content.length > 50 ? "..." : ""),
         colorClass: colorClasses[index % 3],
       });
     }
   });
 
-  return dreams.sort((a, b) => b.day - a.day);
+  return dreams.sort((a, b) => a.day - b.day);
+});
+
+// 꿈 목록 페이지네이션 (4개씩)
+const dreamPageSize = 4;
+const currentDreamPage = ref(1);
+const totalDreamPages = computed(() =>
+  Math.max(1, Math.ceil(monthlyDreams.value.length / dreamPageSize))
+);
+const visibleDreams = computed(() => {
+  const start = (currentDreamPage.value - 1) * dreamPageSize;
+  return monthlyDreams.value.slice(start, start + dreamPageSize);
+});
+
+function nextDreamPage() {
+  if (currentDreamPage.value < totalDreamPages.value) currentDreamPage.value += 1;
+}
+
+function prevDreamPage() {
+  if (currentDreamPage.value > 1) currentDreamPage.value -= 1;
+}
+
+watch(monthlyDreams, () => {
+  currentDreamPage.value = 1;
 });
 
 // 통계 계산 (실제 최장 연속 기록일을 계산)
@@ -319,19 +372,17 @@ const monthlyStats = computed(() => {
   };
 });
 
-// 키워드
-const keywords = [
-  { text: "하늘", size: 1.8, colorClass: "color-purple" },
-  { text: "바다", size: 1.5, colorClass: "color-blue" },
-  { text: "여행", size: 2, colorClass: "color-pink" },
-  { text: "친구", size: 1.3, colorClass: "color-purple" },
-  { text: "집", size: 1.6, colorClass: "color-pink" },
-  { text: "학교", size: 1.4, colorClass: "color-blue" },
-  { text: "비행", size: 1.7, colorClass: "color-purple" },
-  { text: "음악", size: 1.2, colorClass: "color-pink" },
-];
-
 function handleBack() {
+  // 브라우저 히스토리가 있을 경우 뒤로가기, 없으면 캘린더로 이동
+  const historyLength = window.history.length;
+  if (historyLength > 1) {
+    router.back();
+  } else {
+    router.push({ name: "calendar" });
+  }
+}
+
+function handleClose() {
   router.push({ name: "calendar" });
 }
 
@@ -342,12 +393,25 @@ function goToDream(dateKey) {
 
 // 메모 로드
 function loadMonthlyMemos() {
-  monthlyMemos.value = memoStore.getMonthlyMemos(currentYear.value, currentMonth.value);
+  const memos = memoStore.getMonthlyMemos(currentYear.value, currentMonth.value);
+  monthlyMemos.value = sanitizeMemos(memos);
   // 상태 초기화
   isAddingMemo.value = false;
   newMemoContent.value = "";
   editingMemoId.value = null;
   editMemoContent.value = "";
+}
+
+// 내용이 비어 있는 메모 제거
+function sanitizeMemos(memos) {
+  if (!Array.isArray(memos)) return [];
+  return memos.filter((memo) => memo?.content && memo.content.trim().length > 0);
+}
+
+// 선택된 연월의 꿈 일기 서버 동기화
+function loadMonthlyDreams() {
+  if (isLockedMonth.value) return;
+  dreamEntriesStore.fetchDreamsByMonth(currentYear.value, currentMonth.value);
 }
 
 // 새 메모 추가 시작
@@ -433,7 +497,11 @@ function shouldShowExpandBtn(content) {
 
 // 초기 로드
 loadMonthlyMemos();
-watch([currentYear, currentMonth], loadMonthlyMemos);
+loadMonthlyDreams();
+watch([currentYear, currentMonth], () => {
+  loadMonthlyMemos();
+  loadMonthlyDreams();
+});
 </script>
 
 <style scoped>
@@ -551,6 +619,7 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
   padding-left: 1.8rem;
   border-left: 1px solid rgba(205, 180, 219, 0.3);
   min-width: 0; /* 폭 확장으로 인한 튐 방지 */
+  height: 100%;
 }
 
 .right-column .memo-section {
@@ -568,6 +637,7 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
   padding: 1rem;
   background: linear-gradient(135deg, rgba(205, 180, 219, 0.15), rgba(255, 200, 221, 0.15), rgba(162, 210, 255, 0.15));
   border-radius: 20px;
+  margin-bottom: 1.5rem;
 }
 
 .month-nav-btn {
@@ -593,7 +663,7 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
 
 .current-month {
   font-family: "Dongle", sans-serif;
-  font-size: 2rem;
+  font-size: 3rem;
   font-weight: 700;
   color: #4c2b7b;
   min-width: 180px;
@@ -719,41 +789,6 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
   width: 20px;
   height: 20px;
   stroke: #8a6aa8;
-}
-
-.keyword-cloud {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: center;
-  padding: 1.5rem 0;
-}
-
-.keyword-tag {
-  font-weight: 700;
-  transition: all 0.2s;
-  cursor: default;
-  padding: 0.25rem 0.5rem;
-  border-radius: 8px;
-}
-
-.keyword-tag:hover {
-  transform: scale(1.1);
-}
-
-.keyword-tag.color-purple {
-  color: #b799c7;
-  background: rgba(205, 180, 219, 0.2);
-}
-
-.keyword-tag.color-pink {
-  color: #e091a3;
-  background: rgba(255, 200, 221, 0.3);
-}
-
-.keyword-tag.color-blue {
-  color: #7ba3d0;
-  background: rgba(162, 210, 255, 0.3);
 }
 
 /* 메모 섹션 */
@@ -1035,7 +1070,7 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
 
 .memo-empty {
   text-align: center;
-  padding: 2rem 1rem;
+  padding-top: 2rem;
   color: #aaa;
   font-style: italic;
 }
@@ -1082,6 +1117,115 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
   gap: 0.75rem;
 }
 
+.dream-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dream-pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 1rem 0;
+}
+
+.page-btn {
+  padding: 0.35rem 0.45rem;
+  border: 1px solid rgba(205, 180, 219, 0.4);
+  border-radius: 10px;
+  background: white;
+  color: #8a6aa8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-btn.icon svg {
+  display: block;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: rgba(205, 180, 219, 0.22);
+  color: #754f9b;
+  transform: translateY(-1px);
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.page-indicator {
+  font-family: "Dongle", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #6a4a88;
+  padding: 0rem 0.45rem;
+  border-radius: 12px;
+  background: rgba(205, 180, 219, 0.18);
+  box-shadow: 0 4px 10px rgba(205, 180, 219, 0.15);
+}
+
+.lock-card {
+  margin: 1.2rem auto 0;
+  padding:11.4rem 2.2rem;
+  border-radius: 32px;
+  border: 1px solid rgba(205, 180, 219, 0.32);
+  background: radial-gradient(circle at 18% 18%, rgba(255, 200, 221, 0.22), transparent 40%),
+    radial-gradient(circle at 82% 32%, rgba(162, 210, 255, 0.22), transparent 45%),
+    linear-gradient(135deg, rgba(205, 180, 219, 0.2), rgba(255, 200, 221, 0.18), rgba(162, 210, 255, 0.18));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6rem;
+  box-shadow: 0 18px 40px rgba(205, 180, 219, 0.24);
+  text-align: center;
+}
+
+.lock-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.lock-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 1.45rem;
+  align-items: center;
+}
+
+.lock-caption .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #7a5fa3;
+  font-weight: 800;
+  font-size: 0.92rem;
+  box-shadow: 0 12px 24px rgba(205, 180, 219, 0.24);
+}
+
+.lock-caption .caption-main {
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #6f4d95;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0.8rem 1.1rem;
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 10px 24px rgba(205, 180, 219, 0.18);
+}
+
+.lock-caption .caption-sub {
+  font-size: 0.98rem;
+  color: #8a6aa8;
+  font-weight: 700;
+}
+
 .dream-item {
   display: flex;
   align-items: center;
@@ -1117,9 +1261,10 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.5rem;
   color: white;
   flex-shrink: 0;
+  font-family: "Dongle", sans-serif;
 }
 
 .dream-date-badge.color-purple {
@@ -1144,6 +1289,9 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
   font-size: 1rem;
   color: #333;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dream-info p {
@@ -1179,6 +1327,12 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
 }
 
 /* 반응형 */
+@media (max-width: 1040px) {
+  .stat-content {
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 900px) {
   .monthly-analysis-content {
     grid-template-columns: 1fr;
@@ -1191,6 +1345,10 @@ watch([currentYear, currentMonth], loadMonthlyMemos);
 
   .right-column .memo-section {
     max-height: none;
+  }
+
+  .stat-content {
+    flex-direction: row;
   }
 }
 
