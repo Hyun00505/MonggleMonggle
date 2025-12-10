@@ -92,8 +92,8 @@ public class DreamResultService {
                 .build();
     }
     
-    // AI 분석 결과 수정 (이미지 URL)
-    public void updateDreamResult(Long userId, Long dreamId, UpdateDreamResultRequest request) {
+    // AI 분석 결과 수정 (재해몽 포함)
+    public Long updateDreamResult(Long userId, Long dreamId, UpdateDreamResultRequest request) {
         // 꿈 일기 존재 확인
         Dream dream = dreamsDao.findById(dreamId)
                 .orElseThrow(() -> new ResourceNotFoundException("꿈 일기를 찾을 수 없습니다."));
@@ -107,8 +107,40 @@ public class DreamResultService {
         DreamResult result = dreamsResultsDao.findByDreamId(dreamId)
                 .orElseThrow(() -> new ResourceNotFoundException("분석 결과를 찾을 수 없습니다."));
         
-        result.setImageUrl(request.getImageUrl());
+        // 해몽/운세/행운 정보 업데이트
+        if (request.getDreamInterpretation() != null) {
+            result.setDreamInterpretation(request.getDreamInterpretation());
+        }
+        if (request.getTodayFortuneSummary() != null) {
+            result.setTodayFortuneSummary(request.getTodayFortuneSummary());
+        }
+        if (request.getLuckyColor() != null) {
+            if (request.getLuckyColor().getName() != null) {
+                result.setLuckyColorName(request.getLuckyColor().getName());
+            }
+            if (request.getLuckyColor().getNumber() != null) {
+                result.setLuckyColorNumber(request.getLuckyColor().getNumber());
+            }
+            if (request.getLuckyColor().getReason() != null) {
+                result.setLuckyColorReason(request.getLuckyColor().getReason());
+            }
+        }
+        if (request.getLuckyItem() != null) {
+            if (request.getLuckyItem().getName() != null) {
+                result.setLuckyItemName(request.getLuckyItem().getName());
+            }
+            if (request.getLuckyItem().getReason() != null) {
+                result.setLuckyItemReason(request.getLuckyItem().getReason());
+            }
+        }
+        
+        // 이미지 URL은 null일 수 있으므로 분기 처리
+        if (request.getImageUrl() != null) {
+            result.setImageUrl(request.getImageUrl());
+        }
         dreamsResultsDao.updateDreamResult(result);
+        
+        return result.getId();
     }
     
     // AI 분석 결과 삭제
