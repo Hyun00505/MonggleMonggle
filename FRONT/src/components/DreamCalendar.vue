@@ -1,17 +1,17 @@
 <template>
   <div class="calendar-wrapper">
     <h1 class="service-title">몽글몽글</h1>
-    
+
     <div class="calendar-card">
       <!-- Calendar Grid -->
       <div class="calendar-body">
         <div class="nav-row">
           <button @click="changeMonth(-1)" class="nav-btn" aria-label="Previous Month">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15 19L8 12L15 5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15 19L8 12L15 5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </button>
-          
+
           <div class="header-selects">
             <div class="select-wrapper">
               <select v-model="currentDateModel" class="custom-select date-select">
@@ -24,7 +24,7 @@
 
           <button @click="changeMonth(1)" class="nav-btn" aria-label="Next Month">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </button>
         </div>
@@ -32,28 +32,31 @@
         <!-- Wrapped in grid-wrapper for border -->
         <div class="grid-wrapper">
           <div class="calendar-grid">
-            <div v-for="(day, index) in weekDays" :key="day" class="weekday-header"
+            <div
+              v-for="(day, index) in weekDays"
+              :key="day"
+              class="weekday-header"
               :class="{
                 'sun-header': index === 0,
-                'sat-header': index === 6
+                'sat-header': index === 6,
               }"
             >
               {{ day }}
             </div>
-            
+
             <div v-for="n in paddingDays" :key="'pad-' + n" class="day-cell padding"></div>
 
-            <div 
-              v-for="day in daysInMonth" 
-              :key="day" 
+            <div
+              v-for="day in daysInMonth"
+              :key="day"
               class="day-cell"
-              :class="{ 
-                'today': isToday(day), 
+              :class="{
+                today: isToday(day),
                 'has-post': getPost(day),
                 'sun-col': new Date(currentDate.getFullYear(), currentDate.getMonth(), day).getDay() === 0,
                 'sat-col': new Date(currentDate.getFullYear(), currentDate.getMonth(), day).getDay() === 6,
                 'weekday-col': new Date(currentDate.getFullYear(), currentDate.getMonth(), day).getDay() !== 0 && new Date(currentDate.getFullYear(), currentDate.getMonth(), day).getDay() !== 6,
-                'warning-active': isWarningVisible(day)
+                'warning-active': isWarningVisible(day),
               }"
               @click="handleDateClick(day)"
             >
@@ -66,17 +69,22 @@
 
               <!-- Hide number if post exists -->
               <span v-if="!getPost(day)" class="day-number">{{ day }}</span>
-              
+
               <!-- Star Indicator (Centered and Larger) -->
               <!-- 해몽 완료: 행운의 색상 / 해몽 안함: 흰색 -->
               <div v-if="getPost(day)" class="star-indicator" :style="{ color: getStarColor(day) }">
                 <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" 
-                        stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+                  <path
+                    d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+                    stroke="currentColor"
+                    stroke-width="3"
+                    stroke-linejoin="round"
+                    stroke-linecap="round"
+                  />
                 </svg>
               </div>
             </div>
-            
+
             <!-- Fixed size: Fill remaining cells -->
             <div v-for="n in trailingPaddingDays" :key="'trail-' + n" class="day-cell padding"></div>
           </div>
@@ -87,38 +95,48 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch } from "vue";
 
 const props = defineProps({
   initialDate: {
     type: Date,
-    default: () => new Date()
+    default: () => new Date(),
   },
   postedDates: {
     type: Object,
-    default: () => ({})
-  }
+    default: () => ({}),
+  },
 });
 
-const emit = defineEmits(['date-click']);
+const emit = defineEmits(["date-click", "month-change"]);
 
 const currentDate = ref(new Date(props.initialDate));
-const weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const weekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 watch(currentDate, () => {
   clearWarning();
 });
 
+// 부모에서 initialDate가 바뀌면 현재 달도 동기화
+watch(
+  () => props.initialDate,
+  (val) => {
+    if (val) {
+      currentDate.value = new Date(val);
+    }
+  }
+);
+
 const showWarning = ref(false);
-const warningMessage = ref('');
+const warningMessage = ref("");
 const warningDay = ref(null);
 const warningDateKey = ref(null);
 let warningTimeout = null;
 
 function getDateKey(day) {
   const year = currentDate.value.getFullYear();
-  const month = String(currentDate.value.getMonth() + 1).padStart(2, '0');
-  const dayStr = String(day).padStart(2, '0');
+  const month = String(currentDate.value.getMonth() + 1).padStart(2, "0");
+  const dayStr = String(day).padStart(2, "0");
   return `${year}-${month}-${dayStr}`;
 }
 
@@ -137,9 +155,9 @@ function triggerWarning(day, message) {
   warningDay.value = day;
   warningDateKey.value = getDateKey(day);
   showWarning.value = true;
-  
+
   if (warningTimeout) clearTimeout(warningTimeout);
-  
+
   warningTimeout = setTimeout(() => {
     showWarning.value = false;
     warningDay.value = null;
@@ -157,10 +175,10 @@ const dateOptions = computed(() => {
   for (let year = startYear; year <= endYear; year++) {
     for (let month = 0; month < 12; month++) {
       // Format: 2025. 01
-      const monthStr = String(month + 1).padStart(2, '0');
+      const monthStr = String(month + 1).padStart(2, "0");
       options.push({
         label: `${year}. ${monthStr}`,
-        value: `${year}-${month}` // value for unique identification
+        value: `${year}-${month}`, // value for unique identification
       });
     }
   }
@@ -175,13 +193,14 @@ const currentDateModel = computed({
     return `${year}-${month}`;
   },
   set: (value) => {
-    const [year, month] = value.split('-').map(Number);
+    const [year, month] = value.split("-").map(Number);
     const newDate = new Date(currentDate.value);
     newDate.setFullYear(year);
     newDate.setMonth(month);
     currentDate.value = newDate;
+    emitMonthChange();
     clearWarning();
-  }
+  },
 });
 
 const daysInMonth = computed(() => {
@@ -207,30 +226,35 @@ function changeMonth(delta) {
   const newDate = new Date(currentDate.value);
   newDate.setMonth(newDate.getMonth() + delta);
   currentDate.value = newDate;
+  emitMonthChange();
   clearWarning();
 }
 
+function emitMonthChange() {
+  emit("month-change", {
+    year: currentDate.value.getFullYear(),
+    // fetchDreamsByMonth가 1~12 값을 기대하므로 +1
+    month: currentDate.value.getMonth() + 1,
+  });
+}
+
 function handleDateClick(day) {
-  const selectedDate = new Date(
-    currentDate.value.getFullYear(),
-    currentDate.value.getMonth(),
-    day
-  );
-  
+  const selectedDate = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth(), day);
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   if (selectedDate > today) {
-    triggerWarning(day, '미래의 꿈은 아직 꿀 수 없어요! 🌙');
+    triggerWarning(day, "미래의 꿈은 아직 꿀 수 없어요! 🌙");
     return;
   }
 
   if (selectedDate < today && !getPost(day)) {
-    triggerWarning(day, '이 날은 기록된 꿈이 없어요 ☁️');
+    triggerWarning(day, "이 날은 기록된 꿈이 없어요 ☁️");
     return;
   }
 
-  emit('date-click', selectedDate);
+  emit("date-click", selectedDate);
 }
 
 function getPost(day) {
@@ -241,15 +265,15 @@ function getPost(day) {
 // 별 색상 결정: 해몽 완료면 행운의 색상, 아니면 흰색
 function getStarColor(day) {
   const post = getPost(day);
-  if (!post) return '#FFFFFF';
-  
+  if (!post) return "#FFFFFF";
+
   // 해몽 결과가 있고 색상이 지정되어 있으면 그 색상 사용
-  if (post.hasResult && post.color && post.color !== '#FFFFFF') {
+  if (post.hasResult && post.color && post.color !== "#FFFFFF") {
     return post.color;
   }
-  
+
   // 해몽 안 했으면 흰색
-  return '#FFFFFF';
+  return "#FFFFFF";
 }
 
 function isWarningVisible(day) {
@@ -258,15 +282,13 @@ function isWarningVisible(day) {
 
 function isToday(day) {
   const today = new Date();
-  return day === today.getDate() && 
-         currentDate.value.getMonth() === today.getMonth() && 
-         currentDate.value.getFullYear() === today.getFullYear();
+  return day === today.getDate() && currentDate.value.getMonth() === today.getMonth() && currentDate.value.getFullYear() === today.getFullYear();
 }
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Dongle:wght@300;400;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Dongle:wght@300;400;700&display=swap");
 
 .calendar-wrapper {
   display: flex;
@@ -279,21 +301,21 @@ function isToday(day) {
 /* Removed .title-cloud styles */
 
 .service-title {
-  font-family: 'Dongle', sans-serif;
+  font-family: "Dongle", sans-serif;
   font-size: 5rem;
   font-weight: 700;
   /* Text Gradient: Pastel Purple -> Pink -> Blue (Original Lighter Version) */
-  background: linear-gradient(to right, #CDB4DB, #FFC8DD, #A2D2FF);
+  background: linear-gradient(to right, #cdb4db, #ffc8dd, #a2d2ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   color: transparent; /* Fallback */
-  
+
   /* Restore spacing */
   margin: 0 0 2rem 0;
   line-height: 1.2;
   letter-spacing: 2px;
-  
+
   /* Restore shadow for dark background visibility */
   filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.3));
 }
@@ -305,7 +327,7 @@ function isToday(day) {
   padding: 1.2rem;
   width: 100%;
   box-shadow: 0 20px 60px rgba(100, 100, 200, 0.15);
-  font-family: 'Nunito', sans-serif;
+  font-family: "Nunito", sans-serif;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -313,7 +335,6 @@ function isToday(day) {
 }
 
 /* Removed text title styles */
-
 
 .calendar-body {
   width: 100%;
@@ -340,7 +361,7 @@ function isToday(day) {
   appearance: none;
   background-color: transparent;
   border: none;
-  font-family: 'Nunito', sans-serif !important;
+  font-family: "Nunito", sans-serif !important;
   font-weight: 800;
   color: #333;
   cursor: pointer;
@@ -353,7 +374,7 @@ function isToday(day) {
 }
 
 .custom-select:hover {
-  background-color: #f5f5f5; 
+  background-color: #f5f5f5;
 }
 
 /* Remove custom arrow */
@@ -374,7 +395,7 @@ function isToday(day) {
 }
 
 .nav-btn:hover {
-  color: #8EC5FC;
+  color: #8ec5fc;
   background-color: #f0f4f8;
   border-radius: 50%;
 }
@@ -397,7 +418,7 @@ function isToday(day) {
 /* Saturday Column (7th column) - Handled by dynamic classes */
 
 .weekday-header {
-  background-color: #FAFAFA; /* Very Light Gray */
+  background-color: #fafafa; /* Very Light Gray */
   font-size: 1rem;
   color: #777;
   font-weight: 800;
@@ -407,13 +428,13 @@ function isToday(day) {
 }
 
 .sun-header {
-  background-color: #FFF5F6; /* Very Pale Pink */
-  color: #FF8A80;
+  background-color: #fff5f6; /* Very Pale Pink */
+  color: #ff8a80;
 }
 
 .sat-header {
-  background-color: #F2F9FF; /* Very Pale Blue */
-  color: #82B1FF;
+  background-color: #f2f9ff; /* Very Pale Blue */
+  color: #82b1ff;
 }
 
 .day-cell {
@@ -421,7 +442,7 @@ function isToday(day) {
   aspect-ratio: 1; /* Keeps cells square */
   width: 100%;
   height: auto;
-   background-color: #FAF5FC; /* Very Pale Purple */
+  background-color: #faf5fc; /* Very Pale Purple */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -430,15 +451,15 @@ function isToday(day) {
   transition: all 0.2s;
   position: relative;
   margin: 0;
-  border-radius: 20%; 
+  border-radius: 20%;
 }
 
 .sun-col {
-  background-color: #FFF5F6 !important; /* Very Pale Pink */
+  background-color: #fff5f6 !important; /* Very Pale Pink */
 }
 
 .sat-col {
-  background-color: #F2F9FF !important; /* Very Pale Blue */
+  background-color: #f2f9ff !important; /* Very Pale Blue */
 }
 
 .day-cell.padding {
@@ -453,7 +474,7 @@ function isToday(day) {
 }
 
 .day-cell.today:not(.has-post) {
-  background: linear-gradient(135deg, #CDB4DB, #FFC8DD, #A2D2FF); /* Gradient matching title */
+  background: linear-gradient(135deg, #cdb4db, #ffc8dd, #a2d2ff); /* Gradient matching title */
   border: none;
   color: #fff;
   box-shadow: 0 4px 12px rgba(255, 200, 221, 0.3);
@@ -471,7 +492,8 @@ function isToday(day) {
 } */
 
 @keyframes blink-shadow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 8px rgba(205, 180, 219, 0.4);
     transform: scale(1);
   }
@@ -491,7 +513,7 @@ function isToday(day) {
 }
 
 .day-cell.today .day-number {
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .star-indicator {
@@ -510,7 +532,7 @@ function isToday(day) {
 .star-indicator svg {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 2px 1px rgba(0,0,0,0.15));
+  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.15));
 }
 
 .mini-warning-bubble {
@@ -525,7 +547,7 @@ function isToday(day) {
   z-index: 100;
   font-weight: 700;
   font-size: 0.75rem;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   pointer-events: none;
   white-space: nowrap;
   display: flex;
@@ -534,7 +556,7 @@ function isToday(day) {
 }
 
 .mini-warning-bubble::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 100%; /* Arrow pointing down */
   left: 50%;
@@ -561,11 +583,11 @@ function isToday(day) {
     padding: 1.2rem;
     max-width: 95%;
   }
-  
+
   .day-number {
     font-size: 1.3rem; /* Increased from 1.1rem */
   }
-  
+
   .custom-select {
     font-size: 1.8rem; /* Increased from 1.5rem */
   }
@@ -638,7 +660,7 @@ function isToday(day) {
   }
 
   .day-number {
-    font-size: 1.0rem; /* Increased from 0.9rem */
+    font-size: 1rem; /* Increased from 0.9rem */
   }
 
   .star-indicator {

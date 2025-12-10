@@ -1,31 +1,21 @@
 <script setup>
-import { onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { storeToRefs } from 'pinia';
-import { useDreamEntriesStore } from '../stores/dreamEntriesStore';
+import { onMounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { storeToRefs } from "pinia";
+import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
 
 const router = useRouter();
 const route = useRoute();
 const dreamEntriesStore = useDreamEntriesStore();
-const {
-  dreamTitle,
-  dreamContent,
-  formattedSelectedDate,
-  showAnalysisOption,
-  selectedDate,
-  selectedEmotion,
-  hasExistingResult,
-  canReinterpret,
-  remainingReinterprets
-} = storeToRefs(dreamEntriesStore);
+const { dreamTitle, dreamContent, formattedSelectedDate, showAnalysisOption, selectedDate, selectedEmotion, hasExistingResult, canReinterpret, remainingReinterprets } = storeToRefs(dreamEntriesStore);
 const { saveDream, deleteDream, setEmotion, enableEditMode, resetWriteState, setSelectedDateWithResult } = dreamEntriesStore;
 
 const emotions = [
-  { value: 1, label: '매우 나쁨', icon: '😫' },
-  { value: 2, label: '나쁨', icon: '😞' },
-  { value: 3, label: '보통', icon: '😐' },
-  { value: 4, label: '좋음', icon: '🙂' },
-  { value: 5, label: '매우 좋음', icon: '🥰' }
+  { value: 1, label: "매우 나쁨", icon: "😫" },
+  { value: 2, label: "나쁨", icon: "😞" },
+  { value: 3, label: "보통", icon: "😐" },
+  { value: 4, label: "좋음", icon: "🙂" },
+  { value: 5, label: "매우 좋음", icon: "🥰" },
 ];
 
 function updateEmotion(event) {
@@ -34,42 +24,58 @@ function updateEmotion(event) {
   }
 }
 
-onMounted(async () => {
-  // 새로고침 시 쿼리 파라미터에서 날짜 복원 (해몽 결과도 함께 조회)
-  if (!selectedDate.value && route.query.date) {
-    const dateStr = route.query.date;
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const restoredDate = new Date(year, month - 1, day);
+async function restoreFromQuery() {
+  const dateStr = route.query.date;
+  if (!dateStr) return;
+
+  const [year, month, day] = String(dateStr).split("-").map(Number);
+  const restoredDate = new Date(year, month - 1, day);
+
+  // 이미 선택된 날짜와 다를 때만 갱신
+  const currentKey = selectedDate.value ? formatDateKey(selectedDate.value) : null;
+  if (currentKey !== dateStr) {
     await setSelectedDateWithResult(restoredDate);
   }
-  
+}
+
+onMounted(async () => {
+  await restoreFromQuery();
+
   // 날짜가 여전히 없으면 캘린더로 이동
   if (!selectedDate.value && !route.query.date) {
-    router.replace({ name: 'calendar' });
+    router.replace({ name: "calendar" });
   }
 });
 
+// 다른 화면에서 쿼리 date가 바뀌어도 반영되도록 감시
+watch(
+  () => route.query.date,
+  async () => {
+    await restoreFromQuery();
+  }
+);
+
 function handleBack() {
   resetWriteState();
-  router.push({ name: 'calendar' });
+  router.push({ name: "calendar" });
 }
 
 function handleSave() {
   if (!dreamTitle.value?.trim() || !dreamContent.value?.trim()) {
-    alert('제목과 내용을 모두 입력해주세요.');
+    alert("제목과 내용을 모두 입력해주세요.");
     return;
   }
 
   const saved = saveDream();
   if (!saved) {
-    alert('날짜를 먼저 선택해주세요.');
+    alert("날짜를 먼저 선택해주세요.");
   }
 }
 
 function handleDelete() {
-  if (confirm('정말로 이 꿈 기록을 삭제하시겠습니까?')) {
+  if (confirm("정말로 이 꿈 기록을 삭제하시겠습니까?")) {
     deleteDream();
-    router.push({ name: 'calendar' });
+    router.push({ name: "calendar" });
   }
 }
 
@@ -80,30 +86,30 @@ function handleEdit() {
 function handleAnalysis() {
   // 현재 날짜를 쿼리 파라미터로 전달
   const dateKey = route.query.date || formatDateKey(selectedDate.value);
-  router.push({ name: 'loading', query: { date: dateKey } });
+  router.push({ name: "loading", query: { date: dateKey } });
 }
 
 // 해몽 결과 보기
 function handleViewResult() {
   const dateKey = route.query.date || formatDateKey(selectedDate.value);
-  router.push({ name: 'analysis', query: { date: dateKey } });
+  router.push({ name: "analysis", query: { date: dateKey } });
 }
 
 // 다시 해몽하기
 function handleReinterpret() {
   if (!canReinterpret.value) {
-    alert('재해몽 횟수를 모두 사용했습니다. (최대 2회)');
+    alert("재해몽 횟수를 모두 사용했습니다. (최대 2회)");
     return;
   }
   const dateKey = route.query.date || formatDateKey(selectedDate.value);
-  router.push({ name: 'loading', query: { date: dateKey } });
+  router.push({ name: "loading", query: { date: dateKey } });
 }
 
 function formatDateKey(date) {
-  if (!date) return '';
+  if (!date) return "";
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 </script>
@@ -133,49 +139,45 @@ function formatDateKey(date) {
         </div>
       </div>
 
-       <div class="side-actions">
-         <div class="emotion-selector" :class="{ 'read-only': showAnalysisOption }">
-           <p class="emotion-label">꿈 속의 나</p>
-           
-           <div class="current-emotion-display">
-             <transition name="scale" mode="out-in">
-               <div :key="selectedEmotion || 'none'" class="emoji-wrapper">
-                 <span class="main-emoji">
-                   {{ selectedEmotion ? emotions.find(e => e.value === selectedEmotion)?.icon : '🤔' }}
-                 </span>
-                 <span class="main-label">
-                   {{ selectedEmotion ? emotions.find(e => e.value === selectedEmotion)?.label : '선택해주세요' }}
-                 </span>
-               </div>
-             </transition>
-           </div>
+      <div class="side-actions">
+        <div class="emotion-selector" :class="{ 'read-only': showAnalysisOption }">
+          <p class="emotion-label">꿈 속의 나</p>
 
-           <div class="slider-container">
-             <input 
-               type="range" 
-               min="1" 
-               max="5" 
-               step="1" 
-               :value="selectedEmotion || 3" 
-               @input="updateEmotion"
-               class="emotion-range"
-               :disabled="showAnalysisOption"
-               :style="{ backgroundSize: ((selectedEmotion || 3) - 1) * 25 + '% 100%' }"
-             >
-             <div class="range-marks">
-               <span v-for="n in 5" :key="n" class="mark" :class="{ active: selectedEmotion === n }"></span>
-             </div>
-           </div>
-         </div>
+          <div class="current-emotion-display">
+            <transition name="scale" mode="out-in">
+              <div :key="selectedEmotion || 'none'" class="emoji-wrapper">
+                <span class="main-emoji">
+                  {{ selectedEmotion ? emotions.find((e) => e.value === selectedEmotion)?.icon : "🤔" }}
+                </span>
+                <span class="main-label">
+                  {{ selectedEmotion ? emotions.find((e) => e.value === selectedEmotion)?.label : "선택해주세요" }}
+                </span>
+              </div>
+            </transition>
+          </div>
 
-         <transition name="fade" mode="out-in">
+          <div class="slider-container">
+            <input
+              type="range"
+              min="1"
+              max="5"
+              step="1"
+              :value="selectedEmotion || 3"
+              @input="updateEmotion"
+              class="emotion-range"
+              :disabled="showAnalysisOption"
+              :style="{ backgroundSize: ((selectedEmotion || 3) - 1) * 25 + '% 100%' }"
+            />
+            <div class="range-marks">
+              <span v-for="n in 5" :key="n" class="mark" :class="{ active: selectedEmotion === n }"></span>
+            </div>
+          </div>
+        </div>
+
+        <transition name="fade" mode="out-in">
           <!-- 작성 중일 때: 저장 버튼 -->
           <div v-if="!showAnalysisOption" key="save-mode" class="button-group">
-            <button
-              @click="handleSave"
-              class="action-btn save-btn"
-              aria-label="꿈 기록 저장"
-            >
+            <button @click="handleSave" class="action-btn save-btn" aria-label="꿈 기록 저장">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                 <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -187,11 +189,7 @@ function formatDateKey(date) {
 
           <!-- 작성 완료 시: 수정, 삭제, 분석 버튼 -->
           <div v-else key="view-mode" class="button-group">
-            <button
-              @click="handleEdit"
-              class="action-btn edit-btn"
-              aria-label="꿈 기록 수정"
-            >
+            <button @click="handleEdit" class="action-btn edit-btn" aria-label="꿈 기록 수정">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -199,11 +197,7 @@ function formatDateKey(date) {
               <span class="label">수정하기</span>
             </button>
 
-            <button
-              @click="handleDelete"
-              class="action-btn delete-btn"
-              aria-label="꿈 기록 삭제"
-            >
+            <button @click="handleDelete" class="action-btn delete-btn" aria-label="꿈 기록 삭제">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -214,11 +208,7 @@ function formatDateKey(date) {
             </button>
 
             <!-- 해몽 결과가 없을 때: AI 꿈해몽 버튼 -->
-            <button
-              v-if="!hasExistingResult"
-              @click="handleAnalysis"
-              class="action-btn analysis-btn"
-            >
+            <button v-if="!hasExistingResult" @click="handleAnalysis" class="action-btn analysis-btn">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sparkle-icon">
                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
                 <path d="M4.5 4.5L5.5 6.5L6.5 4.5L8.5 3.5L6.5 2.5L5.5 0.5L4.5 2.5L2.5 3.5L4.5 4.5Z" fill="currentColor" stroke="none" class="twinkle"></path>
@@ -229,11 +219,7 @@ function formatDateKey(date) {
 
             <!-- 해몽 결과가 있을 때: 결과 보기 + 다시 해몽하기 버튼 -->
             <template v-if="hasExistingResult">
-              <button
-                @click="handleViewResult"
-                class="action-btn view-result-btn"
-                aria-label="해몽 결과 보기"
-              >
+              <button @click="handleViewResult" class="action-btn view-result-btn" aria-label="해몽 결과 보기">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
@@ -241,13 +227,7 @@ function formatDateKey(date) {
                 <span class="label">결과 보기</span>
               </button>
 
-              <button
-                @click="handleReinterpret"
-                class="action-btn reinterpret-btn"
-                :class="{ disabled: !canReinterpret }"
-                :disabled="!canReinterpret"
-                aria-label="다시 해몽하기"
-              >
+              <button @click="handleReinterpret" class="action-btn reinterpret-btn" :class="{ disabled: !canReinterpret }" :disabled="!canReinterpret" aria-label="다시 해몽하기">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M23 4v6h-6"></path>
                   <path d="M1 20v-6h6"></path>
@@ -332,11 +312,11 @@ function formatDateKey(date) {
   .current-emotion-display {
     height: 60px;
   }
-  
+
   .main-emoji {
     font-size: 2.5rem !important;
   }
-  
+
   .main-label {
     font-size: 0.8rem !important;
   }
@@ -351,7 +331,7 @@ function formatDateKey(date) {
 
 .main-emoji {
   font-size: 3rem;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
   animation: bounce 2s infinite ease-in-out;
 }
 
@@ -410,7 +390,7 @@ function formatDateKey(date) {
   background: #fff;
   border: 4px solid #cdb4db;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s;
 }
 
@@ -425,7 +405,7 @@ function formatDateKey(date) {
   background: #fff;
   border: 4px solid #cdb4db;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s;
 }
 
@@ -446,7 +426,7 @@ function formatDateKey(date) {
   height: 8px;
   background: #fff;
   border-radius: 50%;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .mark.active {
@@ -465,8 +445,13 @@ function formatDateKey(date) {
 }
 
 @keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
 }
 
 .button-group {
@@ -518,7 +503,7 @@ function formatDateKey(date) {
   font-size: 1.2rem;
   color: #333;
   font-weight: 700;
-  font-family: 'Nunito', sans-serif;
+  font-family: "Nunito", sans-serif;
 }
 
 .spacer {
@@ -566,7 +551,7 @@ function formatDateKey(date) {
   font-size: 1.2rem;
   line-height: 1.6;
   color: #555;
-  font-family: 'Nunito', sans-serif;
+  font-family: "Nunito", sans-serif;
   padding-top: 0.5rem;
   background: transparent;
   min-height: 300px;
@@ -620,12 +605,12 @@ function formatDateKey(date) {
   height: 100px;
   font-weight: 700;
   font-size: 0.9rem;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .action-btn:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
 }
 
 .save-btn {
@@ -654,7 +639,7 @@ function formatDateKey(date) {
 
 /* 해몽 결과 보기 버튼 - 청록/민트 톤 */
 .view-result-btn {
-  background: linear-gradient(135deg, #64B5F6, #4DD0E1);
+  background: linear-gradient(135deg, #64b5f6, #4dd0e1);
   color: white;
   position: relative;
   overflow: hidden;
@@ -663,7 +648,7 @@ function formatDateKey(date) {
 }
 
 .view-result-btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
@@ -674,13 +659,13 @@ function formatDateKey(date) {
 }
 
 .view-result-btn:hover {
-  background: linear-gradient(135deg, #42A5F5, #26C6DA);
+  background: linear-gradient(135deg, #42a5f5, #26c6da);
   box-shadow: 0 8px 20px rgba(77, 208, 225, 0.35);
 }
 
 /* 다시 해몽하기 버튼 - 분홍/코랄 톤 */
 .reinterpret-btn {
-  background: linear-gradient(135deg, #F48FB1, #CE93D8);
+  background: linear-gradient(135deg, #f48fb1, #ce93d8);
   color: white;
   position: relative;
   overflow: hidden;
@@ -689,7 +674,7 @@ function formatDateKey(date) {
 }
 
 .reinterpret-btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
@@ -700,7 +685,7 @@ function formatDateKey(date) {
 }
 
 .reinterpret-btn:hover:not(.disabled) {
-  background: linear-gradient(135deg, #F06292, #BA68C8);
+  background: linear-gradient(135deg, #f06292, #ba68c8);
   box-shadow: 0 8px 20px rgba(206, 147, 216, 0.4);
 }
 
@@ -728,7 +713,7 @@ function formatDateKey(date) {
 
 .reinterpret-btn.disabled:hover {
   transform: none;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .reinterpret-btn.disabled .remaining-count {
@@ -737,7 +722,7 @@ function formatDateKey(date) {
 
 /* 반짝이는 효과 */
 .analysis-btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
@@ -761,14 +746,27 @@ function formatDateKey(date) {
 }
 
 @keyframes shine {
-  0% { left: -100%; }
-  20% { left: 100%; }
-  100% { left: 100%; }
+  0% {
+    left: -100%;
+  }
+  20% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 @keyframes twinkle {
-  0%, 100% { transform: scale(0.5); opacity: 0.5; }
-  50% { transform: scale(1.2); opacity: 1; }
+  0%,
+  100% {
+    transform: scale(0.5);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
 }
 
 .icon {
@@ -798,16 +796,16 @@ function formatDateKey(date) {
     justify-content: center;
     align-items: center;
     border-radius: 16px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   }
 
   /* 수정, 삭제 버튼: 아이콘만 표시 */
-  .edit-btn, 
+  .edit-btn,
   .delete-btn {
     flex: 0 0 56px; /* 정사각형 형태 */
     width: 56px;
   }
-  
+
   .edit-btn .label,
   .delete-btn .label {
     display: none;
@@ -848,4 +846,3 @@ function formatDateKey(date) {
   transform: translateY(10px);
 }
 </style>
-
