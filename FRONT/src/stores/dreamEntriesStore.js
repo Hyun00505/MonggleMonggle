@@ -34,8 +34,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
   const analysisError = ref(null);
   const analysisDate = ref(null); // 분석 요청한 날짜
   const hasExistingResult = ref(false); // 기존 해몽 결과 존재 여부
-  const reinterpretCount = ref(0); // 재해몽 횟수 (최대 2회)
-  const MAX_REINTERPRET = 2; // 최대 재해몽 횟수
 
   function setSelectedDate(date) {
     selectedDate.value = date;
@@ -55,12 +53,10 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
       showAnalysisOption.value = true;
       // 기존 해몽 결과 여부 및 재해몽 횟수
       hasExistingResult.value = existingPost.hasResult ?? false;
-      reinterpretCount.value = existingPost.reinterpretCount ?? 0;
     } else {
       resetWriteFields();
       showAnalysisOption.value = false;
       hasExistingResult.value = false;
-      reinterpretCount.value = 0;
     }
   }
 
@@ -96,7 +92,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
       const result = await fetchDreamResult(existingPost.dreamId);
       if (result) {
         hasExistingResult.value = true;
-        reinterpretCount.value = result.reinterpretCount ?? 0;
         // 분석 결과도 저장
       analysisResult.value = {
         dreamInterpretation: result.dreamInterpretation,
@@ -113,7 +108,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
         posts.value[dateKey] = {
           ...existingPost,
           hasResult: true,
-          reinterpretCount: result.reinterpretCount ?? 0,
           // 해몽 결과의 행운의 색상으로 별 색상 업데이트
           color: result.luckyColor?.name ? getColorHex(result.luckyColor.name) : existingPost.color,
           luckyColorName: result.luckyColor?.name || existingPost.luckyColorName,
@@ -195,7 +189,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
           color: existingPost?.hasResult ? existingPost.color : "#FFFFFF",
           luckyColorName: existingPost?.hasResult ? existingPost.luckyColorName : null,
           hasResult: existingPost?.hasResult ?? false,
-          reinterpretCount: existingPost?.reinterpretCount ?? 0,
         },
       };
 
@@ -281,7 +274,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
             color: starColor,
             luckyColorName: dream.luckyColorName || "",
             luckyColorNumber: dream.luckyColorNumber || null,
-            reinterpretCount: 0, // 서버에서 받아와야 하지만 일단 기본값
           };
         });
         persistEntries();
@@ -378,10 +370,9 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
 
           let dbResult;
           if (hasExistingResult.value) {
-            // 재해몽: 기존 결과 업데이트
+            // 기존 결과 업데이트
             dbResult = await dreamResultService.updateDreamResult(dreamId, saveRequest);
-            reinterpretCount.value += 1;
-            console.log("✅ AI 분석 결과가 업데이트되었습니다 (재해몽 횟수:", reinterpretCount.value, ")");
+            console.log("✅ AI 분석 결과가 업데이트되었습니다.");
           } else {
             // 최초 해몽: 새로 저장
             dbResult = await dreamResultService.saveDreamResult(dreamId, saveRequest);
@@ -395,7 +386,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
           posts.value[dateKey] = {
             ...posts.value[dateKey],
             hasResult: true,
-            reinterpretCount: reinterpretCount.value,
             // 해몽 결과의 행운의 색상으로 별 색상 업데이트
             color: getColorHex(result.lucky_color.name),
             luckyColorName: result.lucky_color.name,
@@ -514,10 +504,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
 
   hydrateFromLocalStorage();
 
-  // 재해몽 가능 여부 확인
-  const canReinterpret = computed(() => reinterpretCount.value < MAX_REINTERPRET);
-  const remainingReinterprets = computed(() => MAX_REINTERPRET - reinterpretCount.value);
-
   return {
     selectedDate,
     dreamTitle,
@@ -537,9 +523,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
     analysisError,
     analysisDate,
     hasExistingResult,
-    reinterpretCount,
-    canReinterpret,
-    remainingReinterprets,
     setSelectedDate,
     setSelectedDateWithResult,
     fetchDreamResult,
