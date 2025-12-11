@@ -98,7 +98,6 @@ public class AuthService {
     }
     
     // 사용자 정보 조회
-    @Transactional(readOnly = true)
     public UserInfoResponse getUserInfo(Long userId) {
         User user = userDao.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));

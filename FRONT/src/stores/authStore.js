@@ -80,6 +80,7 @@ export const useAuthStore = defineStore("auth", () => {
         birthDate: response.birthDate,
         gender: response.gender,
         calendarType: response.calendarType,
+        coin: response.coin, // ai 꿈해몽 할 수 있는 하루 횟수
       };
 
       return response;

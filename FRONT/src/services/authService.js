@@ -33,6 +33,7 @@ export const authService = {
       birthDate: response.data.birthDate,
       gender: response.data.gender,
       calendarType: response.data.calendarType,
+      coin: response.data.coin, // ai 꿈해몽 할 수 있는 하루 횟수
     };
     localStorage.setItem("currentUser", JSON.stringify(userData));
 

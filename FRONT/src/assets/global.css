@@ -244,6 +244,56 @@ select {
   font-weight: 600;
 }
 
+/* 글래스 버튼/칩 공통 스타일 */
+.glass-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  height: 42px;
+}
+
+.glass-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-text {
+  font-family: "Nunito", sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.glass-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.5rem 0.9rem;
+  border-radius: 20px;
+  color: white;
+  font-weight: 700;
+  min-width: 70px;
+  height: 42px;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
 /* 푸터 액션 링크 스타일 */
 .footer-actions {
   display: flex;
