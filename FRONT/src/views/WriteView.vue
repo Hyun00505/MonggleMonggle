@@ -12,6 +12,21 @@ const authStore = useAuthStore();
 const { currentUser } = storeToRefs(authStore);
 const { dreamTitle, dreamContent, formattedSelectedDate, showAnalysisOption, selectedDate, selectedEmotion, hasExistingResult, posts } = storeToRefs(dreamEntriesStore);
 const isCoinDepleted = computed(() => (currentUser.value?.coin ?? 0) <= 0);
+
+// 지난 달 여부 확인 (현재 달 이전이면 true)
+const isPastMonth = computed(() => {
+  if (!selectedDate.value) return false;
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth();
+  const selectedYear = selectedDate.value.getFullYear();
+  const selectedMonth = selectedDate.value.getMonth();
+  
+  // 선택된 날짜가 현재 년월보다 이전이면 지난 달
+  return selectedYear < currentYear || 
+         (selectedYear === currentYear && selectedMonth < currentMonth);
+});
+
 const { saveDream, deleteDream, setEmotion, enableEditMode, resetWriteState, setSelectedDateWithResult, fetchDreamsByMonth, validateRequiredFields } = dreamEntriesStore;
 
 const emotions = [
@@ -101,13 +116,16 @@ function handleSave() {
 }
 
 function handleDelete() {
-  if (confirm("정말로 이 꿈 기록을 삭제하시겠습니까?")) {
+  if (confirm("정말로 이 꿈 일기를 삭제하시겠습니까?")) {
     deleteDream();
     router.push({ name: "calendar" });
   }
 }
 
 function handleEdit() {
+  if(!confirm("수정하시면 기존의 꿈 해몽 결과, 꿈 이미지 등이 모두 삭제됩니다.\n정말 수정하시겠습니까?")) {
+    return;
+  }
   enableEditMode();
 }
 
@@ -252,7 +270,8 @@ async function ensureMonthData(date) {
 
           <!-- 작성 완료 시: 수정, 삭제, 분석 버튼 -->
           <div v-else key="view-mode" class="button-group">
-            <button @click="handleEdit" class="action-btn edit-btn" aria-label="꿈 기록 수정">
+            <!-- 지난 달이 아닐 때만 수정 버튼 표시 -->
+            <button v-if="!isPastMonth" @click="handleEdit" class="action-btn edit-btn" aria-label="꿈 기록 수정">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -260,7 +279,8 @@ async function ensureMonthData(date) {
               <span class="label">수정하기</span>
             </button>
 
-            <button @click="handleDelete" class="action-btn delete-btn" aria-label="꿈 기록 삭제">
+            <!-- 지난 달이 아닐 때만 삭제 버튼 표시 -->
+            <button v-if="!isPastMonth" @click="handleDelete" class="action-btn delete-btn" aria-label="꿈 기록 삭제">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -269,7 +289,7 @@ async function ensureMonthData(date) {
               </svg>
               <span class="label">삭제하기</span>
             </button>
-            <!-- 해몽 결과가 있을 때: 결과 보기 버튼 -->
+            <!-- 해몽 결과가 있을 때: 결과 보기 버튼 (지난 달도 조회 가능) -->
               <button v-if="hasExistingResult" @click="handleViewResult" class="action-btn view-result-btn" aria-label="해몽 결과 보기">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -278,8 +298,8 @@ async function ensureMonthData(date) {
                 <span class="label">결과 보기</span>
               </button>
               
-              <!-- 해몽 결과가 없을 때: AI 꿈해몽 버튼 v-if="!hasExistingResult" -->
-              <button  @click="handleAnalysis" class="action-btn analysis-btn" :class="{ disabled: (currentUser?.coin ?? 0) <= 0 }">
+              <!-- 지난 달이 아닐 때만 AI 꿈해몽 버튼 표시 -->
+              <button v-if="!isPastMonth" @click="handleAnalysis" class="action-btn analysis-btn" :class="{ disabled: (currentUser?.coin ?? 0) <= 0 }">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sparkle-icon">
                   <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
                   <path d="M4.5 4.5L5.5 6.5L6.5 4.5L8.5 3.5L6.5 2.5L5.5 0.5L4.5 2.5L2.5 3.5L4.5 4.5Z" fill="currentColor" stroke="none" class="twinkle"></path>
