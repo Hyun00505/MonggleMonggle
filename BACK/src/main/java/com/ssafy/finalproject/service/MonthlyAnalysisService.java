@@ -41,10 +41,18 @@ public class MonthlyAnalysisService {
     // 월별 꿈 통계 조회
     @Transactional(readOnly = true)
     public MonthlyAnalysisResponse getMonthlyAnalysis(Long userId, Integer year, Integer month) {
-        MonthlyAnalysis analysis = monthlyAnalysisDao.findByUserIdAndYearMonth(userId, year, month)
-                .orElseThrow(() -> new ResourceNotFoundException("월별 분석 데이터가 없습니다."));
-        
-        return toResponse(analysis);
+        return monthlyAnalysisDao.findByUserIdAndYearMonth(userId, year, month)
+                .map(this::toResponse)
+                .orElseGet(() -> MonthlyAnalysisResponse.builder()
+                        .analysisId(null)
+                        .year(year)
+                        .month(month)
+                        .dreamCount(0)
+                        .avgEmotionScore(BigDecimal.ZERO)
+                        .monthlyReport(null)
+                        .createdDate(null)
+                        .updatedDate(null)
+                        .build());
     }
     
     /**

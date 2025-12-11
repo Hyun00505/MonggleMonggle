@@ -73,6 +73,7 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<UserInfoResponse> getUserInfo() {
         Long userId = SecurityUtil.getCurrentUserId();
+        authService.resetDailyCoinIfNeeded(userId);
         UserInfoResponse response = authService.getUserInfo(userId);
         return ResponseEntity.ok(response);
     }

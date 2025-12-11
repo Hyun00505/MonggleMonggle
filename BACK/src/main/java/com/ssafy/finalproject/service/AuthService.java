@@ -15,10 +15,12 @@ import com.ssafy.finalproject.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZoneId;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +52,7 @@ public class AuthService {
                 .gender(request.getGender().toUpperCase())
                 .calendarType(request.getCalendarType())
                 .coin(5)
-                .lastCoinResetAt(java.time.LocalDateTime.now(KST))
+                .lastCoinResetAt(LocalDateTime.now(KST))
                 .build();
         
         // 저장
@@ -97,18 +99,17 @@ public class AuthService {
                 .build();
     }
     
+    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = false)
+    public void resetDailyCoinIfNeeded(Long userId) {
+        LocalDate today = LocalDate.now(KST);
+        userDao.resetDailyCoin(userId, today);
+    }
+
     // 사용자 정보 조회
     @Transactional(readOnly = true)
     public UserInfoResponse getUserInfo(Long userId) {
         User user = userDao.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
-
-        // 조회 시에도 날짜가 바뀌었으면 코인 리셋 (로그인 시 자동 리셋은 없음)
-        int reset = userDao.resetDailyCoin(userId, java.time.LocalDate.now(KST));
-        if (reset > 0) {
-            user.setCoin(5);
-            user.setLastCoinResetAt(LocalDateTime.now(KST));
-        }
         
         return UserInfoResponse.builder()
                 .userId(user.getUserId())
