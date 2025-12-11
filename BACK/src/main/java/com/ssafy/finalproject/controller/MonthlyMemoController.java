@@ -37,11 +37,14 @@ public class MonthlyMemoController {
     
     @Operation(summary = "6.1 월별 메모 조회", description = "특정 월의 메모를 조회합니다.")
     @GetMapping
-    public ResponseEntity<MonthlyMemoResponse> getMemo(
+    public ResponseEntity<java.util.List<MonthlyMemoResponse>> getMemo(
             @RequestParam Integer year,
             @RequestParam Integer month) {
         Long userId = SecurityUtil.getCurrentUserId();
-        MonthlyMemoResponse response = monthlyMemoService.getMemo(userId, year, month);
+        var response = monthlyMemoService.getMemo(userId, year, month);
+        if (response.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
         return ResponseEntity.ok(response);
     }
     

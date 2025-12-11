@@ -19,6 +19,9 @@ public interface MonthlyAnalysisDao {
             @Param("month") Integer month
     );
     
+    // 분석 ID로 조회
+    Optional<MonthlyAnalysis> findById(@Param("analysisId") Long analysisId);
+    
     // 월별 분석 수정
     void updateMonthlyAnalysis(MonthlyAnalysis analysis);
 }

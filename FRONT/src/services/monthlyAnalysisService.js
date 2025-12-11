@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 /**
  * 월간 분석 관련 API 서비스
@@ -10,7 +10,7 @@ export const monthlyAnalysisService = {
    * @param {number} month - 월
    */
   async generateMonthlyAnalysis(year, month) {
-    const response = await api.post('/monthly-analysis', { year, month });
+    const response = await api.post("/analysis/monthly", { year, month });
     return response.data;
   },
 
@@ -20,7 +20,7 @@ export const monthlyAnalysisService = {
    * @param {number} month - 월
    */
   async getMonthlyAnalysis(year, month) {
-    const response = await api.get('/monthly-analysis', {
+    const response = await api.get("/analysis/monthly", {
       params: { year, month },
     });
     return response.data;
@@ -28,10 +28,10 @@ export const monthlyAnalysisService = {
 
   /**
    * 월별 메모 저장
-   * @param {Object} memoData - { year, month, memo }
+   * @param {Object} memoData - { year, month, memoContent, memoId? }
    */
   async saveMemo(memoData) {
-    const response = await api.post('/monthly-memo', memoData);
+    const response = await api.post("/memo/monthly", memoData);
     return response.data;
   },
 
@@ -41,7 +41,7 @@ export const monthlyAnalysisService = {
    * @param {number} month - 월
    */
   async getMemo(year, month) {
-    const response = await api.get('/monthly-memo', {
+    const response = await api.get("/memo/monthly", {
       params: { year, month },
     });
     return response.data;
@@ -49,13 +49,10 @@ export const monthlyAnalysisService = {
 
   /**
    * 월별 메모 삭제
-   * @param {number} year - 연도
-   * @param {number} month - 월
+   * @param {number} memoId - 메모 ID
    */
-  async deleteMemo(year, month) {
-    const response = await api.delete('/monthly-memo', {
-      params: { year, month },
-    });
+  async deleteMemo(memoId) {
+    const response = await api.delete(`/memo/monthly/${memoId}`);
     return response.data;
   },
 
@@ -65,7 +62,7 @@ export const monthlyAnalysisService = {
    * @param {number} month - 월
    */
   async getEmotionStats(year, month) {
-    const response = await api.get('/emotions/stats', {
+    const response = await api.get("/emotions/stats", {
       params: { year, month },
     });
     return response.data;
@@ -73,4 +70,3 @@ export const monthlyAnalysisService = {
 };
 
 export default monthlyAnalysisService;
-
