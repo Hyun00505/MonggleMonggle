@@ -17,10 +17,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZoneId;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class AuthService {
+    
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
     
     private final UserDao userDao;
     private final PasswordEncoder passwordEncoder;
@@ -44,6 +48,8 @@ public class AuthService {
                 .birthDate(request.getBirthDate())
                 .gender(request.getGender().toUpperCase())
                 .calendarType(request.getCalendarType())
+                .coin(5)
+                .lastCoinResetAt(java.time.LocalDateTime.now(KST))
                 .build();
         
         // 저장
@@ -57,6 +63,7 @@ public class AuthService {
                 .gender(user.getGender())
                 .birthDate(user.getBirthDate())
                 .calendarType(user.getCalendarType())
+                .coin(user.getCoin())
                 .message("회원가입이 완료되었습니다.")
                 .build();
     }
@@ -83,6 +90,7 @@ public class AuthService {
                 .birthDate(user.getBirthDate())
                 .gender(user.getGender())
                 .calendarType(user.getCalendarType())
+                .coin(user.getCoin())
                 .token(token)
                 .message("로그인 성공")
                 .build();
@@ -101,6 +109,7 @@ public class AuthService {
                 .birthDate(user.getBirthDate())
                 .gender(user.getGender())
                 .calendarType(user.getCalendarType())
+                .coin(user.getCoin())
                 .createdDate(user.getCreatedDate())
                 .build();
     }
@@ -129,7 +138,7 @@ public class AuthService {
     
     // 회원 탈퇴
     public void deleteUser(Long userId) {
-        User user = userDao.findById(userId)
+        userDao.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
         
         userDao.deleteUser(userId);

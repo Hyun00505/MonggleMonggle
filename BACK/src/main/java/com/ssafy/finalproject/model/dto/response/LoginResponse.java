@@ -18,6 +18,7 @@ public class LoginResponse {
     private LocalDate birthDate;
     private String gender;
     private String calendarType;
+    private Integer coin;
     private String token;
     private String message;
 }

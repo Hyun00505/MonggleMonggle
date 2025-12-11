@@ -20,6 +20,8 @@ public class User {
     private LocalDate birthDate;
     private String gender; // 'M' or 'F'
     private String calendarType; // 'solar', 'lunarGeneral', 'lunarLeap'
+    private Integer coin;
+    private LocalDateTime lastCoinResetAt;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
     private LocalDateTime deletedDate;

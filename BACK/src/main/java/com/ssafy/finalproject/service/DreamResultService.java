@@ -21,6 +21,7 @@ public class DreamResultService {
     
     private final DreamsResultsDao dreamsResultsDao;
     private final DreamsDao dreamsDao;
+    private final CoinService coinService;
     
     // AI 분석 결과 저장
     public Long saveDreamResult(Long userId, Long dreamId, SaveDreamResultRequest request) {
@@ -37,6 +38,9 @@ public class DreamResultService {
         if (dreamsResultsDao.existsByDreamId(dreamId)) {
             throw new ConflictException("이미 분석 결과가 존재합니다.");
         }
+
+        // 코인 차감 (꿈 해몽 AI 1회)
+        coinService.consumeForDreamInterpretation(userId);
         
         // DreamResult 엔티티 생성
         DreamResult dreamResult = DreamResult.builder()

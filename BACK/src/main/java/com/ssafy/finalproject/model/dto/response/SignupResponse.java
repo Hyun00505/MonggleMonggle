@@ -18,6 +18,7 @@ public class SignupResponse {
     private String gender;
     private LocalDate birthDate;
     private String calendarType;
+    private Integer coin;
     private String message;
 }
 

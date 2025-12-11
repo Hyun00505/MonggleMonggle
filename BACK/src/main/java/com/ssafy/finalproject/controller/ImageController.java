@@ -1,6 +1,7 @@
 package com.ssafy.finalproject.controller;
 
 import com.ssafy.finalproject.model.dto.response.ApiResponse;
+import com.ssafy.finalproject.service.CoinService;
 import com.ssafy.finalproject.service.ImageService;
 import com.ssafy.finalproject.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +21,7 @@ import java.util.Map;
 public class ImageController {
 
     private final ImageService imageService;
+    private final CoinService coinService;
 
     @Operation(summary = "이미지 업로드", description = "Base64 인코딩된 이미지를 서버에 저장하고 URL을 반환합니다.")
     @PostMapping("/upload")
@@ -27,8 +29,6 @@ public class ImageController {
         Long userId = SecurityUtil.getCurrentUserId();
         
         String base64Image = (String) request.get("imageData");
-        Long dreamId = request.get("dreamId") != null ? 
-                Long.valueOf(request.get("dreamId").toString()) : null;
         
         if (base64Image == null || base64Image.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of(
@@ -38,9 +38,12 @@ public class ImageController {
         }
         
         try {
-            String imageUrl = imageService.saveBase64Image(base64Image, userId, dreamId);
+            // 코인 차감 (꿈 시각화 1회 = 2코인)
+            coinService.consumeForImageVisualization(userId);
+
+            String imageUrl = imageService.saveBase64Image(base64Image, userId);
             
-            log.info("이미지 업로드 성공 - userId: {}, dreamId: {}, url: {}", userId, dreamId, imageUrl);
+            log.info("이미지 업로드 성공 - userId: {}, url: {}", userId, imageUrl);
             
             return ResponseEntity.ok(Map.of(
                     "success", true,

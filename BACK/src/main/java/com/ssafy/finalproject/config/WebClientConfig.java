@@ -7,16 +7,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.time.Duration;
-
 @Configuration
 public class WebClientConfig {
     
     @Value("${fastapi.url}")
     private String fastApiUrl;
-    
-    @Value("${fastapi.timeout:60000}")
-    private int timeout;
     
     @Bean
     public WebClient webClient() {

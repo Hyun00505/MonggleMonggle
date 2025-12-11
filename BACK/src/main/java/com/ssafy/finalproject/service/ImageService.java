@@ -28,10 +28,9 @@ public class ImageService {
      * Base64 이미지를 파일로 저장하고 URL 반환
      * @param base64Image Base64 인코딩된 이미지 데이터 (data URI 포함 가능)
      * @param userId 사용자 ID
-     * @param dreamId 꿈 ID (선택)
      * @return 저장된 이미지의 접근 URL
      */
-    public String saveBase64Image(String base64Image, Long userId, Long dreamId) throws IOException {
+    public String saveBase64Image(String base64Image, Long userId) throws IOException {
         // data URI 형식인 경우 헤더 제거 (예: "data:image/png;base64,...")
         String imageData = base64Image;
         String extension = "png"; // 기본 확장자
