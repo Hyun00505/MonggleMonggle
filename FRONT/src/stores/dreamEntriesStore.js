@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { useGalleryStore } from "./galleryStore";
 import { useMonthlyMemoStore } from "./monthlyMemoStore";
+import { useAuthStore } from "./authStore";
 import { getColorHex } from "../constants/luckyColors";
 import { dreamService } from "../services/dreamService";
 import { fortuneService } from "../services/fortuneService";
@@ -18,6 +19,7 @@ function formatDateKey(date) {
 }
 
 export const useDreamEntriesStore = defineStore("dreamEntries", () => {
+  const authStore = useAuthStore();
   const selectedDate = ref(null);
   const dreamTitle = ref("");
   const dreamContent = ref("");
@@ -33,9 +35,7 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
   const analysisLoading = ref(false);
   const analysisError = ref(null);
   const analysisDate = ref(null); // 분석 요청한 날짜
-  const hasExistingResult = ref(false); // 기존 해몽 결과 존재 여부
-  const reinterpretCount = ref(0); // 재해몽 횟수 (최대 2회)
-  const MAX_REINTERPRET = 2; // 최대 재해몽 횟수
+  const hasExistingResult = ref(false); // 기존 해몽 결과 존재 여부 
 
   function setSelectedDate(date) {
     selectedDate.value = date;
@@ -53,14 +53,12 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
       selectedEmotion.value = existingPost.emotion ?? null;
       currentDreamId.value = existingPost.dreamId ?? null;
       showAnalysisOption.value = true;
-      // 기존 해몽 결과 여부 및 재해몽 횟수
+      // 기존 해몽 결과 여부
       hasExistingResult.value = existingPost.hasResult ?? false;
-      reinterpretCount.value = existingPost.reinterpretCount ?? 0;
     } else {
       resetWriteFields();
       showAnalysisOption.value = false;
       hasExistingResult.value = false;
-      reinterpretCount.value = 0;
     }
   }
 
@@ -96,7 +94,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
       const result = await fetchDreamResult(existingPost.dreamId);
       if (result) {
         hasExistingResult.value = true;
-        reinterpretCount.value = result.reinterpretCount ?? 0;
         // 분석 결과도 저장
         analysisResult.value = {
           dreamInterpretation: result.dreamInterpretation,
@@ -113,7 +110,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
         posts.value[dateKey] = {
           ...existingPost,
           hasResult: true,
-          reinterpretCount: result.reinterpretCount ?? 0,
           // 해몽 결과의 행운의 색상으로 별 색상 업데이트
           color: result.luckyColor?.name ? getColorHex(result.luckyColor.name) : existingPost.color,
           luckyColorName: result.luckyColor?.name || existingPost.luckyColorName,
@@ -191,16 +187,15 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
           title: dreamTitle.value,
           content: dreamContent.value,
           emotion: selectedEmotion.value,
-          // 기존에 해몽 결과가 있으면 그 색상 유지, 없으면 흰색
-          color: existingPost?.hasResult ? existingPost.color : "#FFFFFF",
+          color: existingPost?.hasResult ? existingPost.color : "#FFFFFF", // 기존에 해몽 결과가 있으면 그 색상 유지, 없으면 흰색
           luckyColorName: existingPost?.hasResult ? existingPost.luckyColorName : null,
           hasResult: existingPost?.hasResult ?? false,
-          reinterpretCount: existingPost?.reinterpretCount ?? 0,
         },
       };
 
       showAnalysisOption.value = true;
       persistEntries();
+
       return true;
     } catch (err) {
       error.value = err.response?.data?.message || "꿈 일기 저장에 실패했습니다.";
@@ -281,7 +276,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
             color: starColor,
             luckyColorName: dream.luckyColorName || "",
             luckyColorNumber: dream.luckyColorNumber || null,
-            reinterpretCount: 0, // 서버에서 받아와야 하지만 일단 기본값
           };
         });
         persistEntries();
@@ -378,10 +372,9 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
 
           let dbResult;
           if (hasExistingResult.value) {
-            // 재해몽: 기존 결과 업데이트
+            // 기존 결과 업데이트
             dbResult = await dreamResultService.updateDreamResult(dreamId, saveRequest);
-            reinterpretCount.value += 1;
-            console.log("✅ AI 분석 결과가 업데이트되었습니다 (재해몽 횟수:", reinterpretCount.value, ")");
+            console.log("✅ AI 분석 결과가 업데이트되었습니다.");
           } else {
             // 최초 해몽: 새로 저장
             dbResult = await dreamResultService.saveDreamResult(dreamId, saveRequest);
@@ -395,13 +388,19 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
           posts.value[dateKey] = {
             ...posts.value[dateKey],
             hasResult: true,
-            reinterpretCount: reinterpretCount.value,
             // 해몽 결과의 행운의 색상으로 별 색상 업데이트
             color: getColorHex(result.lucky_color.name),
             luckyColorName: result.lucky_color.name,
             luckyColorNumber: result.lucky_color.number,
           };
           persistEntries();
+
+          // 코인 차감 후 최신 사용자 정보 동기화
+          try {
+            await authStore.fetchCurrentUser();
+          } catch (syncErr) {
+            console.warn("⚠️ 코인 동기화 실패:", syncErr?.message || syncErr);
+          }
         } catch (dbErr) {
           // DB 저장 실패해도 분석 결과는 표시 (이미 분석 결과가 있는 경우 등)
           console.warn("⚠️ DB 저장 실패 (이미 존재할 수 있음):", dbErr.response?.data?.message || dbErr.message);
@@ -514,10 +513,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
 
   hydrateFromLocalStorage();
 
-  // 재해몽 가능 여부 확인
-  const canReinterpret = computed(() => reinterpretCount.value < MAX_REINTERPRET);
-  const remainingReinterprets = computed(() => MAX_REINTERPRET - reinterpretCount.value);
-
   return {
     selectedDate,
     dreamTitle,
@@ -537,9 +532,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
     analysisError,
     analysisDate,
     hasExistingResult,
-    reinterpretCount,
-    canReinterpret,
-    remainingReinterprets,
     setSelectedDate,
     setSelectedDateWithResult,
     fetchDreamResult,

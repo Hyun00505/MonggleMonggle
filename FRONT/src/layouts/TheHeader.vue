@@ -3,7 +3,7 @@
     <div class="header-content">
       <!-- 네비게이션 메뉴 -->
       <nav class="nav-menu">
-        <button @click="toggleMenu" class="menu-btn" aria-label="Menu">
+      <button @click="toggleMenu" class="glass-btn menu-btn" aria-label="Menu">
           <span class="btn-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -32,7 +32,19 @@
 
       <div class="spacer"></div>
 
-      <button @click="$emit('logout')" class="logout-btn" aria-label="Logout">
+      <div class="glass-btn coin-container" aria-label="AI 티켓 (해몽 가능 횟수)">
+        <span class="coin-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0-2 2 2 2 0 0 0 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 2-2 2 2 0 0 0-2-2Z"></path>
+            <path d="M9 5v14"></path>
+            <path d="M15 5v14"></path>
+          </svg>
+        </span>
+        <span class="coin-label">AI 티켓</span>
+        <span class="coin-text">{{ displayCoin }}</span>
+      </div>
+
+      <button @click="$emit('logout')" class="glass-btn logout-btn" aria-label="Logout">
         <span class="btn-text">Logout</span>
         <div class="btn-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -43,8 +55,8 @@
         </div>
       </button>
 
-      <button @click="$emit('navigate-mypage')" class="profile-btn" aria-label="My Page">
-        <span class="btn-text">My Page</span>
+      <button @click="$emit('navigate-mypage')" class="glass-btn profile-btn" aria-label="My Page">
+        <span class="btn-text">{{ displayName }}</span>
         <div class="btn-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -57,11 +69,27 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
+import { storeToRefs } from "pinia";
+import { useAuthStore } from "../stores/authStore";
 
 defineEmits(["navigate-mypage", "logout"]);
 
+const authStore = useAuthStore();
+const { currentUser } = storeToRefs(authStore);
+
 const showMenu = ref(false);
+
+const displayName = computed(() => {
+  const name = currentUser.value?.name;
+  return name && String(name).trim() ? name + " 님" : "My Page";
+});
+
+const displayCoin = computed(() => {
+  const coin = currentUser.value?.coin;
+  if (coin === undefined || coin === null) return "-";
+  return coin;
+});
 
 function toggleMenu() {
   showMenu.value = !showMenu.value;
@@ -167,38 +195,34 @@ function closeMenu() {
   flex: 1;
 }
 
-.profile-btn,
-.logout-btn {
+.coin-container {
+  cursor: default;
+}
+
+.coin-label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  font-family: "Nunito", sans-serif;
+}
+
+.coin-icon {
+  font-size: 1rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: white;
-  height: 42px;
+  width: 20px;
 }
 
-.profile-btn:hover,
-.logout-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
+.coin-icon svg {
+  display: block;
+  position: absolute;
+  top: -9px;
 }
 
-.btn-text {
+.coin-text {
   font-family: "Nunito", sans-serif;
   font-weight: 700;
   font-size: 0.9rem;
-}
-
-.btn-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: #f3e366;
 }
 
 @media (max-width: 768px) {
@@ -211,11 +235,17 @@ function closeMenu() {
   }
 
   .menu-btn,
+  .coin-container,
   .profile-btn,
   .logout-btn {
     padding: 0.5rem;
-    border-radius: 50%;
-    width: 42px;
+    border-radius: 16px;
+    min-width: 42px;
+    height: 42px;
+  }
+
+  .coin-text {
+    font-size: 0.85rem;
   }
 
   .dropdown-menu {
@@ -236,9 +266,10 @@ function closeMenu() {
   }
 
   .menu-btn,
+  .coin-container,
   .profile-btn,
   .logout-btn {
-    width: 38px;
+    min-width: 38px;
     height: 38px;
     padding: 0.4rem;
   }
