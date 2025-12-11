@@ -48,7 +48,7 @@
       </button>
 
       <button @click="$emit('navigate-mypage')" class="profile-btn" aria-label="My Page">
-        <span class="btn-text">My Page</span>
+        <span class="btn-text">{{ displayName }}</span>
         <div class="btn-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -61,12 +61,21 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { authService } from "../services/authService";
+import { ref, computed } from "vue";
+import { storeToRefs } from "pinia";
+import { useAuthStore } from "../stores/authStore";
 
 defineEmits(["navigate-mypage", "logout"]);
 
+const authStore = useAuthStore();
+const { currentUser } = storeToRefs(authStore);
+
 const showMenu = ref(false);
+
+const displayName = computed(() => {
+  const name = currentUser.value?.name;
+  return name && String(name).trim() ? name + " 님" : "My Page";
+});
 
 function toggleMenu() {
   showMenu.value = !showMenu.value;
