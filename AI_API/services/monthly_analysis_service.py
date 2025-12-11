@@ -40,7 +40,7 @@ def create_compact_monthly_prompt(request: MonthlyAnalysisRequest) -> tuple[str,
     }
     
     emotion_labels = {
-        1: "매우 부정적", 2: "부정적", 3: "중립", 4: "긍정적", 5: "매우 긍정적"
+        1: "매우 나쁨", 2: "나쁨", 3: "보통", 4: "좋음", 5: "매우 좋음"
     }
     
     prompt = f"""당신은 꿈 분석 전문가입니다. {stats['user_name']}님({stats['birth_date']}생)의 {stats['period']} 한 달 꿈 일기를 분석해주세요.
