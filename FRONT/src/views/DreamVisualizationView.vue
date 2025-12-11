@@ -148,24 +148,25 @@ function truncateTitle(title, maxLength = 15) {
 }
 
 async function loadDreamContent() {
-  if (selectedDreamKey.value) {
-    selectedDream.value = postedDates.value[selectedDreamKey.value];
+  if (!selectedDreamKey.value) {
+    selectedDream.value = null;
+    selectedDreamResult.value = null;
+    return;
+  }
 
-    // 해몽 결과 가져오기
-    if (selectedDream.value?.dreamId) {
-      try {
-        const result = await dreamResultService.getDreamResult(selectedDream.value.dreamId);
-        selectedDreamResult.value = result;
-        console.log("📜 해몽 결과 로드:", result);
-      } catch (err) {
-        console.log("해몽 결과 없음");
-        selectedDreamResult.value = null;
-      }
-    } else {
+  selectedDream.value = postedDates.value[selectedDreamKey.value];
+
+  // 해몽 결과가 있다고 표시된 경우에만 백엔드 조회 (없으면 404 방지)
+  if (selectedDream.value?.dreamId && selectedDream.value?.hasResult) {
+    try {
+      const result = await dreamResultService.getDreamResult(selectedDream.value.dreamId);
+      selectedDreamResult.value = result;
+      console.log("📜 해몽 결과 로드:", result);
+    } catch (err) {
+      console.log("해몽 결과 없음");
       selectedDreamResult.value = null;
     }
   } else {
-    selectedDream.value = null;
     selectedDreamResult.value = null;
   }
 }

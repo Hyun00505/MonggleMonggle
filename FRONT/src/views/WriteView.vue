@@ -110,6 +110,7 @@ function handleEdit() {
 function handleAnalysis() {
   // 현재 날짜를 쿼리 파라미터로 전달
   const dateKey = route.query.date || formatDateKey(selectedDate.value);
+  sessionStorage.setItem("analysisRequestedDate", dateKey);
   router.push({ name: "loading", query: { date: dateKey } });
 }
 
@@ -126,6 +127,7 @@ function handleReinterpret() {
     return;
   }
   const dateKey = route.query.date || formatDateKey(selectedDate.value);
+  sessionStorage.setItem("analysisRequestedDate", dateKey);
   router.push({ name: "loading", query: { date: dateKey } });
 }
 

@@ -198,6 +198,22 @@ async function performAnalysis() {
 }
 
 onMounted(() => {
+  const targetDate = route.query.date?.toString();
+  const requestedDate = sessionStorage.getItem("analysisRequestedDate");
+
+  // 버튼을 통한 정상 접근이 아니면 즉시 차단
+  if (!requestedDate || !targetDate || requestedDate !== targetDate) {
+    alert("올바른 경로로 접근해주세요. 꿈 작성 화면에서 해몽을 다시 요청해주세요.");
+    router.replace({
+      name: "write",
+      query: targetDate ? { date: targetDate } : {},
+    });
+    return;
+  }
+
+  // 한 번만 사용하도록 바로 제거
+  sessionStorage.removeItem("analysisRequestedDate");
+
   // 꿈 팩트 배열 랜덤 섞기
   shuffledFacts.value = shuffleArray(dreamFacts);
 

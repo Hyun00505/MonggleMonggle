@@ -39,6 +39,7 @@ CREATE TABLE `dreams` (
     `title`        TEXT            NOT NULL COMMENT '꿈 제목',
     `content`      TEXT            NOT NULL COMMENT '꿈 내용',
     `created_date` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    `updated_date` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
     `deleted_date` DATETIME        NULL COMMENT '삭제일시 (Soft Delete)',
     PRIMARY KEY (`dream_id`),
     FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,

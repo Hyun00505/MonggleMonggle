@@ -59,6 +59,7 @@ public class DreamService {
                 .title(dream.getTitle())
                 .content(dream.getContent())
                 .createdDate(dream.getCreatedDate())
+                .updatedDate(dream.getUpdatedDate())
                 .build();
     }
     
@@ -122,6 +123,7 @@ public class DreamService {
                 .title(dream.getTitle())
                 .content(dream.getContent())
                 .createdDate(dream.getCreatedDate())
+                .updatedDate(dream.getUpdatedDate())
                 .build();
     }
     

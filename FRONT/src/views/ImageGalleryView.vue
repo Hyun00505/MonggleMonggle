@@ -535,7 +535,8 @@ async function syncFromServer() {
     // posts에 있는 dreamId로 결과 조회 후 갤러리에 채우기
     const entries = Object.entries(posts.value || {});
     for (const [dateKey, entry] of entries) {
-      if (!entry?.dreamId || seenDreamIds.has(entry.dreamId)) continue;
+      // 해몽 결과가 없다고 표시된 경우에는 조회하지 않아 404를 방지
+      if (!entry?.dreamId || seenDreamIds.has(entry.dreamId) || !entry?.hasResult) continue;
       try {
         const result = await dreamEntriesStore.fetchDreamResult(entry.dreamId);
         if (result?.imageUrl) {

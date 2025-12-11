@@ -20,7 +20,10 @@
       </div>
       <div class="analysis-content">
         <div class="section dream-section">
-          <h3>🌌 꿈 해몽</h3>
+          <h3>
+            <span class="title-cloud" aria-hidden="true"></span>
+            꿈 해몽
+          </h3>
           <p class="result-text">
             {{ analysisResult?.dreamInterpretation || "분석 결과를 불러오는 중..." }}
           </p>
@@ -29,7 +32,10 @@
         <div class="divider"></div>
 
         <div class="section fortune-section">
-          <h3>🍀 오늘의 운세</h3>
+          <h3>
+            <span class="title-cloud" aria-hidden="true"></span>
+            오늘의 운세
+          </h3>
           <p v-if="analysisResult?.todayFortuneSummary" class="result-text fortune-summary">
             {{ analysisResult.todayFortuneSummary }}
           </p>
@@ -167,6 +173,7 @@ import { ref, nextTick, onMounted, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
+import { getColorHex } from "../constants/luckyColors";
 import { useGalleryStore } from "../stores/galleryStore";
 import { fortuneService } from "../services/fortuneService";
 import { dreamResultService } from "../services/dreamResultService";
@@ -177,6 +184,7 @@ const route = useRoute();
 const dreamEntriesStore = useDreamEntriesStore();
 const galleryStore = useGalleryStore();
 const { currentLuckyColor, postedDates, analysisResult, analysisDate } = storeToRefs(dreamEntriesStore);
+const { setSelectedDateWithResult, fetchDreamsByMonth } = dreamEntriesStore;
 
 // 분석 결과에서 행운의 색상 정보 가져오기
 const displayLuckyColor = computed(() => {
@@ -190,34 +198,27 @@ const displayLuckyColor = computed(() => {
   return currentLuckyColor.value;
 });
 
-// 색상 이름을 HEX 코드로 변환
-function getColorHex(colorName) {
-  const colorMap = {
-    빨간색: "#FF4444",
-    주황색: "#FF8C00",
-    노란색: "#FFD700",
-    초록색: "#32CD32",
-    파란색: "#4169E1",
-    남색: "#191970",
-    보라색: "#9370DB",
-    분홍색: "#FFB6C1",
-    하늘색: "#87CEEB",
-    청록색: "#40E0D0",
-    갈색: "#8B4513",
-    회색: "#808080",
-    검정색: "#333333",
-    흰색: "#FFFFFF",
-    금색: "#FFD700",
-    은색: "#C0C0C0",
-  };
-  return colorMap[colorName] || "#CDB4DB";
-}
+// URL에서 날짜 복원 및 새로고침 시 결과 복구
+onMounted(async () => {
+  const dateKey = route.query.date?.toString();
 
-// URL에서 날짜 복원
-onMounted(() => {
-  if (!analysisResult.value && route.query.date) {
-    // 분석 결과가 없으면 다시 write 페이지로
-    router.replace({ name: "write", query: { date: route.query.date } });
+  // 기존 결과가 없다면 스토어나 서버에서 복구 시도
+  if (!analysisResult.value && dateKey) {
+    const parsed = new Date(dateKey);
+
+    if (!Number.isNaN(parsed.getTime())) {
+      // 월 데이터가 비어있다면 서버에서 해당 달 꿈 목록을 가져와서 dreamId 확보
+      if (!postedDates.value[dateKey]) {
+        await fetchDreamsByMonth(parsed.getFullYear(), parsed.getMonth() + 1);
+      }
+
+      await setSelectedDateWithResult(parsed);
+    }
+  }
+
+  // 그래도 결과가 없으면 달력으로 이동
+  if (!analysisResult.value && dateKey) {
+    router.replace({ name: "calendar" });
   }
 });
 
@@ -515,10 +516,46 @@ function downloadImage(image) {
 }
 
 .section h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: "Dongle", sans-serif;
+  font-size: 1.6rem;
+  font-weight: 600;
   color: #444;
   margin: 0 0 0.75rem;
+}
+
+.title-cloud {
+  position: relative;
+  display: inline-block;
+  width: 22px;
+  height: 9px;
+  background: #cdb4db;
+  border-radius: 999px;
+  transform: translateY(1px);
+}
+
+.title-cloud::before,
+.title-cloud::after {
+  content: "";
+  position: absolute;
+  background: #cdb4db;
+  border-radius: 999px;
+}
+
+.title-cloud::before {
+  width: 12px;
+  height: 12px;
+  top: -6px;
+  left: 2px;
+}
+
+.title-cloud::after {
+  width: 14px;
+  height: 14px;
+  top: -4px;
+  right: 0;
 }
 
 .result-text {
@@ -532,9 +569,7 @@ function downloadImage(image) {
 }
 
 .fortune-summary {
-  margin-bottom: 1rem;
-  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
-  border-left: 3px solid #22c55e;
+  margin-bottom: 1.25rem;
 }
 
 .divider {
@@ -564,13 +599,15 @@ function downloadImage(image) {
 }
 
 .fortune-label {
-  font-size: 0.85rem;
+  font-family: "Dongle", sans-serif;
+  font-size: 1.6rem;
   font-weight: 600;
   color: #666;
 }
 
 .fortune-pill {
-  font-size: 0.65rem;
+  font-family: "Dongle", sans-serif;
+  font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.2rem 0.5rem;
@@ -620,10 +657,10 @@ function downloadImage(image) {
 }
 
 .fortune-reason {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
   color: #666;
   margin: 0;
-  line-height: 1.5;
 }
 
 /* ===== Analysis Wrapper ===== */
@@ -1270,7 +1307,7 @@ function downloadImage(image) {
 
   .fortune-grid {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 1.25rem;
   }
 
   .fortune-card {

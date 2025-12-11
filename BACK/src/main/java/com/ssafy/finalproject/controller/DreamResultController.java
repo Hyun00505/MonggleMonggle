@@ -60,16 +60,20 @@ public class DreamResultController {
         return ResponseEntity.ok(response);
     }
     
-    @Operation(summary = "3.3 AI 분석 결과 수정", description = "AI 분석 결과를 수정합니다 (이미지 URL 업데이트).")
+    @Operation(summary = "3.3 AI 분석 결과 수정", description = "AI 분석 결과를 수정합니다 (재해몽 포함).")
     @PutMapping
-    public ResponseEntity<ApiResponse> updateDreamResult(
+    public ResponseEntity<Map<String, Object>> updateDreamResult(
             @PathVariable Long dreamId,
             @RequestBody UpdateDreamResultRequest request) {
         Long userId = SecurityUtil.getCurrentUserId();
-        dreamResultService.updateDreamResult(userId, dreamId, request);
-        return ResponseEntity.ok(ApiResponse.builder()
-                .message("AI 분석 결과가 수정되었습니다.")
-                .build());
+        Long resultId = dreamResultService.updateDreamResult(userId, dreamId, request);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("resultId", resultId);
+        response.put("dreamId", dreamId);
+        response.put("message", "AI 분석 결과가 수정되었습니다.");
+        
+        return ResponseEntity.ok(response);
     }
     
     @Operation(summary = "3.4 AI 분석 결과 삭제", description = "AI 분석 결과를 삭제합니다 (재분석을 위한 초기화).")

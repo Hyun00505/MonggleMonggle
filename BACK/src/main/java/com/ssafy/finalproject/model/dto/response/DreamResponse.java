@@ -21,6 +21,7 @@ public class DreamResponse {
     private String title;
     private String content;
     private LocalDateTime createdDate;
+    private LocalDateTime updatedDate;
     private LocalDateTime deletedDate;
 }
 

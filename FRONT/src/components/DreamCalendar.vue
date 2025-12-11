@@ -265,15 +265,15 @@ function getPost(day) {
 // 별 색상 결정: 해몽 완료면 행운의 색상, 아니면 흰색
 function getStarColor(day) {
   const post = getPost(day);
-  if (!post) return "#FFFFFF";
+  if (!post) return "#000000";
 
   // 해몽 결과가 있고 색상이 지정되어 있으면 그 색상 사용
-  if (post.hasResult && post.color && post.color !== "#FFFFFF") {
+  if (post.hasResult && post.color && post.color !== "#000000") {
     return post.color;
   }
 
-  // 해몽 안 했으면 흰색
-  return "#FFFFFF";
+  // 해몽 안 했으면 검정색
+  return "#000000";
 }
 
 function isWarningVisible(day) {

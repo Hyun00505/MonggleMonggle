@@ -18,7 +18,7 @@ export default defineConfig({
     proxy: {
       // FastAPI AI 서버 프록시
       "/ai-api": {
-        target: "http://localhost:8000",
+        target: "https://7ef9eaa8e752.ngrok-free.app",
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/ai-api/, ""),
