@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneId;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -101,6 +102,13 @@ public class AuthService {
     public UserInfoResponse getUserInfo(Long userId) {
         User user = userDao.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+
+        // 조회 시에도 날짜가 바뀌었으면 코인 리셋 (로그인 시 자동 리셋은 없음)
+        int reset = userDao.resetDailyCoin(userId, java.time.LocalDate.now(KST));
+        if (reset > 0) {
+            user.setCoin(5);
+            user.setLastCoinResetAt(LocalDateTime.now(KST));
+        }
         
         return UserInfoResponse.builder()
                 .userId(user.getUserId())
