@@ -35,4 +35,6 @@ pnpm-debug.log*
 .env
 .env.*
 
+# AI API generated/intermediate data
+AI_API/generated_results/
 

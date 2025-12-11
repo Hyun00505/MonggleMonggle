@@ -19,6 +19,7 @@ public class UserInfoResponse {
     private LocalDate birthDate;
     private String gender;
     private String calendarType;
+    private Integer coin;
     private LocalDateTime createdDate;
 }
 

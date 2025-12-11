@@ -1,4 +1,6 @@
--- Active: 1764908874666@@127.0.0.1@3306@dream_db
+-- 0. 기존 DB 삭제
+-- DROP DATABASE IF EXISTS `dream_db`;
+
 -- 1. 데이터베이스 생성
 CREATE DATABASE IF NOT EXISTS `dream_db`
     DEFAULT CHARACTER SET utf8mb4
@@ -15,6 +17,8 @@ CREATE TABLE `users` (
     `birth_date`    DATE            NOT NULL COMMENT '생년월일',
     `gender`        CHAR(1)         NOT NULL COMMENT '성별 (M: 남성, F: 여성)',
     `calendar_type` VARCHAR(20)     NOT NULL DEFAULT 'solar' COMMENT '달력 유형 (solar, lunarGeneral, lunarLeap)',
+    `coin`          INT             NOT NULL DEFAULT 5 COMMENT '하루 해몽 가능 횟수',
+    `last_coin_reset_at` DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '마지막 코인 리셋 일시',
     `created_date`  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '가입일',
     `updated_date`  DATETIME        NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
     `deleted_date`  DATETIME        NULL COMMENT '삭제일시 (Soft Delete)',
@@ -59,6 +63,7 @@ CREATE TABLE `dream_results` (
     `lucky_item_reason`     TEXT           NOT NULL COMMENT '행운의 아이템 추천 이유',
     `image_url`             VARCHAR(255)   NULL COMMENT '꿈 이미지 URL',
     `created_date`          DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    `updated_date`          DATETIME       NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
     `deleted_date`          DATETIME       NULL COMMENT '삭제일시 (Soft Delete)',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_dream_results_dream_id` (`dream_id`),
@@ -81,7 +86,7 @@ CREATE TABLE `dream_monthly_analysis` (
     FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
 ) COMMENT = '월별 꿈 분석';
 
--- 7. 월별 메모 테이블 (dream_monthly_memo) - 월별 분석과 독립적으로 동작
+-- 7. 월별 메모 테이블 (dream_monthly_memo)
 CREATE TABLE `dream_monthly_memo` (
     `memo_id`      BIGINT          NOT NULL AUTO_INCREMENT COMMENT '메모 ID',
     `user_id`      BIGINT          NOT NULL COMMENT '사용자 ID',
@@ -98,8 +103,8 @@ CREATE TABLE `dream_monthly_memo` (
 
 -- 8. 초기 데이터 삽입 - 감정 점수
 INSERT INTO `emotion_scores` (`emotion_id`, `emotion_name`, `score`) VALUES
-(1, '기쁨', 5),
-(2, '만족', 4),
-(3, '평범', 3),
-(4, '불안', 2),
-(5, '슬픔', 1);
+(5, '매우 좋음', 5),
+(4, '좋음', 4),
+(3, '보통', 3),
+(2, '나쁨', 2),
+(1, '매우 나쁨', 1);
