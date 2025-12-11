@@ -134,8 +134,7 @@
       <div v-else class="empty-gallery">
         <span class="empty-emoji">🎨</span>
         <h3>아직 생성된 이미지가 없습니다</h3>
-        <p>꿈 시각화 페이지에서 꿈을 이미지로 만들어보세요!</p>
-        <button @click="goToVisualization" class="create-btn">✨ 이미지 생성하러 가기</button>
+        <p>캘린더에서 꿈을 기록하고 분석하면 생성된 이미지가 여기 보입니다.</p>
       </div>
     </div>
 
@@ -362,10 +361,6 @@ function resolveImageSrc(src) {
 
 function handleBack() {
   router.push({ name: "calendar" });
-}
-
-function goToVisualization() {
-  router.push({ name: "visualization" });
 }
 
 function formatDate(dateString) {
@@ -902,25 +897,6 @@ async function syncFromServer() {
 .empty-gallery h3 {
   color: #333;
   margin-bottom: 0.5rem;
-}
-
-.create-btn {
-  margin-top: 2rem;
-  padding: 1rem 2rem;
-  border: none;
-  border-radius: 20px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: white;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-}
-
-.create-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
 }
 
 /* 갤러리 아이템 메타 뱃지 */

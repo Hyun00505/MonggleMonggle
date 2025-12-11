@@ -113,6 +113,9 @@ public class DreamResultService {
         // 분석 결과 조회
         DreamResult result = dreamsResultsDao.findByDreamId(dreamId)
                 .orElseThrow(() -> new ResourceNotFoundException("분석 결과를 찾을 수 없습니다."));
+
+        // 재해몽 요청도 코인 차감 (동일 꿈 내 재분석)
+        coinService.consumeForDreamInterpretation(userId);
         
         // 해몽/운세/행운 정보 업데이트
         if (request.getDreamInterpretation() != null) {

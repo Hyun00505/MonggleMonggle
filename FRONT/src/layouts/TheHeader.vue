@@ -19,10 +19,6 @@
             <span class="menu-icon">📅</span>
             <span>캘린더</span>
           </router-link>
-          <router-link to="/visualization" class="menu-item" @click="closeMenu">
-            <span class="menu-icon">✨</span>
-            <span>꿈 시각화</span>
-          </router-link>
           <router-link to="/gallery" class="menu-item" @click="closeMenu">
             <span class="menu-icon">🖼️</span>
             <span>갤러리</span>
