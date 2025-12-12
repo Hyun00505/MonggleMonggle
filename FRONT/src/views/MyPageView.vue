@@ -22,15 +22,20 @@
       <!-- 생년월일 -->
       <div class="input-group labeled">
         <label class="input-label">생년월일</label>
-        <input 
-          v-model="formData.birthDate" 
-          type="date" 
-          data-placeholder="YYYY-MM-DD"
-          class="custom-input date-input"
-          :max="today"
-          @click="showDatePicker"
-          @blur="validation.validateBirthDate(formData.birthDate)"
-        />
+        <div class="date-input-wrapper">
+          <input 
+            v-model="formData.birthDate" 
+            type="text" 
+            placeholder="YYYY-MM-DD" 
+            class="custom-input date-input" 
+            maxlength="10" 
+            @input="formatBirthDate" 
+            @keydown="handleBirthDateKeydown"
+            @blur="validation.validateBirthDate(formData.birthDate)"
+          />
+          <input ref="datePickerRef" type="date" class="hidden-date-picker" @change="onDatePickerChange" :max="today" />
+          <button type="button" class="calendar-btn" @click="openDatePicker">📅</button>
+        </div>
         <p v-if="validation.errors.birthDate" class="error-text">{{ validation.errors.birthDate }}</p>
       </div>
 
@@ -162,6 +167,7 @@ const formData = reactive({
 });
 
 const isLoading = ref(false);
+const datePickerRef = ref(null);
 
 // 오늘 날짜 (생년월일 최대값)
 const today = computed(() => {
@@ -172,12 +178,68 @@ const today = computed(() => {
   return `${year}-${month}-${day}`;
 });
 
-function showDatePicker(event) {
-  try {
-    event.target.showPicker();
-  } catch (error) {
-    // ignore
+// 생년월일 입력 시 자동 포맷팅 (YYYY-MM-DD)
+function formatBirthDate(event) {
+  const input = event.target;
+  let digits = input.value.replace(/\D/g, "");
+
+  if (digits.length > 8) {
+    digits = digits.slice(0, 8);
   }
+
+  let formatted = digits;
+  if (digits.length > 6) {
+    formatted = digits.slice(0, 4) + "-" + digits.slice(4, 6) + "-" + digits.slice(6);
+  } else if (digits.length > 4) {
+    formatted = digits.slice(0, 4) + "-" + digits.slice(4);
+  }
+
+  formData.birthDate = formatted;
+
+  setTimeout(() => {
+    input.setSelectionRange(formatted.length, formatted.length);
+  }, 0);
+}
+
+// 백스페이스 키 처리
+function handleBirthDateKeydown(event) {
+  if (event.key === "Backspace") {
+    const input = event.target;
+    const cursorPos = input.selectionStart;
+    const selectionEnd = input.selectionEnd;
+    const value = formData.birthDate;
+
+    if (cursorPos === selectionEnd && cursorPos > 0 && value[cursorPos - 1] === "-") {
+      event.preventDefault();
+      let digits = value.replace(/\D/g, "");
+      digits = digits.slice(0, -1);
+
+      let formatted = digits;
+      if (digits.length > 6) {
+        formatted = digits.slice(0, 4) + "-" + digits.slice(4, 6) + "-" + digits.slice(6);
+      } else if (digits.length > 4) {
+        formatted = digits.slice(0, 4) + "-" + digits.slice(4);
+      }
+
+      formData.birthDate = formatted;
+      setTimeout(() => {
+        input.setSelectionRange(formatted.length, formatted.length);
+      }, 0);
+    }
+  }
+}
+
+// 캘린더 열기
+function openDatePicker() {
+  if (datePickerRef.value) {
+    datePickerRef.value.showPicker();
+  }
+}
+
+// 캘린더에서 날짜 선택 시
+function onDatePickerChange(event) {
+  formData.birthDate = event.target.value;
+  validation.validateBirthDate(formData.birthDate);
 }
 
 function handleBack() {
@@ -272,5 +334,42 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+/* 생년월일 입력 wrapper */
+.date-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.date-input-wrapper .date-input {
+  flex: 1;
+  padding-right: 40px;
+}
+
+.hidden-date-picker {
+  position: absolute;
+  right: 220px;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.calendar-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 5px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.calendar-btn:hover {
+  opacity: 1;
 }
 </style>
