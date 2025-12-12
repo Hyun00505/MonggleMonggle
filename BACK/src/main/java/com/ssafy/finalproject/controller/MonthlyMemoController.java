@@ -42,9 +42,6 @@ public class MonthlyMemoController {
             @RequestParam Integer month) {
         Long userId = SecurityUtil.getCurrentUserId();
         var response = monthlyMemoService.getMemo(userId, year, month);
-        if (response.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
         return ResponseEntity.ok(response);
     }
     

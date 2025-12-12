@@ -13,13 +13,7 @@
         <form @submit.prevent="handleSubmit" class="common-form">
           <!-- 이름 -->
           <div v-if="!isLogin" class="input-group">
-            <input 
-              v-model="formData.name" 
-              type="text" 
-              placeholder="이름" 
-              class="auth-input" 
-              @blur="validation.validateName(formData.name)"
-            />
+            <input v-model="formData.name" type="text" placeholder="이름" class="auth-input" @blur="validation.validateName(formData.name)" />
             <p v-if="validation.errors.name" class="error-text">{{ validation.errors.name }}</p>
           </div>
 
@@ -27,13 +21,13 @@
           <div v-if="!isLogin" class="input-group">
             <label class="input-label">생년월일</label>
             <div class="date-input-wrapper">
-              <input 
-                v-model="formData.birthDate" 
-                type="text" 
-                placeholder="YYYY-MM-DD" 
-                class="auth-input date-input" 
-                maxlength="10" 
-                @input="formatBirthDate" 
+              <input
+                v-model="formData.birthDate"
+                type="text"
+                placeholder="YYYY-MM-DD"
+                class="auth-input date-input"
+                maxlength="10"
+                @input="formatBirthDate"
                 @keydown="handleBirthDateKeydown"
                 @blur="validation.validateBirthDate(formData.birthDate)"
               />
@@ -76,23 +70,17 @@
 
           <!-- 아이디 (로그인) -->
           <div v-if="isLogin" class="input-group">
-            <input 
-              v-model="formData.loginId" 
-              type="text" 
-              placeholder="아이디" 
-              class="auth-input" 
-              @input="validation.filterAlphaNumeric"
-            />
+            <input v-model="formData.loginId" type="text" placeholder="아이디" class="auth-input" @input="validation.filterAlphaNumeric" />
             <p v-if="validation.errors.loginId" class="error-text">{{ validation.errors.loginId }}</p>
           </div>
 
           <!-- 아이디 (회원가입) -->
           <div v-else class="input-group">
-            <input 
-              v-model="formData.loginId" 
-              type="text" 
-              placeholder="아이디 (영문, 숫자 4~20자)" 
-              class="auth-input" 
+            <input
+              v-model="formData.loginId"
+              type="text"
+              placeholder="아이디 (영문, 숫자 4~20자)"
+              class="auth-input"
               @input="validation.filterAlphaNumeric"
               @blur="validation.validateLoginId(formData.loginId)"
             />
@@ -101,24 +89,18 @@
 
           <!-- 비밀번호 (로그인) -->
           <div v-if="isLogin" class="input-group">
-            <input 
-              v-model="formData.password" 
-              type="password" 
-              placeholder="비밀번호" 
-              class="auth-input" 
-              @input="validation.filterPassword"
-            />
+            <input v-model="formData.password" type="password" placeholder="비밀번호" class="auth-input" @input="validation.filterPassword" />
             <p v-if="validation.errors.password" class="error-text">{{ validation.errors.password }}</p>
             <p v-if="serverError" class="error-text">{{ serverError }}</p>
           </div>
 
           <!-- 비밀번호 (회원가입) -->
           <div v-else class="input-group">
-            <input 
-              v-model="formData.password" 
-              type="password" 
-              placeholder="비밀번호 (영문, 숫자, 특수문자 8~20자)" 
-              class="auth-input" 
+            <input
+              v-model="formData.password"
+              type="password"
+              placeholder="비밀번호 (영문, 숫자, 특수문자 8~20자)"
+              class="auth-input"
               @input="validation.filterPassword"
               @blur="validation.validatePassword(formData.password)"
             />
@@ -127,11 +109,11 @@
 
           <!-- 비밀번호 확인 (회원가입만) -->
           <div v-if="!isLogin" class="input-group">
-            <input 
-              v-model="formData.confirmPassword" 
-              type="password" 
-              placeholder="비밀번호 확인" 
-              class="auth-input" 
+            <input
+              v-model="formData.confirmPassword"
+              type="password"
+              placeholder="비밀번호 확인"
+              class="auth-input"
               @input="validation.filterPassword"
               @blur="validation.validateConfirmPassword(formData.password, formData.confirmPassword)"
             />
@@ -139,7 +121,7 @@
           </div>
 
           <button type="submit" class="submit-btn" :disabled="isSubmitting">
-            {{ isSubmitting ? '처리 중...' : (isLogin ? "로그인" : "회원가입") }}
+            {{ isSubmitting ? "처리 중..." : isLogin ? "로그인" : "회원가입" }}
           </button>
         </form>
 
@@ -280,7 +262,7 @@ function toggleAuthMode() {
 // 폼 제출
 async function handleSubmit() {
   if (isSubmitting.value) return;
-  
+
   serverError.value = "";
 
   // 유효성 검사
@@ -307,7 +289,7 @@ async function handleSubmit() {
         gender: validation.genderToBackend(formData.gender),
         calendarType: validation.calendarTypeToBackend(formData.calendarType),
       };
-      
+
       await authStore.signup(signupData);
       alert("회원가입이 완료되었습니다.");
     } else {
@@ -317,11 +299,6 @@ async function handleSubmit() {
         password: formData.password,
       });
     }
-
-    // 로그인 성공 시 꿈 데이터 불러오기
-    const now = new Date();
-    await dreamEntriesStore.fetchDreamsByMonth(now.getFullYear(), now.getMonth() + 1);
-
     router.push({ name: "calendar" });
   } catch (err) {
     serverError.value = authStore.error || "처리 중 오류가 발생했습니다.";
