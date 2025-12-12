@@ -138,6 +138,10 @@ public class AuthService {
         
         // 비밀번호가 제공된 경우에만 변경
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+            // 이전 비밀번호와 동일한지 확인
+            if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new ConflictException("이전과 동일한 비밀번호는 사용할 수 없습니다.");
+            }
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
         

@@ -36,16 +36,8 @@ export const useAuthStore = defineStore("auth", () => {
     error.value = null;
 
     try {
-      const requestData = {
-        loginId: userData.loginId,
-        password: userData.password,
-        name: userData.name,
-        birthDate: userData.birthDate,
-        gender: userData.gender === "male" ? "M" : "F",
-        calendarType: userData.calendarType,
-      };
-      console.log("API로 전송되는 데이터:", requestData);
-      const response = await authService.signup(requestData);
+      // userData는 이미 변환된 상태로 전달됨 (gender: M/F, calendarType: solar/lunarGeneral)
+      const response = await authService.signup(userData);
 
       // 회원가입 후 자동 로그인
       await login({

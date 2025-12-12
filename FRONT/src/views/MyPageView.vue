@@ -10,24 +10,29 @@
       <div class="input-group labeled">
         <label class="input-label">이름</label>
         <input 
-          v-model="userInfo.name" 
+          v-model="formData.name" 
           type="text" 
           class="custom-input"
           placeholder="이름"
+          @blur="validation.validateName(formData.name)"
         />
+        <p v-if="validation.errors.name" class="error-text">{{ validation.errors.name }}</p>
       </div>
 
-      <!-- 생년월일 -->
+      <!-- 생년월일 (변경 불가) -->
       <div class="input-group labeled">
         <label class="input-label">생년월일</label>
-        <input 
-          v-model="userInfo.birthDate" 
-          type="date" 
-          data-placeholder="YYYY-MM-DD"
-          class="custom-input date-input"
-          required
-          @click="showDatePicker"
-        />
+        <div class="disabled-input-wrapper" @click="showBirthDateWarning">
+          <input 
+            v-model="formData.birthDate" 
+            type="text" 
+            class="custom-input"
+            placeholder="YYYY-MM-DD"
+            disabled
+          />
+          <div class="disabled-overlay"></div>
+        </div>
+        <p v-if="birthDateWarning" class="error-text">{{ birthDateWarning }}</p>
       </div>
 
       <!-- 달력 유형 (양력/음력) -->
@@ -36,7 +41,7 @@
           <label class="radio-label">
             <input 
               type="radio" 
-              v-model="userInfo.calendarType" 
+              v-model="formData.calendarType" 
               value="solar" 
               class="custom-radio"
             />
@@ -45,13 +50,14 @@
           <label class="radio-label">
             <input 
               type="radio" 
-              v-model="userInfo.calendarType" 
+              v-model="formData.calendarType" 
               value="lunar" 
               class="custom-radio"
             />
             <span class="radio-text">음력</span>
           </label>
         </div>
+        <p v-if="validation.errors.calendarType" class="error-text">{{ validation.errors.calendarType }}</p>
       </div>
 
       <!-- 성별 -->
@@ -61,7 +67,7 @@
           <label class="radio-label">
             <input 
               type="radio" 
-              v-model="userInfo.gender" 
+              v-model="formData.gender" 
               value="male" 
               class="custom-radio"
             />
@@ -70,49 +76,58 @@
           <label class="radio-label">
             <input 
               type="radio" 
-              v-model="userInfo.gender" 
+              v-model="formData.gender" 
               value="female" 
               class="custom-radio"
             />
             <span class="radio-text">여</span>
           </label>
         </div>
+        <p v-if="validation.errors.gender" class="error-text">{{ validation.errors.gender }}</p>
       </div>
 
       <!-- 아이디 (변경 불가) -->
       <div class="input-group labeled">
         <label class="input-label">아이디</label>
-        <input 
-          v-model="userInfo.loginId" 
-          type="text" 
-          class="custom-input"
-          placeholder="아이디"
-          disabled
-        />
+        <div class="disabled-input-wrapper" @click="showLoginIdWarning">
+          <input 
+            v-model="formData.loginId" 
+            type="text" 
+            class="custom-input"
+            placeholder="아이디"
+            disabled
+          />
+          <div class="disabled-overlay"></div>
+        </div>
+        <p v-if="loginIdWarning" class="error-text">{{ loginIdWarning }}</p>
       </div>
 
       <!-- 비밀번호 (변경 시에만 입력) -->
       <div class="input-group labeled">
         <label class="input-label">비밀번호 변경</label>
         <input 
-          v-model="userInfo.password" 
+          v-model="formData.password" 
           type="password" 
           class="custom-input"
-          placeholder="새 비밀번호 (변경 시에만 입력)"
-          @input="allowOnlyAlphaNumeric"
+          placeholder="새 비밀번호 (영문, 숫자, 특수문자 8~20자)"
+          @input="validation.filterPassword"
+          @blur="formData.password && validation.validatePassword(formData.password)"
         />
+        <p v-if="validation.errors.password" class="error-text">{{ validation.errors.password }}</p>
       </div>
 
       <!-- 비밀번호 확인 -->
       <div class="input-group">
         <input 
-          v-model="userInfo.confirmPassword" 
+          v-model="formData.confirmPassword" 
           type="password" 
           class="custom-input"
           placeholder="새 비밀번호 확인"
-          @input="allowOnlyAlphaNumeric"
+          @input="validation.filterPassword"
+          @blur="formData.password && validation.validateConfirmPassword(formData.password, formData.confirmPassword)"
         />
-        <p v-if="passwordError" class="error-text">{{ passwordError }}</p>
+        <p v-if="validation.errors.confirmPassword" class="error-text">{{ validation.errors.confirmPassword }}</p>
+        <p v-if="serverError" class="error-text">{{ serverError }}</p>
       </div>
 
       <button class="submit-btn" @click="saveUserInfo" :disabled="isLoading">
@@ -128,67 +143,137 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, toRef, watch } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useDreamEntriesStore } from '../stores/dreamEntriesStore';
 import { useAuthStore } from '../stores/authStore';
 import { useUserStorage } from '../composables/useUserStorage';
-import { usePasswordValidation } from '../composables/usePasswordValidation';
-import { useInputValidation } from '../composables/useInputValidation';
+import { useFormValidation } from '../composables/useFormValidation';
 
 const router = useRouter();
 const dreamEntriesStore = useDreamEntriesStore();
 const authStore = useAuthStore();
 const { resetAll } = dreamEntriesStore;
 const { clearSessionUser } = useUserStorage();
-const { allowOnlyAlphaNumeric } = useInputValidation();
+const validation = useFormValidation();
 
-const userInfo = reactive({
+const formData = reactive({
   loginId: '',
   password: '',
   confirmPassword: '',
   name: '',
   birthDate: '',
   gender: '',
-  calendarType: 'solar'
+  calendarType: ''
 });
 
-const originalLoginId = ref('');
 const isLoading = ref(false);
+const datePickerRef = ref(null);
+const serverError = ref("");
+const birthDateWarning = ref("");
+const loginIdWarning = ref("");
 
-// Create refs for validation composable
-const passwordRef = toRef(userInfo, 'password');
-const confirmPasswordRef = toRef(userInfo, 'confirmPassword');
+// 생년월일 클릭 시 경고 메시지 표시
+function showBirthDateWarning() {
+  birthDateWarning.value = "생년월일은 변경 불가합니다.";
+  setTimeout(() => {
+    birthDateWarning.value = "";
+  }, 3000);
+}
 
-const { passwordError, validateMatch } = usePasswordValidation(passwordRef, confirmPasswordRef);
+// 아이디 클릭 시 경고 메시지 표시
+function showLoginIdWarning() {
+  loginIdWarning.value = "아이디는 변경 불가합니다.";
+  setTimeout(() => {
+    loginIdWarning.value = "";
+  }, 3000);
+}
 
-function showDatePicker(event) {
-  try {
-    event.target.showPicker();
-  } catch (error) {
-    // ignore
+// 오늘 날짜 (생년월일 최대값)
+const today = computed(() => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+});
+
+// 생년월일 입력 시 자동 포맷팅 (YYYY-MM-DD)
+function formatBirthDate(event) {
+  const input = event.target;
+  let digits = input.value.replace(/\D/g, "");
+
+  if (digits.length > 8) {
+    digits = digits.slice(0, 8);
+  }
+
+  let formatted = digits;
+  if (digits.length > 6) {
+    formatted = digits.slice(0, 4) + "-" + digits.slice(4, 6) + "-" + digits.slice(6);
+  } else if (digits.length > 4) {
+    formatted = digits.slice(0, 4) + "-" + digits.slice(4);
+  }
+
+  formData.birthDate = formatted;
+
+  setTimeout(() => {
+    input.setSelectionRange(formatted.length, formatted.length);
+  }, 0);
+}
+
+// 백스페이스 키 처리
+function handleBirthDateKeydown(event) {
+  if (event.key === "Backspace") {
+    const input = event.target;
+    const cursorPos = input.selectionStart;
+    const selectionEnd = input.selectionEnd;
+    const value = formData.birthDate;
+
+    if (cursorPos === selectionEnd && cursorPos > 0 && value[cursorPos - 1] === "-") {
+      event.preventDefault();
+      let digits = value.replace(/\D/g, "");
+      digits = digits.slice(0, -1);
+
+      let formatted = digits;
+      if (digits.length > 6) {
+        formatted = digits.slice(0, 4) + "-" + digits.slice(4, 6) + "-" + digits.slice(6);
+      } else if (digits.length > 4) {
+        formatted = digits.slice(0, 4) + "-" + digits.slice(4);
+      }
+
+      formData.birthDate = formatted;
+      setTimeout(() => {
+        input.setSelectionRange(formatted.length, formatted.length);
+      }, 0);
+    }
   }
 }
 
-// This function is now handled by the composable and watcher, 
-// but the template calls it on @input.
-// We can remove @input="checkPasswordMatch" from template and rely on the watcher in composable
-// or we can keep it if we want manual trigger.
-// The composable watches changes, so we don't need manual @input handler if we use the error from composable.
+// 캘린더 열기
+function openDatePicker() {
+  if (datePickerRef.value) {
+    datePickerRef.value.showPicker();
+  }
+}
+
+// 캘린더에서 날짜 선택 시
+function onDatePickerChange(event) {
+  formData.birthDate = event.target.value;
+  validation.validateBirthDate(formData.birthDate);
+}
 
 function handleBack() {
   router.push({ name: 'calendar' });
 }
 
 async function saveUserInfo() {
-  if (!isFormComplete()) {
-    alert('모든 항목을 입력해주세요.');
-    return;
-  }
-
-  // 비밀번호 변경 시에만 검증
-  if (userInfo.password && !validateMatch()) {
-    alert('비밀번호가 일치하지 않습니다.');
+  const hasPasswordChange = !!formData.password;
+  
+  // 서버 에러 초기화
+  serverError.value = "";
+  
+  // 유효성 검사
+  if (!validation.validateUpdateForm(formData, hasPasswordChange)) {
     return;
   }
 
@@ -197,45 +282,34 @@ async function saveUserInfo() {
   try {
     // 백엔드 API 호출을 위한 데이터 준비
     const updateData = {
-      name: userInfo.name,
-      birthDate: userInfo.birthDate,
-      gender: userInfo.gender === 'male' ? 'M' : 'F',
-      calendarType: userInfo.calendarType,
+      name: formData.name,
+      birthDate: formData.birthDate,
+      gender: validation.genderToBackend(formData.gender),
+      calendarType: validation.calendarTypeToBackend(formData.calendarType),
     };
     
     // 비밀번호가 입력된 경우에만 포함
-    if (userInfo.password) {
-      updateData.password = userInfo.password;
+    if (formData.password) {
+      updateData.password = formData.password;
     }
     
     // 백엔드 API를 통해 정보 수정
     await authStore.updateUser(updateData);
     
     // 비밀번호 필드 초기화
-    userInfo.password = '';
-    userInfo.confirmPassword = '';
+    formData.password = '';
+    formData.confirmPassword = '';
+    validation.clearError('password');
+    validation.clearError('confirmPassword');
 
     alert('정보가 수정되었습니다.');
     router.push({ name: 'calendar' });
   } catch (error) {
-    alert(authStore.error || '정보 수정에 실패했습니다.');
+    // 서버 에러 메시지를 화면에 표시
+    serverError.value = authStore.error || '정보 수정에 실패했습니다.';
   } finally {
     isLoading.value = false;
   }
-}
-
-function isFormComplete() {
-  // 비밀번호는 변경하려는 경우에만 필수
-  const passwordValid = !userInfo.password || (userInfo.password && userInfo.confirmPassword);
-  
-  return (
-    userInfo.name?.trim() &&
-    userInfo.birthDate &&
-    userInfo.gender &&
-    userInfo.calendarType &&
-    userInfo.loginId?.trim() &&
-    passwordValid
-  );
 }
 
 async function handleWithdraw() {
@@ -260,23 +334,18 @@ onMounted(async () => {
     const response = await authStore.fetchCurrentUser();
     
     if (response) {
-      // gender 변환: 백엔드는 'M'/'F', 프론트엔드는 'male'/'female'
-      const genderMapping = { 'M': 'male', 'F': 'female' };
-      
-      userInfo.loginId = response.loginId || '';
-      userInfo.name = response.name || '';
-      userInfo.birthDate = response.birthDate || '';
-      userInfo.gender = genderMapping[response.gender] || response.gender || '';
-      userInfo.calendarType = response.calendarType || 'solar';
+      formData.loginId = response.loginId || '';
+      formData.name = response.name || '';
+      formData.birthDate = response.birthDate || '';
+      formData.gender = validation.genderToFrontend(response.gender);
+      formData.calendarType = validation.calendarTypeToFrontend(response.calendarType);
       
       // 비밀번호 필드는 비워둠 (보안 및 UX)
-      userInfo.password = '';
-      userInfo.confirmPassword = '';
-      originalLoginId.value = response.loginId || '';
+      formData.password = '';
+      formData.confirmPassword = '';
     }
   } catch (error) {
     console.error('사용자 정보 조회 실패:', error);
-    // 토큰이 없거나 유효하지 않은 경우 로그인 페이지로 이동
     router.push({ name: 'auth' });
   } finally {
     isLoading.value = false;
@@ -289,5 +358,62 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+/* 생년월일 입력 wrapper */
+.date-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.date-input-wrapper .date-input {
+  flex: 1;
+  padding-right: 40px;
+}
+
+.hidden-date-picker {
+  position: absolute;
+  right: 220px;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.calendar-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 5px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.calendar-btn:hover {
+  opacity: 1;
+}
+
+/* 비활성화된 입력 필드 오버레이 */
+.disabled-input-wrapper {
+  position: relative;
+  width: 100%;
+  cursor: pointer;
+}
+
+.disabled-input-wrapper input {
+  width: 100%;
+}
+
+.disabled-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  cursor: pointer;
 }
 </style>
