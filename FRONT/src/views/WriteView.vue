@@ -414,7 +414,7 @@ async function ensureMonthData(date) {
   height: 8px;
   border-radius: 5px;
   background: #e0e0e0;
-  background-image: linear-gradient(90deg, #ffc8dd, #cdb4db);
+  background-image: linear-gradient(90deg, var(--color-pink), var(--color-purple));
   background-repeat: no-repeat;
   outline: none;
   cursor: pointer;
@@ -433,7 +433,7 @@ async function ensureMonthData(date) {
   height: 24px;
   border-radius: 50%;
   background: #fff;
-  border: 4px solid #cdb4db;
+  border: 4px solid var(--color-purple);
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s;
@@ -448,7 +448,7 @@ async function ensureMonthData(date) {
   height: 24px;
   border-radius: 50%;
   background: #fff;
-  border: 4px solid #cdb4db;
+  border: 4px solid var(--color-purple);
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s;
@@ -475,7 +475,7 @@ async function ensureMonthData(date) {
 }
 
 .mark.active {
-  background: #cdb4db;
+  background: var(--color-purple);
 }
 
 .scale-enter-active,
@@ -593,7 +593,7 @@ async function ensureMonthData(date) {
   background: transparent;
   min-height: 300px;
   scrollbar-width: thin;
-  scrollbar-color: #cdb4db transparent;
+  scrollbar-color: var(--color-purple) transparent;
 }
 
 .content-input::-webkit-scrollbar {
@@ -605,7 +605,7 @@ async function ensureMonthData(date) {
 }
 
 .content-input::-webkit-scrollbar-thumb {
-  background-color: #cdb4db;
+  background-color: var(--color-purple);
   border-radius: 4px;
   border: none;
 }

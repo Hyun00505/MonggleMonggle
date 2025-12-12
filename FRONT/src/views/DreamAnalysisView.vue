@@ -489,7 +489,7 @@ function downloadImage(image) {
   gap: 0.75rem;
   padding: 0.5rem 1.25rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(205, 180, 219, 0.3), rgba(162, 210, 255, 0.3));
+  background: var(--gradient-title-badge);
   color: #4c2b7b;
 }
 
@@ -524,7 +524,7 @@ function downloadImage(image) {
   display: inline-block;
   width: 22px;
   height: 9px;
-  background: #cdb4db;
+  background: var(--color-purple);
   border-radius: 999px;
   transform: translateY(1px);
 }
@@ -533,7 +533,7 @@ function downloadImage(image) {
 .title-cloud::after {
   content: "";
   position: absolute;
-  background: #cdb4db;
+  background: var(--color-purple);
   border-radius: 999px;
 }
 

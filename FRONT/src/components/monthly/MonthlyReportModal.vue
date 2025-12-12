@@ -124,7 +124,7 @@ const formattedReport = computed(() => (props.report ? props.report.replace(/\n/
   border-radius: 20px;
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.18);
   padding: 1.6rem;
-  border: 1px solid rgba(205, 180, 219, 0.35);
+  border: 1px solid var(--color-purple-35);
 }
 
 .report-modal-header {
@@ -138,7 +138,7 @@ const formattedReport = computed(() => (props.report ? props.report.replace(/\n/
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #cdb4db, #a2d2ff);
+  background: var(--gradient-purple-blue);
   display: grid;
   place-items: center;
   color: #fff;
@@ -172,7 +172,7 @@ const formattedReport = computed(() => (props.report ? props.report.replace(/\n/
   padding: 0.5rem 1rem;
   border-radius: 16px;
   background: #faf7ff;
-  border: 1px solid rgba(205, 180, 219, 0.35);
+  border: 1px solid var(--color-purple-35);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 14px 30px rgba(205, 180, 219, 0.14);
   position: relative;
   overflow: hidden;
@@ -199,7 +199,7 @@ const formattedReport = computed(() => (props.report ? props.report.replace(/\n/
 .letter-stamp {
   padding: 0.55rem 0.75rem;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(205, 180, 219, 0.35), rgba(162, 210, 255, 0.35));
+  background: var(--gradient-report-badge);
   color: #5a3d7a;
   font-family: "Dongle", sans-serif;
   font-weight: 700;
@@ -227,7 +227,7 @@ const formattedReport = computed(() => (props.report ? props.report.replace(/\n/
   z-index: 1;
   background: rgba(250, 247, 255, 0.9);
   border-radius: 12px;
-  border: 1px dashed rgba(205, 180, 219, 0.35);
+  border: 1px dashed var(--color-purple-35);
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
@@ -282,7 +282,7 @@ const formattedReport = computed(() => (props.report ? props.report.replace(/\n/
 }
 
 .report-modal::-webkit-scrollbar-thumb {
-  background: rgba(205, 180, 219, 0.6);
+  background: var(--color-purple-60);
   border-radius: 4px;
 }
 </style>

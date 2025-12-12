@@ -301,8 +301,8 @@ function isToday(day) {
   font-family: "Dongle", sans-serif;
   font-size: 5rem;
   font-weight: 700;
-  /* Text Gradient: Pastel Purple -> Pink -> Blue (Original Lighter Version) */
-  background: linear-gradient(to right, #cdb4db, #ffc8dd, #a2d2ff);
+  /* Text Gradient: Pastel Purple -> Pink -> Blue */
+  background: linear-gradient(to right, var(--color-purple), var(--color-pink), var(--color-blue));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -471,10 +471,10 @@ function isToday(day) {
 }
 
 .day-cell.today:not(.has-post) {
-  background: linear-gradient(135deg, #cdb4db, #ffc8dd, #a2d2ff); /* Gradient matching title */
+  background: var(--gradient-primary);
   border: none;
   color: #fff;
-  box-shadow: 0 4px 12px rgba(255, 200, 221, 0.3);
+  box-shadow: 0 4px 12px var(--shadow-pink);
 }
 
 .day-cell.warning-active {
@@ -491,7 +491,7 @@ function isToday(day) {
 @keyframes blink-shadow {
   0%,
   100% {
-    box-shadow: 0 0 8px rgba(205, 180, 219, 0.4);
+    box-shadow: 0 0 8px var(--shadow-purple-md);
     transform: scale(1);
   }
   50% {

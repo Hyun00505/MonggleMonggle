@@ -187,10 +187,10 @@ defineExpose({ resetState });
 
 <style scoped>
 .section-card {
-  background: linear-gradient(135deg, rgba(205, 180, 219, 0.1), rgba(255, 200, 221, 0.1), rgba(162, 210, 255, 0.1));
+  background: var(--gradient-bg-light);
   border-radius: 20px;
   padding: 1.5rem;
-  border: 1px solid rgba(205, 180, 219, 0.2);
+  border: 1px solid var(--border-purple);
 }
 
 .section-title {
@@ -239,18 +239,18 @@ defineExpose({ resetState });
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, #cdb4db, #b799c7);
+  background: linear-gradient(135deg, var(--color-purple), var(--color-purple-dark));
   color: white;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 3px 10px rgba(205, 180, 219, 0.3);
+  box-shadow: 0 3px 10px var(--shadow-purple);
 }
 
 .add-memo-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(205, 180, 219, 0.4);
+  box-shadow: 0 5px 15px var(--shadow-purple-md);
 }
 
 .memo-list {
@@ -261,7 +261,7 @@ defineExpose({ resetState });
   overflow-y: auto;
   padding-right: 0.5rem;
   scrollbar-width: thin;
-  scrollbar-color: #cdb4db rgba(205, 180, 219, 0.1);
+  scrollbar-color: var(--color-purple) var(--color-purple-light);
 }
 
 .memo-list::-webkit-scrollbar {
@@ -269,17 +269,17 @@ defineExpose({ resetState });
 }
 
 .memo-list::-webkit-scrollbar-track {
-  background: rgba(205, 180, 219, 0.1);
+  background: var(--color-purple-light);
   border-radius: 3px;
 }
 
 .memo-list::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #cdb4db, #ffc8dd);
+  background: linear-gradient(180deg, var(--color-purple), var(--color-pink));
   border-radius: 3px;
 }
 
 .memo-list::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #b799c7, #ffb3cc);
+  background: linear-gradient(180deg, var(--color-purple-dark), var(--color-pink-dark));
 }
 
 .memo-note {
@@ -312,19 +312,19 @@ defineExpose({ resetState });
   background: linear-gradient(180deg, #f3eef7 0%, #ebe4f0 100%);
 }
 .memo-purple::before {
-  background: #cdb4db;
+  background: var(--color-purple);
 }
 
 .memo-pink {
   background: linear-gradient(180deg, #fff0f5 0%, #ffe8ef 100%);
 }
 .memo-pink::before {
-  background: #ffc8dd;
+  background: var(--color-pink);
 }
 
 .new-memo {
   background: white;
-  border: 2px dashed rgba(205, 180, 219, 0.4);
+  border: 2px dashed var(--border-dashed-purple);
   grid-column: 1 / -1;
   min-height: auto;
   margin-bottom: 16px;
@@ -363,7 +363,7 @@ defineExpose({ resetState });
   padding: 0.25rem 0.6rem;
   border: none;
   border-radius: 6px;
-  background: rgba(205, 180, 219, 0.2);
+  background: var(--color-purple-20);
   color: #8a6aa8;
   font-size: 0.75rem;
   font-weight: 600;
@@ -372,7 +372,7 @@ defineExpose({ resetState });
 }
 
 .expand-btn:hover {
-  background: rgba(205, 180, 219, 0.4);
+  background: var(--color-purple-40);
   color: #6a4a88;
 }
 
@@ -413,7 +413,7 @@ defineExpose({ resetState });
 }
 
 .memo-action-btn.edit:hover {
-  background: #cdb4db;
+  background: var(--color-purple);
   color: white;
 }
 
@@ -422,7 +422,7 @@ defineExpose({ resetState });
 }
 
 .memo-action-btn.delete:hover {
-  background: #ffc8dd;
+  background: var(--color-pink);
   color: white;
 }
 
@@ -444,7 +444,7 @@ defineExpose({ resetState });
   background: rgba(255, 255, 255, 0.8);
   transition: all 0.2s;
   scrollbar-width: thin;
-  scrollbar-color: #cdb4db rgba(205, 180, 219, 0.1);
+  scrollbar-color: var(--color-purple) var(--color-purple-light);
 }
 
 .memo-textarea::-webkit-scrollbar {
@@ -452,26 +452,26 @@ defineExpose({ resetState });
 }
 
 .memo-textarea::-webkit-scrollbar-track {
-  background: rgba(205, 180, 219, 0.1);
+  background: var(--color-purple-light);
   border-radius: 4px;
 }
 
 .memo-textarea::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #cdb4db, #ffc8dd);
+  background: linear-gradient(180deg, var(--color-purple), var(--color-pink));
   border-radius: 4px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 .memo-textarea::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #b799c7, #ffb3cc);
+  background: linear-gradient(180deg, var(--color-purple-dark), var(--color-pink-dark));
   background-clip: padding-box;
 }
 
 .memo-textarea:focus {
   outline: none;
   background: white;
-  box-shadow: 0 0 0 2px rgba(205, 180, 219, 0.3);
+  box-shadow: 0 0 0 2px var(--shadow-purple);
 }
 
 .memo-note-actions {
@@ -505,14 +505,14 @@ defineExpose({ resetState });
 }
 
 .save-btn {
-  background: linear-gradient(135deg, #cdb4db, #b799c7);
+  background: linear-gradient(135deg, var(--color-purple), var(--color-purple-dark));
   color: white;
-  box-shadow: 0 4px 12px rgba(205, 180, 219, 0.4);
+  box-shadow: 0 4px 12px var(--shadow-purple-md);
 }
 
 .save-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(205, 180, 219, 0.5);
+  box-shadow: 0 6px 16px var(--shadow-purple-lg);
 }
 
 .cancel-btn {

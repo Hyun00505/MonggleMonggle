@@ -315,7 +315,7 @@ onBeforeUnmount(() => {
 }
 
 .menu-item.router-link-active {
-  background: linear-gradient(135deg, #a2d2ff, #bde0fe);
+  background: linear-gradient(135deg, var(--color-blue), var(--color-blue-dark));
   color: white;
 }
 

@@ -68,10 +68,10 @@ defineEmits(["select-dream", "prev-page", "next-page"]);
 
 <style scoped>
 .section-card {
-  background: linear-gradient(135deg, rgba(205, 180, 219, 0.1), rgba(255, 200, 221, 0.1), rgba(162, 210, 255, 0.1));
+  background: var(--gradient-bg-light);
   border-radius: 20px;
   padding: 1.5rem;
-  border: 1px solid rgba(205, 180, 219, 0.2);
+  border: 1px solid var(--border-purple);
 }
 
 .section-title {
@@ -113,7 +113,7 @@ defineEmits(["select-dream", "prev-page", "next-page"]);
 
 .page-btn {
   padding: 0.35rem 0.45rem;
-  border: 1px solid rgba(205, 180, 219, 0.4);
+  border: 1px solid var(--border-dashed-purple);
   border-radius: 10px;
   background: white;
   color: #8a6aa8;
@@ -162,13 +162,13 @@ defineEmits(["select-dream", "prev-page", "next-page"]);
   border-radius: 14px;
   cursor: pointer;
   transition: all 0.2s;
-  border: 1px solid rgba(205, 180, 219, 0.15);
+  border: 1px solid var(--color-purple-15);
 }
 
 .dream-item:hover {
   transform: translateX(5px);
-  box-shadow: 0 4px 16px rgba(205, 180, 219, 0.2);
-  border-color: rgba(205, 180, 219, 0.3);
+  box-shadow: 0 4px 16px var(--color-purple-20);
+  border-color: var(--border-purple-light);
 }
 
 .dream-item svg {
@@ -177,7 +177,7 @@ defineEmits(["select-dream", "prev-page", "next-page"]);
 }
 
 .dream-item:hover svg {
-  color: #b799c7;
+  color: var(--color-purple-dark);
 }
 
 .dream-date-badge {
@@ -195,15 +195,15 @@ defineEmits(["select-dream", "prev-page", "next-page"]);
 }
 
 .dream-date-badge.color-purple {
-  background: linear-gradient(135deg, #cdb4db, #b799c7);
+  background: linear-gradient(135deg, var(--color-purple), var(--color-purple-dark));
 }
 
 .dream-date-badge.color-pink {
-  background: linear-gradient(135deg, #ffc8dd, #ffb3cc);
+  background: linear-gradient(135deg, var(--color-pink), var(--color-pink-dark));
 }
 
 .dream-date-badge.color-blue {
-  background: linear-gradient(135deg, #a2d2ff, #8bb8e8);
+  background: linear-gradient(135deg, var(--color-blue), var(--color-blue-dark));
 }
 
 .dream-info {
@@ -245,7 +245,7 @@ defineEmits(["select-dream", "prev-page", "next-page"]);
 .empty-icon svg {
   width: 48px;
   height: 48px;
-  stroke: #cdb4db;
+  stroke: var(--color-purple);
 }
 
 .empty-state p {

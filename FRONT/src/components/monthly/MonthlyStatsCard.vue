@@ -70,7 +70,7 @@ defineProps({
 }
 
 .dreams-card:hover {
-  box-shadow: 0 8px 28px rgba(205, 180, 219, 0.4);
+  box-shadow: 0 8px 28px var(--shadow-purple-md);
 }
 
 .streak-card {

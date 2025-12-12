@@ -366,7 +366,7 @@ watch([() => formData.loginId, () => formData.password], () => {
   font-family: "Dongle", sans-serif;
   font-size: 5rem;
   font-weight: 700;
-  background: linear-gradient(to right, #cdb4db, #ffc8dd, #a2d2ff);
+  background: linear-gradient(to right, var(--color-purple), var(--color-pink), var(--color-blue));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

@@ -523,7 +523,7 @@ watch([currentYear, currentMonth], () => {
   align-items: center;
   gap: 0.35rem;
   padding: 0.55rem 0.9rem;
-  border: 1px solid rgba(205, 180, 219, 0.4);
+  border: 1px solid var(--border-dashed-purple);
   border-radius: 12px;
   background: linear-gradient(135deg, rgba(205, 180, 219, 0.16), rgba(162, 210, 255, 0.16));
   color: #6a4a88;
@@ -615,7 +615,7 @@ watch([currentYear, currentMonth], () => {
   gap: 0.75rem;
   padding: 0.5rem 1.25rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(205, 180, 219, 0.3), rgba(162, 210, 255, 0.3));
+  background: var(--gradient-title-badge);
   -webkit-text-fill-color: #4c2b7b;
   line-height: 1.2;
   overflow: visible;
@@ -628,7 +628,7 @@ watch([currentYear, currentMonth], () => {
   padding: 0.3rem 0.8rem;
   border-radius: 999px;
   background: white;
-  color: #b799c7;
+  color: var(--color-purple-dark);
   font-weight: 600;
 }
 
@@ -650,7 +650,7 @@ watch([currentYear, currentMonth], () => {
   display: flex;
   flex-direction: column;
   padding-left: 1.8rem;
-  border-left: 1px solid rgba(205, 180, 219, 0.3);
+  border-left: 1px solid var(--border-purple-light);
   min-width: 0;
   height: 100%;
 }
@@ -661,7 +661,7 @@ watch([currentYear, currentMonth], () => {
   align-items: center;
   gap: 1.5rem;
   padding: 1rem;
-  background: linear-gradient(135deg, rgba(205, 180, 219, 0.15), rgba(255, 200, 221, 0.15), rgba(162, 210, 255, 0.15));
+  background: var(--gradient-bg-15);
   border-radius: 20px;
   margin-bottom: 1.5rem;
 }
@@ -673,16 +673,16 @@ watch([currentYear, currentMonth], () => {
   height: 40px;
   border-radius: 12px;
   cursor: pointer;
-  color: #b799c7;
+  color: var(--color-purple-dark);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(205, 180, 219, 0.2);
+  box-shadow: 0 2px 8px var(--color-purple-20);
 }
 
 .month-nav-btn:hover {
-  background: #cdb4db;
+  background: var(--color-purple);
   color: white;
   transform: scale(1.08);
 }
@@ -723,7 +723,7 @@ watch([currentYear, currentMonth], () => {
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #cdb4db, #a2d2ff);
+  background: var(--gradient-purple-blue);
   display: grid;
   place-items: center;
   color: #fff;

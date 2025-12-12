@@ -9,7 +9,77 @@
 }
 
 :root {
+  /* 폰트 */
   --font-main: 'ThinRounded', sans-serif;
+
+  /* ===== 몽글몽글 컬러 팔레트 ===== */
+  /* 메인 파스텔 색상 */
+  --color-purple: #cdb4db;
+  --color-pink: #ffc8dd;
+  --color-blue: #a2d2ff;
+
+  /* 다크 파스텔 (hover, accent) */
+  --color-purple-dark: #b799c7;
+  --color-pink-dark: #ffb3cc;
+  --color-blue-dark: #8bb8e8;
+
+  /* 텍스트 색상 */
+  --color-text-primary: #4c2b7b;
+  --color-text-secondary: #6a4a88;
+  --color-text-muted: #8a6aa8;
+
+  /* 그라데이션 */
+  --gradient-primary: linear-gradient(135deg, var(--color-purple), var(--color-pink), var(--color-blue));
+  --gradient-purple-blue: linear-gradient(135deg, var(--color-purple), var(--color-blue));
+  --gradient-purple-pink: linear-gradient(135deg, var(--color-purple), var(--color-pink));
+
+  /* 반투명 배경 (10%) */
+  --color-purple-light: rgba(205, 180, 219, 0.1);
+  --color-pink-light: rgba(255, 200, 221, 0.1);
+  --color-blue-light: rgba(162, 210, 255, 0.1);
+  --gradient-bg-light: linear-gradient(135deg, var(--color-purple-light), var(--color-pink-light), var(--color-blue-light));
+
+  /* 반투명 배경 (15%) */
+  --color-purple-15: rgba(205, 180, 219, 0.15);
+  --color-pink-15: rgba(255, 200, 221, 0.15);
+  --color-blue-15: rgba(162, 210, 255, 0.15);
+  --gradient-bg-15: linear-gradient(135deg, var(--color-purple-15), var(--color-pink-15), var(--color-blue-15));
+
+  /* 반투명 배경 (20%) */
+  --color-purple-20: rgba(205, 180, 219, 0.2);
+  --color-pink-20: rgba(255, 200, 221, 0.2);
+  --color-blue-20: rgba(162, 210, 255, 0.2);
+
+  /* 반투명 배경 (30%) - 타이틀 배지 등 */
+  --color-purple-30: rgba(205, 180, 219, 0.3);
+  --color-blue-30: rgba(162, 210, 255, 0.3);
+  --gradient-title-badge: linear-gradient(135deg, var(--color-purple-30), var(--color-blue-30));
+
+  /* 반투명 배경 (40%) */
+  --color-purple-40: rgba(205, 180, 219, 0.4);
+
+  /* 반투명 배경 (50%) */
+  --color-purple-50: rgba(205, 180, 219, 0.5);
+
+  /* 반투명 배경 (35%) - 리포트 모달 등 */
+  --color-purple-35: rgba(205, 180, 219, 0.35);
+  --color-blue-35: rgba(162, 210, 255, 0.35);
+  --gradient-report-badge: linear-gradient(135deg, var(--color-purple-35), var(--color-blue-35));
+
+  /* 반투명 배경 (60%) */
+  --color-purple-60: rgba(205, 180, 219, 0.6);
+
+  /* 보더 색상 */
+  --border-purple: rgba(205, 180, 219, 0.2);
+  --border-purple-light: rgba(205, 180, 219, 0.3);
+  --border-dashed-purple: rgba(205, 180, 219, 0.4);
+
+  /* 그림자 */
+  --shadow-purple: rgba(205, 180, 219, 0.3);
+  --shadow-purple-md: rgba(205, 180, 219, 0.4);
+  --shadow-purple-lg: rgba(205, 180, 219, 0.5);
+  --shadow-pink: rgba(255, 200, 221, 0.3);
+  --shadow-blue: rgba(162, 210, 255, 0.3);
 }
 
 *,
@@ -54,7 +124,7 @@ select {
   font-weight: 800;
   color: #333;
   margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, #CDB4DB, #FFC8DD, #A2D2FF);
+  background: var(--gradient-primary);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -93,9 +163,9 @@ select {
 }
 
 .auth-input:focus, .custom-input:focus {
-  border-color: #CDB4DB;
+  border-color: var(--color-purple);
   background: #fff;
-  box-shadow: 0 0 0 4px rgba(205, 180, 219, 0.1);
+  box-shadow: 0 0 0 4px var(--color-purple-light);
 }
 
 .auth-input::placeholder, .custom-input::placeholder {
@@ -189,7 +259,7 @@ select {
 
 .custom-radio:checked {
   border-color: transparent;
-  background: #CDB4DB;
+  background: var(--color-purple);
 }
 
 .custom-radio:checked::after {
@@ -205,7 +275,7 @@ select {
 }
 
 .custom-radio:hover {
-  border-color: #CDB4DB;
+  border-color: var(--color-purple);
 }
 
 .radio-label-text, .radio-text {
@@ -221,18 +291,23 @@ select {
   padding: 1rem;
   border: none;
   border-radius: 15px;
-  background: linear-gradient(135deg, #CDB4DB, #FFC8DD, #A2D2FF);
+  background: var(--gradient-primary);
   color: white;
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 10px 20px rgba(162, 210, 255, 0.3);
+  box-shadow: 0 10px 20px var(--shadow-blue);
 }
 
 .submit-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 15px 30px rgba(162, 210, 255, 0.4);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* 에러 텍스트 */
@@ -323,8 +398,8 @@ select {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #CDB4DB, #A2D2FF);
-  box-shadow: 0 0 0 4px rgba(205, 180, 219, 0.2);
+  background: var(--gradient-purple-blue);
+  box-shadow: 0 0 0 4px var(--color-purple-light);
   display: inline-block;
 }
 
@@ -356,19 +431,19 @@ select {
   top: 0;
   bottom: 0;
   border-radius: 999px;
-  background: linear-gradient(90deg, #CDB4DB, #FFC8DD, #A2D2FF);
+  background: linear-gradient(90deg, var(--color-purple), var(--color-pink), var(--color-blue));
   transition: width 0.3s ease;
 }
 
 /* 하이라이트 필 (강조 텍스트) */
 .highlight-text {
-  color: #CDB4DB;
+  color: var(--color-purple);
   font-weight: 700;
 }
 
 /* 타임 필 공통 스타일 */
 .time-pill {
-  background: linear-gradient(135deg, #CDB4DB, #A2D2FF);
+  background: var(--gradient-purple-blue);
   color: white;
   padding: 0.4rem 0.75rem;
   border-radius: 12px;
@@ -376,7 +451,7 @@ select {
   font-weight: 800;
   font-size: 0.9rem;
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 12px rgba(162, 210, 255, 0.25);
+  box-shadow: 0 4px 12px var(--shadow-blue);
 }
 
 /* 푸터 액션 링크 스타일 */
@@ -400,7 +475,7 @@ select {
 }
 
 .back-text:hover {
-  color: #A2D2FF;
+  color: var(--color-blue);
   text-decoration: underline;
 }
 

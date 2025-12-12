@@ -627,7 +627,7 @@ async function syncFromServer() {
 }
 
 .search-box:focus-within {
-  border-color: #a2d2ff;
+  border-color: var(--color-blue);
 }
 
 .search-box svg {
@@ -666,7 +666,7 @@ async function syncFromServer() {
 }
 
 .filter-btn:hover {
-  border-color: #a2d2ff;
+  border-color: var(--color-blue);
   background: #f8f9ff;
 }
 
@@ -713,7 +713,7 @@ async function syncFromServer() {
 }
 
 .view-mode-btn:hover {
-  border-color: #a2d2ff;
+  border-color: var(--color-blue);
   background: #f8f9ff;
 }
 
@@ -861,7 +861,7 @@ async function syncFromServer() {
 }
 
 .action-btn:hover {
-  border-color: #a2d2ff;
+  border-color: var(--color-blue);
   background: #f8f9ff;
 }
 
