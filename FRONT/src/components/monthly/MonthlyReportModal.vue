@@ -1,6 +1,6 @@
 <template>
   <transition name="fade">
-    <div v-if="isOpen" class="report-modal-overlay" @click.self="$emit('close')">
+    <div v-if="isOpen" class="report-modal-overlay" @click.self="handleClose">
       <div class="report-modal">
         <div class="report-modal-header">
           <div class="report-mailbox">
@@ -14,7 +14,7 @@
           <div>
             <div class="report-title">{{ year }}년 {{ month }}월 편지</div>
           </div>
-          <button class="modal-close-btn" @click="$emit('close')" aria-label="리포트 닫기">
+          <button class="modal-close-btn" @click="handleClose" aria-label="리포트 닫기">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
@@ -37,9 +37,9 @@
           </div>
 
           <div class="letter-body">
-            <div v-if="isLoading" class="letter-placeholder">편지를 준비하는 중이에요...</div>
-            <div v-else-if="error" class="letter-error">{{ error }}</div>
-            <div v-else-if="report" class="letter-content" v-html="formattedReport"></div>
+            <div v-if="isLoadingReport" class="letter-placeholder">편지를 준비하는 중이에요...</div>
+            <div v-else-if="reportError" class="letter-error">{{ reportError }}</div>
+            <div v-else-if="monthlyReport" class="letter-content" v-html="formattedReport"></div>
             <div v-else class="letter-placeholder">편지 내용을 여기에 담아 전달해 드릴게요.</div>
           </div>
 
@@ -56,7 +56,10 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { storeToRefs } from "pinia";
+import { useAuthStore } from "../../stores/authStore";
+import { monthlyAnalysisService } from "../../services/monthlyAnalysisService";
 
 const props = defineProps({
   isOpen: {
@@ -71,27 +74,252 @@ const props = defineProps({
     type: Number,
     required: true,
   },
-  report: {
-    type: String,
-    default: "",
-  },
-  isLoading: {
+  isLocked: {
     type: Boolean,
     default: false,
   },
-  error: {
-    type: String,
-    default: "",
-  },
-  receiverName: {
-    type: String,
-    default: "나에게",
-  },
 });
 
-defineEmits(["close"]);
+const emit = defineEmits(["close", "mark-read"]);
 
-const formattedReport = computed(() => (props.report ? props.report.replace(/\n/g, "<br />") : ""));
+const authStore = useAuthStore();
+const { currentUser } = storeToRefs(authStore);
+
+// 리포트 상태
+const monthlyReport = ref("");
+const isLoadingReport = ref(false);
+const isGeneratingReport = ref(false);
+const reportError = ref("");
+
+// 편지 읽음 상태 관리
+const letterReadStatus = ref({});
+const LETTER_READ_KEY = "monthlyReportRead";
+
+// 현재 시간 (직전 달 판단용)
+const now = ref(new Date());
+let nowTimer = null;
+
+// 직전 달인지 확인 (편지 생성/조회는 직전 달만 가능)
+const isPreviousMonth = computed(() => {
+  const prevMonthDate = new Date(now.value.getFullYear(), now.value.getMonth() - 1, 1);
+  return props.year === prevMonthDate.getFullYear() && props.month === prevMonthDate.getMonth() + 1;
+});
+
+// 편지 버튼 표시 여부
+const hasReportContent = computed(() => {
+  // 직전 달인 경우 항상 편지 버튼 표시 (로딩 중이거나 편지가 있거나 생성 가능)
+  if (isPreviousMonth.value) {
+    return true;
+  }
+  // 2달 이상 과거는 기존 편지가 있을 때만 표시 (조회만 가능, 생성 불가)
+  return isLoadingReport.value || !!monthlyReport.value;
+});
+
+// 편지 포맷팅
+const formattedReport = computed(() => (monthlyReport.value ? monthlyReport.value.replace(/\n/g, "<br />") : ""));
+
+// 수신자 이름
+const receiverName = computed(() => {
+  const name = currentUser.value?.name;
+  return name ? `${name} 님에게` : "나에게";
+});
+
+// 월 키 생성
+function getMonthKey() {
+  return `${props.year}-${String(props.month).padStart(2, "0")}`;
+}
+
+// 편지 읽음 상태 로드
+function loadLetterReadStatus() {
+  try {
+    const stored = localStorage.getItem(LETTER_READ_KEY);
+    letterReadStatus.value = stored ? JSON.parse(stored) : {};
+  } catch {
+    letterReadStatus.value = {};
+  }
+}
+
+// 편지 읽음 상태 저장
+function persistLetterReadStatus() {
+  try {
+    localStorage.setItem(LETTER_READ_KEY, JSON.stringify(letterReadStatus.value));
+  } catch (err) {
+    console.error("편지 읽음 상태 저장 실패:", err);
+  }
+}
+
+// 편지 읽지 않음 상태
+const isLetterUnread = computed(() => {
+  const key = getMonthKey();
+  return isPreviousMonth.value && hasReportContent.value && !letterReadStatus.value[key];
+});
+
+// 모달 닫기
+function handleClose() {
+  emit("close");
+}
+
+// 모달 열릴 때 읽음 상태 마킹
+function markAsRead() {
+  const key = getMonthKey();
+  letterReadStatus.value = { ...letterReadStatus.value, [key]: true };
+  persistLetterReadStatus();
+  emit("mark-read", key);
+}
+
+// 월간 리포트 생성 시도
+async function tryGenerateReport() {
+  isGeneratingReport.value = true;
+
+  try {
+    const generated = await monthlyAnalysisService.generateMonthlyAnalysis(props.year, props.month);
+    monthlyReport.value = generated?.monthlyReport || "";
+
+    if (!monthlyReport.value) {
+      // 생성 요청은 성공했지만 결과가 없으면 재시도
+      await retryFetchReport();
+    }
+  } catch (genErr) {
+    reportError.value = genErr?.response?.data?.message || genErr.message || "월간 리포트를 생성하지 못했습니다.";
+    monthlyReport.value = "";
+  } finally {
+    isGeneratingReport.value = false;
+  }
+}
+
+// 월간 리포트 조회 (직전 달이면 없을 시 생성, 과거 달은 조회만)
+async function fetchMonthlyReport() {
+  // 잠긴 달(현재 달 이후)이면 리포트 없음
+  if (props.isLocked) {
+    monthlyReport.value = "";
+    reportError.value = "";
+    return;
+  }
+
+  // 이미 로딩 중이거나 생성 중이면 중복 호출 방지
+  if (isLoadingReport.value || isGeneratingReport.value) {
+    return;
+  }
+
+  isLoadingReport.value = true;
+  reportError.value = "";
+
+  try {
+    // 기존 편지가 있는지 조회
+    const response = await monthlyAnalysisService.getMonthlyAnalysis(props.year, props.month);
+    const report = response?.monthlyReport || "";
+
+    if (report) {
+      monthlyReport.value = report;
+    } else if (isPreviousMonth.value) {
+      // 직전 달인 경우에만 편지가 없으면 자동 생성 시도
+      await tryGenerateReport();
+    } else {
+      // 2달 이상 과거는 편지가 없으면 그냥 비워둠 (생성 안 함)
+      monthlyReport.value = "";
+    }
+  } catch (err) {
+    if (err?.response?.status === 404) {
+      // 편지가 없는 경우
+      if (isPreviousMonth.value) {
+        // 직전 달이면 생성 시도
+        await tryGenerateReport();
+      } else {
+        // 2달 이상 과거는 생성 안 함
+        monthlyReport.value = "";
+      }
+    } else {
+      reportError.value = err?.response?.data?.message || err.message || "월간 리포트를 불러오지 못했습니다.";
+      monthlyReport.value = "";
+    }
+  } finally {
+    isLoadingReport.value = false;
+  }
+}
+
+// 생성 후 결과 다시 조회 (polling)
+async function retryFetchReport(retries = 3, delay = 2000) {
+  for (let i = 0; i < retries; i++) {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+
+    try {
+      const response = await monthlyAnalysisService.getMonthlyAnalysis(props.year, props.month);
+      const report = response?.monthlyReport || "";
+
+      if (report) {
+        monthlyReport.value = report;
+        reportError.value = "";
+        return;
+      }
+    } catch (err) {
+      // 아직 생성 중이면 계속 재시도
+      if (err?.response?.status !== 404) {
+        break;
+      }
+    }
+  }
+
+  // 재시도 후에도 결과가 없으면 에러 메시지
+  if (!monthlyReport.value) {
+    reportError.value = "편지 생성에 시간이 걸리고 있어요. 잠시 후 다시 확인해주세요. ⏳";
+  }
+}
+
+// 상태 리셋
+function resetState() {
+  monthlyReport.value = "";
+  isLoadingReport.value = false;
+  isGeneratingReport.value = false;
+  reportError.value = "";
+}
+
+// 모달 열릴 때 읽음 상태 마킹
+watch(
+  () => props.isOpen,
+  (newValue) => {
+    if (newValue) {
+      markAsRead();
+    }
+  }
+);
+
+// 월 변경 시 데이터 갱신
+watch(
+  [() => props.year, () => props.month],
+  () => {
+    resetState();
+    fetchMonthlyReport();
+  },
+  { immediate: false }
+);
+
+// 라이프사이클
+onMounted(() => {
+  loadLetterReadStatus();
+  fetchMonthlyReport();
+
+  nowTimer = setInterval(() => {
+    now.value = new Date();
+  }, 60 * 1000);
+});
+
+onUnmounted(() => {
+  if (nowTimer) {
+    clearInterval(nowTimer);
+  }
+  // 컴포넌트 언마운트 시 진행 중인 상태 정리
+  isLoadingReport.value = false;
+  isGeneratingReport.value = false;
+});
+
+// 부모 컴포넌트에 상태 노출
+defineExpose({
+  hasReportContent,
+  isLetterUnread,
+  isLoadingReport,
+  fetchMonthlyReport,
+  resetState,
+});
 </script>
 
 <style scoped>
@@ -286,4 +514,3 @@ const formattedReport = computed(() => (props.report ? props.report.replace(/\n/
   border-radius: 4px;
 }
 </style>
-

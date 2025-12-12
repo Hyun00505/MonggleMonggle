@@ -73,16 +73,7 @@
     </div>
 
     <!-- 월별 리포트 모달 -->
-    <MonthlyReportModal
-      :is-open="isReportOpen"
-      :year="currentYear"
-      :month="currentMonth"
-      :report="monthlyReport"
-      :is-loading="isLoadingReport"
-      :error="reportError"
-      :receiver-name="reportReceiver"
-      @close="closeReport"
-    />
+    <MonthlyReportModal ref="reportModalRef" :is-open="isReportOpen" :year="currentYear" :month="currentMonth" :is-locked="isLockedMonth" @close="closeReport" />
   </div>
 </template>
 
@@ -91,7 +82,6 @@ import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
-import { useAuthStore } from "../stores/authStore";
 import { monthlyAnalysisService } from "../services/monthlyAnalysisService";
 
 // 컴포넌트 임포트
@@ -103,12 +93,11 @@ import MonthlyReportModal from "../components/monthly/MonthlyReportModal.vue";
 const route = useRoute();
 const router = useRouter();
 const dreamEntriesStore = useDreamEntriesStore();
-const authStore = useAuthStore();
 const { postedDates } = storeToRefs(dreamEntriesStore);
-const { currentUser } = storeToRefs(authStore);
 
 // 컴포넌트 ref
 const memoSectionRef = ref(null);
+const reportModalRef = ref(null);
 
 // 현재 시간 (잠금 상태 계산용)
 const now = ref(new Date());
@@ -119,14 +108,8 @@ const lastMonthDate = computed(() => new Date(now.value.getFullYear(), now.value
 const currentYear = ref(lastMonthDate.value.getFullYear());
 const currentMonth = ref(lastMonthDate.value.getMonth() + 1);
 
-// 리포트 상태
-const monthlyReport = ref("");
-const isLoadingReport = ref(false);
-const isGeneratingReport = ref(false);
-const reportError = ref("");
+// 리포트 모달 열림 상태
 const isReportOpen = ref(false);
-const letterReadStatus = ref({});
-const LETTER_READ_KEY = "monthlyReportRead";
 
 // 메모 상태
 const monthlyMemos = ref([]);
@@ -137,60 +120,15 @@ const isLockedMonth = computed(() => {
   return selectedKey >= currentKey;
 });
 
-// 직전 달인지 확인 (편지 생성/조회는 직전 달만 가능)
-const isPreviousMonth = computed(() => {
-  const prevMonthDate = new Date(now.value.getFullYear(), now.value.getMonth() - 1, 1);
-  return currentYear.value === prevMonthDate.getFullYear() && currentMonth.value === prevMonthDate.getMonth() + 1;
-});
-
-// 편지 버튼 표시 여부
-const hasReportContent = computed(() => {
-  // 직전 달인 경우 항상 편지 버튼 표시 (로딩 중이거나 편지가 있거나 생성 가능)
-  if (isPreviousMonth.value) {
-    return true;
-  }
-  // 2달 이상 과거는 기존 편지가 있을 때만 표시 (조회만 가능, 생성 불가)
-  return isLoadingReport.value || !!monthlyReport.value;
-});
-
-const formattedReport = computed(() => (monthlyReport.value ? monthlyReport.value.replace(/\n/g, "<br />") : ""));
-const reportReceiver = computed(() => {
-  const name = currentUser.value?.name;
-  return name ? `${name} 님에게` : "나에게";
-});
+// 모달 컴포넌트에서 편지 상태 가져오기
+const hasReportContent = computed(() => reportModalRef.value?.hasReportContent ?? false);
+const isLetterUnread = computed(() => reportModalRef.value?.isLetterUnread ?? false);
 
 const nextAvailableText = computed(() => {
   const nextMonthDate = new Date(currentYear.value, currentMonth.value, 1);
   const y = nextMonthDate.getFullYear();
   const m = String(nextMonthDate.getMonth() + 1).padStart(2, "0");
   return `${y}년 ${m}월 01일`;
-});
-
-// 편지 읽음 상태 관리
-function currentMonthKey() {
-  return `${currentYear.value}-${String(currentMonth.value).padStart(2, "0")}`;
-}
-
-function loadLetterReadStatus() {
-  try {
-    const stored = localStorage.getItem(LETTER_READ_KEY);
-    letterReadStatus.value = stored ? JSON.parse(stored) : {};
-  } catch {
-    letterReadStatus.value = {};
-  }
-}
-
-function persistLetterReadStatus() {
-  try {
-    localStorage.setItem(LETTER_READ_KEY, JSON.stringify(letterReadStatus.value));
-  } catch (err) {
-    console.error("편지 읽음 상태 저장 실패:", err);
-  }
-}
-
-const isLetterUnread = computed(() => {
-  const key = currentMonthKey();
-  return isPreviousMonth.value && hasReportContent.value && !letterReadStatus.value[key];
 });
 
 // 색상 클래스 배열
@@ -319,9 +257,6 @@ function goToDream(dateKey) {
 function openReport() {
   if (isLockedMonth.value) return;
   isReportOpen.value = true;
-  const key = currentMonthKey();
-  letterReadStatus.value = { ...letterReadStatus.value, [key]: true };
-  persistLetterReadStatus();
 }
 
 function closeReport() {
@@ -409,112 +344,12 @@ function loadMonthlyDreams() {
   dreamEntriesStore.fetchDreamsByMonth(currentYear.value, currentMonth.value);
 }
 
-// 월간 리포트 생성 시도
-async function tryGenerateReport() {
-  isGeneratingReport.value = true;
-
-  try {
-    const generated = await monthlyAnalysisService.generateMonthlyAnalysis(currentYear.value, currentMonth.value);
-    monthlyReport.value = generated?.monthlyReport || "";
-
-    if (!monthlyReport.value) {
-      // 생성 요청은 성공했지만 결과가 없으면 재시도
-      await retryFetchReport();
-    }
-  } catch (genErr) {
-    reportError.value = genErr?.response?.data?.message || genErr.message || "월간 리포트를 생성하지 못했습니다.";
-    monthlyReport.value = "";
-  } finally {
-    isGeneratingReport.value = false;
-  }
-}
-
-// 월간 리포트 조회(직전 달이면 없을 시 생성, 과거 달은 조회만)
-async function fetchMonthlyReport() {
-  // 잠긴 달(현재 달 이후)이면 리포트 없음
-  if (isLockedMonth.value) {
-    monthlyReport.value = "";
-    reportError.value = "";
-    return;
-  }
-
-  // 이미 로딩 중이거나 생성 중이면 중복 호출 방지
-  if (isLoadingReport.value || isGeneratingReport.value) {
-    return;
-  }
-
-  isLoadingReport.value = true;
-  reportError.value = "";
-
-  try {
-    // 기존 편지가 있는지 조회
-    const response = await monthlyAnalysisService.getMonthlyAnalysis(currentYear.value, currentMonth.value);
-    const report = response?.monthlyReport || "";
-
-    if (report) {
-      monthlyReport.value = report;
-    } else if (isPreviousMonth.value) {
-      // 직전 달인 경우에만 편지가 없으면 자동 생성 시도
-      await tryGenerateReport();
-    } else {
-      // 2달 이상 과거는 편지가 없으면 그냥 비워둠 (생성 안 함)
-      monthlyReport.value = "";
-    }
-  } catch (err) {
-    if (err?.response?.status === 404) {
-      // 편지가 없는 경우
-      if (isPreviousMonth.value) {
-        // 직전 달이면 생성 시도
-        await tryGenerateReport();
-      } else {
-        // 2달 이상 과거는 생성 안 함
-        monthlyReport.value = "";
-      }
-    } else {
-      reportError.value = err?.response?.data?.message || err.message || "월간 리포트를 불러오지 못했습니다.";
-      monthlyReport.value = "";
-    }
-  } finally {
-    isLoadingReport.value = false;
-  }
-}
-
-// 생성 후 결과 다시 조회 (polling)
-async function retryFetchReport(retries = 3, delay = 2000) {
-  for (let i = 0; i < retries; i++) {
-    await new Promise((resolve) => setTimeout(resolve, delay));
-
-    try {
-      const response = await monthlyAnalysisService.getMonthlyAnalysis(currentYear.value, currentMonth.value);
-      const report = response?.monthlyReport || "";
-
-      if (report) {
-        monthlyReport.value = report;
-        reportError.value = "";
-        return;
-      }
-    } catch (err) {
-      // 아직 생성 중이면 계속 재시도
-      if (err?.response?.status !== 404) {
-        break;
-      }
-    }
-  }
-
-  // 재시도 후에도 결과가 없으면 에러 메시지
-  if (!monthlyReport.value) {
-    reportError.value = "편지 생성에 시간이 걸리고 있어요. 잠시 후 다시 확인해주세요. ⏳";
-  }
-}
-
 // 라이프사이클
 onMounted(() => {
   syncFromRoute();
   updateRouteQuery();
-  loadLetterReadStatus();
   loadMonthlyMemos();
   loadMonthlyDreams();
-  fetchMonthlyReport();
 
   nowTimer = setInterval(() => {
     now.value = new Date();
@@ -525,9 +360,6 @@ onUnmounted(() => {
   if (nowTimer) {
     clearInterval(nowTimer);
   }
-  // 컴포넌트 언마운트 시 진행 중인 상태 정리
-  isLoadingReport.value = false;
-  isGeneratingReport.value = false;
 });
 
 watch(
@@ -541,7 +373,6 @@ watch(
 watch([currentYear, currentMonth], () => {
   loadMonthlyMemos();
   loadMonthlyDreams();
-  fetchMonthlyReport();
 });
 </script>
 
