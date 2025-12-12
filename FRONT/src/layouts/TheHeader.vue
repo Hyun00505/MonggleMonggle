@@ -32,8 +32,8 @@
 
       <div class="spacer"></div>
 
-      <div class="coin-wrapper" ref="coinWrapper">
-        <button type="button" class="glass-btn coin-container" aria-label="AI 티켓 (해몽 가능 횟수)" :aria-expanded="showCoinInfo" @click="toggleCoinInfo">
+      <div class="coin-wrapper" ref="coinWrapper" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
+        <button type="button" class="glass-btn coin-container" aria-label="AI 티켓 (해몽 가능 횟수)" :aria-expanded="showCoinInfo" @click="handleCoinClick">
           <span class="coin-icon" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0-2 2 2 2 0 0 0 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 2-2 2 2 0 0 0-2-2Z"></path>
@@ -46,21 +46,16 @@
         </button>
 
         <transition name="popover">
-          <div v-if="showCoinInfo" class="coin-popover" role="status">
-            <div class="popover-header">
-              <span class="status-dot"></span>
-              <span>AI 티켓 안내</span>
-            </div>
-
+          <div v-if="showCoinInfo" class="glass-popover coin-popover" role="status">
             <ul class="rule-list">
               <li>
                 꿈 해몽 시
-                <strong>1개</strong>
+                <strong class="highlight-text">1개</strong>
                 차감
               </li>
               <li>
                 꿈 이미지 생성 시
-                <strong>2개</strong>
+                <strong class="highlight-text">2개</strong>
                 차감
               </li>
             </ul>
@@ -70,11 +65,11 @@
               <span class="time-pill">{{ countdown }}</span>
             </div>
 
-            <div class="progress">
-              <span class="progress-fill" :style="{ width: resetProgress + '%' }"></span>
+            <div class="glass-progress">
+              <span class="glass-progress-fill" :style="{ width: resetProgress + '%' }"></span>
             </div>
 
-            <p class="reset-footnote">매일 자정(UTC+9)에 티켓이 새로고침돼요</p>
+            <p class="reset-footnote">매일 자정(UTC+9)에 티켓이 새로고침 돼요</p>
           </div>
         </transition>
       </div>
@@ -118,7 +113,9 @@ const showCoinInfo = ref(false);
 const coinWrapper = ref(null);
 const countdown = ref("00:00:00");
 const resetProgress = ref(0);
+const isTouchDevice = ref(false);
 let countdownTimer = null;
+let hoverTimeout = null;
 
 const displayName = computed(() => {
   const name = currentUser.value?.name;
@@ -145,7 +142,32 @@ function toggleCoinInfo() {
   showCoinInfo.value = !showCoinInfo.value;
 }
 
+function handleCoinClick() {
+  // 모바일에서는 클릭으로 토글, PC에서는 클릭해도 동작 (접근성)
+  toggleCoinInfo();
+}
+
+function handleMouseEnter() {
+  // PC에서만 호버로 표시
+  if (!isTouchDevice.value) {
+    if (hoverTimeout) clearTimeout(hoverTimeout);
+    showMenu.value = false;
+    showCoinInfo.value = true;
+  }
+}
+
+function handleMouseLeave() {
+  // PC에서만 호버 해제 시 숨김 (약간의 딜레이)
+  if (!isTouchDevice.value) {
+    hoverTimeout = setTimeout(() => {
+      showCoinInfo.value = false;
+    }, 150);
+  }
+}
+
 function handleOutsideClick(event) {
+  // 모바일에서만 외부 클릭 시 닫기
+  if (!isTouchDevice.value) return;
   if (!coinWrapper.value) return;
   if (coinWrapper.value.contains(event.target)) return;
   showCoinInfo.value = false;
@@ -183,6 +205,15 @@ function updateCountdown() {
 }
 
 onMounted(() => {
+  // 호버 기능이 없는 디바이스 감지 (모바일/태블릿)
+  const hoverQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+  isTouchDevice.value = !hoverQuery.matches;
+  
+  // 미디어 쿼리 변경 감지 (예: 태블릿 모드 전환)
+  hoverQuery.addEventListener('change', (e) => {
+    isTouchDevice.value = !e.matches;
+  });
+  
   updateCountdown();
   countdownTimer = setInterval(updateCountdown, 1000);
   document.addEventListener("click", handleOutsideClick);
@@ -192,6 +223,10 @@ onBeforeUnmount(() => {
   if (countdownTimer) {
     clearInterval(countdownTimer);
     countdownTimer = null;
+  }
+  if (hoverTimeout) {
+    clearTimeout(hoverTimeout);
+    hoverTimeout = null;
   }
   document.removeEventListener("click", handleOutsideClick);
 });
@@ -297,7 +332,7 @@ onBeforeUnmount(() => {
 }
 
 .coin-container {
-  cursor: pointer;
+  cursor: default;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -346,130 +381,50 @@ onBeforeUnmount(() => {
   color: #f3e366;
 }
 
+/* coin-popover: 위치 및 사이즈 오버라이드 */
 .coin-popover {
-  position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  width: 260px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
-  border-radius: 20px;
-  padding: 0.9rem 1rem;
-  color: white;
-  z-index: 1200;
-}
-
-.coin-popover::before {
-  content: "";
-  position: absolute;
-  top: -8px;
-  right: 28px;
-  width: 14px;
-  height: 14px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border-left: 1px solid rgba(255, 255, 255, 0.3);
-  border-top: 1px solid rgba(255, 255, 255, 0.3);
-  transform: rotate(45deg);
-}
-
-.popover-header {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-weight: 800;
-  font-size: 0.95rem;
-  color: white;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: white;
-  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.3);
-  display: inline-block;
+  font-family: 'Nunito', sans-serif !important;
+  width: 270px;
+  cursor: default;
 }
 
 .rule-list {
   list-style: none;
-  padding: 0.65rem 0 0.4rem 0;
+  padding: 0rem 0 0.5rem 0;
   margin: 0;
   display: grid;
-  gap: 0.25rem;
-  color: white;
+  gap: 0.35rem;
+  color: #666;
   font-weight: 600;
-  line-height: 1.4;
-}
-
-.rule-list strong {
-  color: #ffe082;
+  line-height: 1.5;
+  font-size: 0.95rem;
 }
 
 .reset-info {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.35rem;
+  margin-top: 0.5rem;
   gap: 0.8rem;
 }
 
 .reset-label {
   font-size: 0.9rem;
   font-weight: 700;
-  color: white;
+  color: #666;
 }
 
-.time-pill {
-  background: linear-gradient(135deg, #ab47bc, #1a237e);
-  color: #ffe082;
-  padding: 0.35rem 0.65rem;
-  border-radius: 10px;
-  font-family: "Nunito", sans-serif;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  box-shadow: 0 6px 12px rgba(26, 35, 126, 0.18);
-}
-
-.progress {
-  position: relative;
-  width: 100%;
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
-  overflow: hidden;
-  margin-top: 0.6rem;
-}
-
-.progress-fill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #ffe082, #fff);
-  transition: width 0.3s ease;
+.coin-popover .glass-progress {
+  margin-top: 0.75rem;
 }
 
 .reset-footnote {
-  margin: 0.4rem 0 0;
+  margin: 0.5rem 0 0;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.8);
-  text-align: right;
-  font-weight: 600;
-}
-
-.popover-enter-active,
-.popover-leave-active {
-  transition: opacity 0.15s ease, transform 0.2s ease;
-}
-
-.popover-enter-from,
-.popover-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
+  color: #999;
+  text-align: center;
 }
 
 @media (max-width: 768px) {
@@ -503,8 +458,11 @@ onBeforeUnmount(() => {
   }
 
   .coin-popover {
-    width: 230px;
-    right: -30px;
+    right: -20px;
+  }
+
+  .coin-popover::before {
+    right: 38px;
   }
 }
 
