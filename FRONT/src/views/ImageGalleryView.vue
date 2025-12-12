@@ -541,7 +541,7 @@ async function syncFromServer() {
       // 이미지가 있는 경우만 갤러리에 추가/업데이트
       if (item.imageUrl) {
         galleryStore.addToGallery({
-          id: item.resultId ?? item.dreamId,
+          id: item.dreamId, // dreamId를 일관된 식별자로 사용하여 중복 방지
           dreamId: item.dreamId,
           dreamDate: item.dreamDate,
           title: item.title,

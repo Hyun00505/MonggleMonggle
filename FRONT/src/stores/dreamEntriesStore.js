@@ -174,7 +174,7 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
           currentDreamId.value = existingDreamId;
 
           // 갤러리에서 해당 dreamId를 가진 항목 제거 (백엔드에서 이미지가 삭제되므로)
-          const imageToRemove = galleryStore.galleryImages.find((img) => img.dreamId === existingDreamId);
+          const imageToRemove = galleryStore.galleryImages.value.find((img) => img.dreamId === existingDreamId);
           if (imageToRemove) {
             galleryStore.removeFromGallery(imageToRemove.id);
             console.log(`🗑️ 꿈 수정으로 인해 갤러리에서 이미지 제거: dreamId=${existingDreamId}`);
