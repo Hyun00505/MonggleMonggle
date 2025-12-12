@@ -7,16 +7,10 @@ import { getColorHex } from "../constants/luckyColors";
 import { dreamService } from "../services/dreamService";
 import { fortuneService } from "../services/fortuneService";
 import { dreamResultService } from "../services/dreamResultService";
+import { formatDateKey } from "../utils/dateUtils";
 
 const STORAGE_KEY = "dreamEntriesStore";
 const LEGACY_KEY = "dreamStore";
-
-function formatDateKey(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 export const useDreamEntriesStore = defineStore("dreamEntries", () => {
   const authStore = useAuthStore();

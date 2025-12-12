@@ -4,6 +4,7 @@ import { useRouter, useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
 import { useAuthStore } from "../stores/authStore";
+import { formatDateKey, isTodayDate, isFutureDate } from "../utils/dateUtils";
 
 const router = useRouter();
 const route = useRoute();
@@ -146,32 +147,6 @@ function handleAnalysis() {
 function handleViewResult() {
   const dateKey = route.query.date || formatDateKey(selectedDate.value);
   router.push({ name: "analysis", query: { date: dateKey } });
-}
-
-function formatDateKey(date) {
-  if (!date) return "";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function isTodayDate(date) {
-  if (!date) return false;
-  const today = new Date();
-  return (
-    date.getFullYear() === today.getFullYear() &&
-    date.getMonth() === today.getMonth() &&
-    date.getDate() === today.getDate()
-  );
-}
-
-function isFutureDate(date) {
-  const today = new Date();
-  const target = new Date(date);
-  today.setHours(0, 0, 0, 0);
-  target.setHours(0, 0, 0, 0);
-  return target.getTime() > today.getTime();
 }
 
 function hasPostForDate(date) {
