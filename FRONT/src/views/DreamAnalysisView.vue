@@ -250,7 +250,12 @@ const imageStyles = [
 const generateError = ref(null);
 
 function handleClose() {
-  // 날짜 정보와 함께 write 페이지로 돌아가기
+  // 캘린더 페이지로 이동
+  router.push({ name: "calendar" });
+}
+
+function handleBackToWrite() {
+  // 날짜 정보와 함께 write 페이지로 돌아가기 (사용하지 않음)
   const date = route.query.date || analysisDate.value;
   if (date) {
     router.push({ name: "write", query: { date } });

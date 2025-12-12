@@ -366,7 +366,6 @@ onMounted(async () => {
 .input-group.labeled {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
 }
 
 /* 생년월일 입력 wrapper */
