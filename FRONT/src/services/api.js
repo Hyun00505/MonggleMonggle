@@ -28,13 +28,18 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
-      const { status } = error.response;
+      const { status, config } = error.response;
 
       // 401 Unauthorized - 토큰 만료 또는 인증 실패
       if (status === 401) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("currentUser");
-        window.location.href = "/auth";
+        // 로그인/회원가입 API는 리다이렉트하지 않음 (에러 메시지만 표시)
+        const isAuthApi = config.url?.includes('/auth/login') || config.url?.includes('/auth/signup');
+        
+        if (!isAuthApi) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("currentUser");
+          window.location.href = "/auth";
+        }
       }
 
       // 403 Forbidden - 권한 없음
