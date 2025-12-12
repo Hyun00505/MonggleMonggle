@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import DreamCalendar from "../components/DreamCalendar.vue";
 import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
+import { formatDateKey } from "../utils/dateUtils";
 
 const route = useRoute();
 const router = useRouter();
@@ -49,11 +50,7 @@ async function handleDateSelect(date) {
   await setSelectedDateWithResult(date);
 
   // 날짜를 쿼리 파라미터로 전달 (새로고침 시 복원용)
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const dateStr = `${year}-${month}-${day}`;
-  router.push({ name: "write", query: { date: dateStr } });
+  router.push({ name: "write", query: { date: formatDateKey(date) } });
 }
 </script>
 

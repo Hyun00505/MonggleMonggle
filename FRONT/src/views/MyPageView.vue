@@ -1,5 +1,11 @@
 <template>
-  <div class="common-card">
+  <div class="common-card mypage-card">
+    <button class="icon-btn icon-btn-absolute" @click="handleClose" aria-label="닫기">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
     <div class="page-header">
       <h2 class="page-title">마이페이지</h2>
       <p class="page-subtitle">내 정보를 수정해보세요</p>
@@ -136,7 +142,6 @@
 
       <div class="footer-actions">
         <span class="withdraw-text" @click="handleWithdraw">서비스 탈퇴</span>
-        <span class="back-text" @click="handleBack">뒤로가기</span>
       </div>
     </div>
   </div>
@@ -262,7 +267,7 @@ function onDatePickerChange(event) {
   validation.validateBirthDate(formData.birthDate);
 }
 
-function handleBack() {
+function handleClose() {
   router.push({ name: 'calendar' });
 }
 
@@ -354,10 +359,13 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.mypage-card {
+  position: relative;
+}
+
 .input-group.labeled {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
 }
 
 /* 생년월일 입력 wrapper */

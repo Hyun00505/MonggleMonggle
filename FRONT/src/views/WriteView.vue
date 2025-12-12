@@ -4,6 +4,7 @@ import { useRouter, useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
 import { useAuthStore } from "../stores/authStore";
+import { formatDateKey, isTodayDate, isFutureDate } from "../utils/dateUtils";
 
 const router = useRouter();
 const route = useRoute();
@@ -148,32 +149,6 @@ function handleViewResult() {
   router.push({ name: "analysis", query: { date: dateKey } });
 }
 
-function formatDateKey(date) {
-  if (!date) return "";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function isTodayDate(date) {
-  if (!date) return false;
-  const today = new Date();
-  return (
-    date.getFullYear() === today.getFullYear() &&
-    date.getMonth() === today.getMonth() &&
-    date.getDate() === today.getDate()
-  );
-}
-
-function isFutureDate(date) {
-  const today = new Date();
-  const target = new Date(date);
-  today.setHours(0, 0, 0, 0);
-  target.setHours(0, 0, 0, 0);
-  return target.getTime() > today.getTime();
-}
-
 function hasPostForDate(date) {
   const key = formatDateKey(date);
   return !!posts.value[key];
@@ -200,7 +175,7 @@ async function ensureMonthData(date) {
     <div class="write-card">
       <div class="main-content">
         <div class="card-header">
-          <button @click="handleBack" class="back-icon" aria-label="뒤로가기">
+          <button @click="handleBack" class="icon-btn" aria-label="뒤로가기">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
@@ -559,14 +534,6 @@ async function ensureMonthData(date) {
   justify-content: space-between;
   align-items: center;
   padding-bottom: 0.5rem;
-}
-
-.back-icon {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #888;
-  padding: 5px;
 }
 
 .card-header h3 {
