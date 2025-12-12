@@ -3,7 +3,7 @@
     <!-- Analysis Card -->
     <div class="analysis-card">
       <div class="card-close">
-        <button class="fortune-back-btn" @click="handleClose" aria-label="뒤로가기">
+        <button class="icon-btn" @click="handleClose" aria-label="뒤로가기">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
@@ -12,7 +12,7 @@
           AI 해몽 & 운세
           <span class="title-badge">Today's Pick</span>
         </h2>
-        <button @click="handleClose" class="close-btn" aria-label="닫기">
+        <button @click="handleClose" class="icon-btn" aria-label="닫기">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
@@ -472,23 +472,6 @@ function downloadImage(image) {
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.75rem;
-}
-
-.fortune-back-btn,
-.close-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #999;
-  padding: 8px;
-  border-radius: 12px;
-  transition: all 0.2s;
-}
-
-.fortune-back-btn:hover,
-.close-btn:hover {
-  background: #f5f5f5;
-  color: #333;
 }
 
 .analysis-title {

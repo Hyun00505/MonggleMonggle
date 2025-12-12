@@ -1,7 +1,7 @@
 <template>
   <div class="monthly-analysis-card">
     <div class="card-header">
-      <button @click="handleBack" class="back-btn">
+      <button @click="handleBack" class="icon-btn">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
@@ -20,7 +20,7 @@
         <span>우체통</span>
       </button>
       <div class="header-actions">
-        <button @click="handleClose" class="close-btn" aria-label="닫기">
+        <button @click="handleClose" class="icon-btn" aria-label="닫기">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
@@ -747,21 +747,6 @@ watch([currentYear, currentMonth], () => {
   margin-bottom: 1.5rem;
 }
 
-.back-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #999;
-  padding: 8px;
-  border-radius: 12px;
-  transition: all 0.2s;
-}
-
-.back-btn:hover,
-.close-btn:hover {
-  background: #f5f5f5;
-  color: #333;
-}
 
 .header-actions {
   display: inline-flex;
@@ -856,15 +841,6 @@ watch([currentYear, currentMonth], () => {
   box-shadow: none;
 }
 
-.close-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #999;
-  padding: 8px;
-  border-radius: 12px;
-  transition: all 0.2s;
-}
 
 .page-title {
   font-family: "Dongle", sans-serif;

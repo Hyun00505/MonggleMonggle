@@ -200,7 +200,7 @@ async function ensureMonthData(date) {
     <div class="write-card">
       <div class="main-content">
         <div class="card-header">
-          <button @click="handleBack" class="back-icon" aria-label="뒤로가기">
+          <button @click="handleBack" class="icon-btn" aria-label="뒤로가기">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
@@ -559,14 +559,6 @@ async function ensureMonthData(date) {
   justify-content: space-between;
   align-items: center;
   padding-bottom: 0.5rem;
-}
-
-.back-icon {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #888;
-  padding: 5px;
 }
 
 .card-header h3 {

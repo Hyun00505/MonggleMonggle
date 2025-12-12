@@ -384,7 +384,7 @@ select {
   display: flex;
   justify-content: center;
   gap: 1rem;
-  margin-top: 1.5rem;
+  margin-top: 0.5rem;
   font-size: 0.9rem;
   color: #999;
 }
@@ -402,4 +402,37 @@ select {
 .back-text:hover {
   color: #A2D2FF;
   text-decoration: underline;
+}
+
+/* ===== 공통 아이콘 버튼 스타일 ===== */
+
+/* 기본 아이콘 버튼 (헤더 내 back/close 버튼) */
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  padding: 8px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn:hover {
+  background: #F5F5F5;
+  color: #333;
+}
+
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* 절대 위치 modifier (카드 우측 상단) */
+.icon-btn-absolute {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
 }

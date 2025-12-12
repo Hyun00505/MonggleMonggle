@@ -1,7 +1,7 @@
 <template>
   <div class="gallery-card">
     <div class="card-header">
-      <button @click="handleBack" class="back-btn">
+      <button @click="handleBack" class="icon-btn">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
@@ -589,18 +589,6 @@ async function syncFromServer() {
   margin-bottom: 2rem;
 }
 
-.back-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #888;
-  padding: 5px;
-  transition: color 0.2s;
-}
-
-.back-btn:hover {
-  color: #333;
-}
 
 .page-title {
   font-family: "Dongle", sans-serif;
