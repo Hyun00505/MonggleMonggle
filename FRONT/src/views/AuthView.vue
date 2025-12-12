@@ -260,10 +260,6 @@ async function handleSubmit() {
 
     loginError.value = "";
 
-    // 로그인 성공 시 서버에서 현재 월의 꿈 데이터 불러오기
-    const now = new Date();
-    await dreamEntriesStore.fetchDreamsByMonth(now.getFullYear(), now.getMonth() + 1);
-
     router.push({ name: "calendar" });
   } catch (err) {
     loginError.value = authStore.error || "처리 중 오류가 발생했습니다.";
