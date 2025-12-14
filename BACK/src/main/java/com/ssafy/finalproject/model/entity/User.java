@@ -22,6 +22,7 @@ public class User {
     private String calendarType; // 'solar', 'lunarGeneral', 'lunarLeap'
     private Integer coin;
     private LocalDateTime lastCoinResetAt;
+    private String role; // 'USER' or 'ADMIN'
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
     private LocalDateTime deletedDate;
