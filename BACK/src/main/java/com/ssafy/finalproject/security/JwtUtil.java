@@ -24,14 +24,15 @@ public class JwtUtil {
         this.expiration = expiration;
     }
     
-    // JWT 토큰 생성
-    public String generateToken(Long userId, String loginId) {
+    // JWT 토큰 생성 (role 포함)
+    public String generateToken(Long userId, String loginId, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
         
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
                 .claim("loginId", loginId)
+                .claim("role", role)  // role 정보 추가!
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(secretKey, SignatureAlgorithm.HS256)
@@ -48,6 +49,12 @@ public class JwtUtil {
     public String getLoginIdFromToken(String token) {
         Claims claims = getClaims(token);
         return claims.get("loginId", String.class);
+    }
+    
+    // JWT 토큰에서 role 추출
+    public String getRoleFromToken(String token) {
+        Claims claims = getClaims(token);
+        return claims.get("role", String.class);
     }
     
     // JWT 토큰 유효성 검증

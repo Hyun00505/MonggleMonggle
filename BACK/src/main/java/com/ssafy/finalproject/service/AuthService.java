@@ -43,7 +43,7 @@ public class AuthService {
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(request.getPassword());
         
-        // User 엔티티 생성
+        // User 엔티티 생성 (기본 role은 USER)
         User user = User.builder()
                 .loginId(request.getLoginId())
                 .password(encodedPassword)
@@ -51,6 +51,7 @@ public class AuthService {
                 .birthDate(request.getBirthDate())
                 .gender(request.getGender().toUpperCase())
                 .calendarType(request.getCalendarType())
+                .role("USER")  // 기본값: USER
                 .coin(5)
                 .lastCoinResetAt(LocalDateTime.now(KST))
                 .build();
@@ -89,8 +90,9 @@ public class AuthService {
         user = userDao.findById(user.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
         
-        // JWT 토큰 생성
-        String token = jwtUtil.generateToken(user.getUserId(), user.getLoginId());
+        // JWT 토큰 생성 (role 포함)
+        String role = user.getRole() != null ? user.getRole() : "USER";
+        String token = jwtUtil.generateToken(user.getUserId(), user.getLoginId(), role);
         
         // 응답 생성
         return LoginResponse.builder()
