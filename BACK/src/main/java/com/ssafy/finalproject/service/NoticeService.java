@@ -49,22 +49,26 @@ public class NoticeService {
     }
 
     // 상세 조회 (조회수 증가 포함)
-    @Transactional  // ← readOnly 제거!
+    @Transactional
     public NoticeResponse getNoticeById(Long noticeId) {       
-        // 1. DAO로 Entity 조회 (존재 여부 확인)
-        Notice notice = noticeDao.selectNoticeById(noticeId)
+        // 1. 존재 여부 확인
+        noticeDao.selectNoticeById(noticeId)
                 .orElseThrow(() -> new ResourceNotFoundException("공지사항을 찾을 수 없습니다."));
         
-        // 2. 조회수 증가
+        // 2. 조회수 증가 먼저!
         noticeDao.increaseViewCount(noticeId);
 
-        // 3. Entity → Response DTO 변환 후 반환
+        // 3. 증가된 조회수를 반영한 데이터 다시 조회
+        Notice notice = noticeDao.selectNoticeById(noticeId)
+                .orElseThrow(() -> new ResourceNotFoundException("공지사항을 찾을 수 없습니다."));
+
+        // 4. Entity → Response DTO 변환 후 반환
         return NoticeResponse.builder()
                 .noticeId(notice.getNoticeId())
                 .userId(notice.getUserId()) 
                 .title(notice.getTitle())
                 .content(notice.getContent())
-                .viewCount(notice.getViewCount())
+                .viewCount(notice.getViewCount())  // 이제 증가된 값이 반환됨!
                 .createdDate(notice.getCreatedDate())
                 .updatedDate(notice.getUpdatedDate())
                 .deletedDate(notice.getDeletedDate())
