@@ -1,9 +1,9 @@
 <template>
   <Teleport to="body">
     <transition name="modal">
-      <div v-if="notice" class="notice-modal-overlay" @click.self="$emit('close')">
+      <div v-if="noticeDetail" class="notice-modal-overlay" @click.self="handleClose">
         <div class="notice-modal">
-          <button class="icon-btn icon-btn-absolute" @click="$emit('close')" aria-label="닫기">
+          <button class="icon-btn icon-btn-absolute" @click="handleClose" aria-label="닫기">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -13,13 +13,13 @@
           <!-- 공지사항 본문 -->
           <div class="notice-modal-header">
             <span class="notice-modal-badge">공지</span>
-            <span class="notice-modal-date">{{ formatFullDate(notice.createdDate) }}</span>
+            <span class="notice-modal-date">{{ formatFullDate(noticeDetail.createdDate) }}</span>
             <span class="notice-modal-views">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
               </svg>
-              {{ notice.viewCount || 0 }}
+              {{ noticeDetail.viewCount || 0 }}
             </span>
             <!-- 관리자 전용 수정/삭제 버튼 -->
             <div v-if="isAdmin" class="admin-actions">
@@ -39,12 +39,17 @@
               </button>
             </div>
           </div>
-          <h2 class="notice-modal-title">{{ notice.title }}</h2>
-          <div class="notice-modal-content">{{ notice.content }}</div>
+          <h2 class="notice-modal-title">{{ noticeDetail.title }}</h2>
+          <div class="notice-modal-content">{{ noticeDetail.content }}</div>
 
           <!-- 좋아요 버튼 -->
           <div class="notice-like-section">
-            <button class="notice-like-btn" :class="{ 'liked': noticeLiked }" @click="toggleNoticeLike">
+            <button 
+              class="notice-like-btn" 
+              :class="{ 'liked': noticeLiked }" 
+              :disabled="isTogglingLike"
+              @click="toggleNoticeLike"
+            >
               <svg width="20" height="20" viewBox="0 0 24 24" :fill="noticeLiked ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
               </svg>
@@ -66,9 +71,14 @@
                 class="comment-input" 
                 placeholder="댓글을 입력하세요..."
                 rows="2"
+                :disabled="isSubmittingComment"
                 @keydown.ctrl.enter="addComment"
               ></textarea>
-              <button class="comment-submit-btn" @click="addComment" :disabled="!newComment.trim()">
+              <button 
+                class="comment-submit-btn" 
+                :disabled="!newComment.trim() || isSubmittingComment"
+                @click="addComment"
+              >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="22" y1="2" x2="11" y2="13"></line>
                   <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -76,19 +86,35 @@
               </button>
             </div>
 
+            <!-- 댓글 로딩 -->
+            <div v-if="commentsLoading" class="comments-loading">
+              댓글을 불러오는 중...
+            </div>
             <!-- 댓글 목록 -->
-            <div v-if="comments.length === 0" class="comments-empty">
+            <div v-else-if="comments.length === 0" class="comments-empty">
               아직 댓글이 없습니다. 첫 댓글을 남겨보세요!
             </div>
             <ul v-else class="comments-list">
-              <li v-for="comment in comments" :key="comment.id" class="comment-item">
+              <li v-for="comment in comments" :key="comment.commentId" class="comment-item">
                 <div class="comment-avatar">
-                  {{ comment.author.charAt(0) }}
+                  {{ comment.userName?.charAt(0) || '?' }}
                 </div>
                 <div class="comment-body">
                   <div class="comment-meta">
-                    <span class="comment-author">{{ comment.author }}</span>
-                    <span class="comment-date">{{ comment.date }}</span>
+                    <span class="comment-author">{{ comment.userName }}</span>
+                    <span class="comment-date">{{ formatCommentDate(comment.createdDate) }}</span>
+                    <!-- 본인 댓글 또는 관리자일 때 삭제 버튼 -->
+                    <button 
+                      v-if="comment.isOwner || comment.owner || isAdmin" 
+                      class="comment-delete-btn"
+                      @click="deleteComment(comment.commentId)"
+                      title="삭제"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                    </button>
                   </div>
                   <p class="comment-text">{{ comment.content }}</p>
                 </div>
@@ -113,46 +139,98 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close', 'edit', 'deleted']);
+const emit = defineEmits(['close', 'edit', 'deleted', 'refreshList']);
 
 // 관리자 여부 확인
 const authStore = useAuthStore();
 const isAdmin = computed(() => authStore.isAdmin);
 
-const newComment = ref('');
+// 공지사항 상세 데이터 (API에서 조회한 최신 데이터)
+const noticeDetail = ref(null);
 
-// 공지사항 좋아요 상태 (UI만)
+const newComment = ref('');
+const isSubmittingComment = ref(false);
+
+// 좋아요 상태
 const noticeLiked = ref(false);
 const noticeLikes = ref(0);
+const isTogglingLike = ref(false);
 
-// 더미 댓글 데이터
-const comments = ref([
-  {
-    id: 1,
-    author: '김몽글',
-    content: '좋은 공지 감사합니다! 앞으로도 잘 부탁드려요 😊',
-    date: '12/15'
-  },
-  {
-    id: 2,
-    author: '박드림',
-    content: '확인했습니다~',
-    date: '12/16'
-  }
-]);
+// 댓글 데이터
+const comments = ref([]);
+const commentsLoading = ref(false);
 
-// 모달 열릴 때 스크롤 방지 및 상태 초기화
-watch(() => props.notice, (newVal) => {
+// 모달 열릴 때 데이터 로드
+watch(() => props.notice, async (newVal) => {
   if (newVal) {
     document.body.style.overflow = 'hidden';
     newComment.value = '';
-    // 좋아요 상태 초기화
-    noticeLiked.value = false;
-    noticeLikes.value = newVal.likeCount || 0;
+    
+    // 상세 조회 API 호출 (조회수 증가)
+    await fetchNoticeDetail();
+    
+    // 좋아요 상태 및 댓글 로드
+    await Promise.all([
+      fetchLikeStatus(),
+      fetchComments()
+    ]);
   } else {
     document.body.style.overflow = '';
+    noticeDetail.value = null;
+    comments.value = [];
   }
 });
+
+// 공지사항 상세 조회 (조회수 증가)
+async function fetchNoticeDetail() {
+  if (!props.notice?.noticeId) return;
+  
+  try {
+    const response = await noticeService.getNoticeById(props.notice.noticeId);
+    noticeDetail.value = response;
+  } catch (error) {
+    console.error('공지사항 상세 조회 실패:', error);
+    // 실패 시 props.notice 사용
+    noticeDetail.value = props.notice;
+  }
+}
+
+// 모달 닫기 (목록 새로고침 요청)
+function handleClose() {
+  emit('refreshList');
+  emit('close');
+}
+
+// 좋아요 상태 조회
+async function fetchLikeStatus() {
+  if (!props.notice?.noticeId) return;
+  
+  try {
+    const response = await noticeService.getLikeStatus(props.notice.noticeId);
+    noticeLiked.value = response.isLiked || response.liked || false;
+    noticeLikes.value = response.likeCount || 0;
+  } catch (error) {
+    console.error('좋아요 상태 조회 실패:', error);
+    noticeLiked.value = false;
+    noticeLikes.value = props.notice.likeCount || 0;
+  }
+}
+
+// 댓글 목록 조회
+async function fetchComments() {
+  if (!props.notice?.noticeId) return;
+  
+  commentsLoading.value = true;
+  try {
+    const response = await noticeService.getComments(props.notice.noticeId);
+    comments.value = response.comments || [];
+  } catch (error) {
+    console.error('댓글 조회 실패:', error);
+    comments.value = [];
+  } finally {
+    commentsLoading.value = false;
+  }
+}
 
 // 날짜 포맷팅 (전체)
 function formatFullDate(dateString) {
@@ -164,29 +242,65 @@ function formatFullDate(dateString) {
   return `${year}년 ${month}월 ${day}일`;
 }
 
-// 댓글 추가 (UI만)
-function addComment() {
-  if (!newComment.value.trim()) return;
-  
-  const now = new Date();
-  comments.value.unshift({
-    id: Date.now(),
-    author: '나',
-    content: newComment.value.trim(),
-    date: `${now.getMonth() + 1}/${now.getDate()}`
-  });
-  newComment.value = '';
+// 댓글 날짜 포맷팅 (간략)
+function formatCommentDate(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${month}/${day}`;
 }
 
-// 공지사항 좋아요 토글 (UI만)
-function toggleNoticeLike() {
-  noticeLiked.value = !noticeLiked.value;
-  noticeLikes.value += noticeLiked.value ? 1 : -1;
+// 댓글 작성
+async function addComment() {
+  if (!newComment.value.trim() || isSubmittingComment.value) return;
+  
+  isSubmittingComment.value = true;
+  try {
+    await noticeService.createComment(props.notice.noticeId, newComment.value.trim());
+    newComment.value = '';
+    await fetchComments(); // 댓글 목록 새로고침
+  } catch (error) {
+    console.error('댓글 작성 실패:', error);
+    alert('댓글 작성에 실패했습니다.');
+  } finally {
+    isSubmittingComment.value = false;
+  }
+}
+
+// 댓글 삭제
+async function deleteComment(commentId) {
+  if (!confirm('이 댓글을 삭제하시겠습니까?')) return;
+  
+  try {
+    await noticeService.deleteComment(commentId);
+    await fetchComments(); // 댓글 목록 새로고침
+  } catch (error) {
+    console.error('댓글 삭제 실패:', error);
+    alert('댓글 삭제에 실패했습니다.');
+  }
+}
+
+// 좋아요 토글
+async function toggleNoticeLike() {
+  if (isTogglingLike.value) return;
+  
+  isTogglingLike.value = true;
+  try {
+    const response = await noticeService.toggleLike(props.notice.noticeId);
+    noticeLiked.value = response.isLiked ?? response.liked ?? false;
+    noticeLikes.value = response.likeCount || 0;
+  } catch (error) {
+    console.error('좋아요 토글 실패:', error);
+    alert('좋아요 처리에 실패했습니다.');
+  } finally {
+    isTogglingLike.value = false;
+  }
 }
 
 // 공지사항 수정 (관리자 전용)
 function handleEdit() {
-  emit('edit', props.notice);
+  emit('edit', noticeDetail.value);
 }
 
 // 공지사항 삭제 (관리자 전용)
@@ -194,7 +308,7 @@ async function handleDelete() {
   if (!confirm('정말 이 공지사항을 삭제하시겠습니까?')) return;
   
   try {
-    await noticeService.deleteNotice(props.notice.noticeId);
+    await noticeService.deleteNotice(noticeDetail.value.noticeId);
     emit('deleted');
     emit('close');
   } catch (error) {
@@ -205,8 +319,8 @@ async function handleDelete() {
 
 // ESC 키로 모달 닫기
 function handleKeydown(event) {
-  if (event.key === 'Escape' && props.notice) {
-    emit('close');
+  if (event.key === 'Escape' && noticeDetail.value) {
+    handleClose();
   }
 }
 
@@ -372,8 +486,19 @@ onBeforeUnmount(() => {
   background: #fff5f5;
 }
 
+.notice-like-btn.liked:hover {
+  border-color: #ff4757;
+  color: #ff4757;
+  background: #ffe8ea;
+}
+
 .notice-like-btn.liked svg {
   animation: heartBeat 0.3s ease;
+}
+
+.notice-like-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @keyframes heartBeat {
@@ -437,8 +562,8 @@ onBeforeUnmount(() => {
 }
 
 .comment-submit-btn {
-  width: 44px;
-  height: 44px;
+  width: 60px;
+  height: 60px;
   border: none;
   border-radius: 50%;
   background: var(--gradient-purple-blue);
@@ -462,7 +587,8 @@ onBeforeUnmount(() => {
   cursor: not-allowed;
 }
 
-/* 댓글 없음 */
+/* 댓글 로딩/없음 */
+.comments-loading,
 .comments-empty {
   text-align: center;
   color: #999;
@@ -484,12 +610,13 @@ onBeforeUnmount(() => {
 
 .comment-item {
   display: flex;
+  align-items: center;
   gap: 0.75rem;
 }
 
 .comment-avatar {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--gradient-purple-blue);
   color: white;
@@ -522,6 +649,31 @@ onBeforeUnmount(() => {
 .comment-date {
   font-size: 0.8rem;
   color: #999;
+}
+
+.comment-delete-btn {
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #bbb;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.comment-item:hover .comment-delete-btn {
+  opacity: 1;
+}
+
+.comment-delete-btn:hover {
+  background: #fef2f2;
+  color: #ef4444;
 }
 
 .comment-text {

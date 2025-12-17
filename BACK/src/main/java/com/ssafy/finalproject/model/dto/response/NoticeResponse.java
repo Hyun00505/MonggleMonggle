@@ -17,6 +17,7 @@ public class NoticeResponse {
     private String title;
     private String content;
     private Integer viewCount;
+    private Integer likeCount;  // 좋아요 수 추가
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
     private LocalDateTime deletedDate;

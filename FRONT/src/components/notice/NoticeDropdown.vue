@@ -66,6 +66,7 @@
       @close="selectedNotice = null"
       @edit="handleEditNotice"
       @deleted="handleNoticeDeleted"
+      @refreshList="fetchNotices"
     />
     
     <!-- 공지사항 작성/수정 모달 (관리자 전용) -->

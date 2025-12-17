@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ssafy.finalproject.exception.ResourceNotFoundException;
 import com.ssafy.finalproject.model.dao.NoticeDao;
+import com.ssafy.finalproject.model.dao.NoticeLikesDao;
 import com.ssafy.finalproject.model.dto.request.CreateNoticeRequest;
 import com.ssafy.finalproject.model.dto.request.UpdateNoticeRequest;
 import com.ssafy.finalproject.model.dto.response.NoticeListResponse;
@@ -22,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class NoticeService {
     
     private final NoticeDao noticeDao;  // ← DAO 주입
+    private final NoticeLikesDao noticeLikesDao;  // ← 좋아요 DAO 주입
 
     // 전체 목록 조회
     @Transactional(readOnly = true) // 읽기 전용 트랜잭션
@@ -31,15 +33,21 @@ public class NoticeService {
         
         // 2. Entity 리스트 -> Response 리스트로 변환 
         List<NoticeResponse> responseList = notices.stream()
-                .map(notice -> NoticeResponse.builder()
-                        .noticeId(notice.getNoticeId())
-                        .userId(notice.getUserId())
-                        .title(notice.getTitle())
-                        .content(notice.getContent())
-                        .viewCount(notice.getViewCount())
-                        .createdDate(notice.getCreatedDate())
-                        .updatedDate(notice.getUpdatedDate())
-                        .build())
+                .map(notice -> {
+                    // 각 공지사항의 좋아요 수 조회
+                    int likeCount = noticeLikesDao.countLikesByNoticeId(notice.getNoticeId());
+                    
+                    return NoticeResponse.builder()
+                            .noticeId(notice.getNoticeId())
+                            .userId(notice.getUserId())
+                            .title(notice.getTitle())
+                            .content(notice.getContent())
+                            .viewCount(notice.getViewCount())
+                            .likeCount(likeCount)
+                            .createdDate(notice.getCreatedDate())
+                            .updatedDate(notice.getUpdatedDate())
+                            .build();
+                })
                 .toList();
         
         // 3. NoticeListResponse로 감싸서 반환 
@@ -62,13 +70,17 @@ public class NoticeService {
         Notice notice = noticeDao.selectNoticeById(noticeId)
                 .orElseThrow(() -> new ResourceNotFoundException("공지사항을 찾을 수 없습니다."));
 
-        // 4. Entity → Response DTO 변환 후 반환
+        // 4. 좋아요 수 조회
+        int likeCount = noticeLikesDao.countLikesByNoticeId(noticeId);
+
+        // 5. Entity → Response DTO 변환 후 반환
         return NoticeResponse.builder()
                 .noticeId(notice.getNoticeId())
                 .userId(notice.getUserId()) 
                 .title(notice.getTitle())
                 .content(notice.getContent())
-                .viewCount(notice.getViewCount())  // 이제 증가된 값이 반환됨!
+                .viewCount(notice.getViewCount())  
+                .likeCount(likeCount)
                 .createdDate(notice.getCreatedDate())
                 .updatedDate(notice.getUpdatedDate())
                 .deletedDate(notice.getDeletedDate())
@@ -95,6 +107,7 @@ public class NoticeService {
             .title(notice.getTitle())
             .content(notice.getContent())
             .viewCount(notice.getViewCount())
+            .likeCount(0)  // 새 공지사항은 좋아요 0
             .createdDate(notice.getCreatedDate())
             .build();
     }
@@ -112,13 +125,17 @@ public class NoticeService {
         // 3. DAO로 업데이트
         noticeDao.updateNotice(notice);
 
-        // 4. 변경된 Entity → Response 반환
+        // 4. 좋아요 수 조회
+        int likeCount = noticeLikesDao.countLikesByNoticeId(noticeId);
+
+        // 5. 변경된 Entity → Response 반환
         return NoticeResponse.builder()
             .noticeId(notice.getNoticeId())
             .userId(notice.getUserId())
             .title(notice.getTitle())
             .content(notice.getContent())
             .viewCount(notice.getViewCount())
+            .likeCount(likeCount)
             .createdDate(notice.getCreatedDate())
             .updatedDate(notice.getUpdatedDate())
             .build();
