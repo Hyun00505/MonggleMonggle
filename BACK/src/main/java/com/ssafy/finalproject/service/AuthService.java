@@ -102,6 +102,7 @@ public class AuthService {
                 .birthDate(user.getBirthDate())
                 .gender(user.getGender())
                 .calendarType(user.getCalendarType())
+                .role(role)
                 .coin(user.getCoin())
                 .token(token)
                 .message("로그인 성공")

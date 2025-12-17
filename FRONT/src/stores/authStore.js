@@ -12,6 +12,7 @@ export const useAuthStore = defineStore("auth", () => {
   // Getters
   const isLoggedIn = computed(() => !!token.value);
   const currentUser = computed(() => user.value);
+  const isAdmin = computed(() => user.value?.role === 'ADMIN');
 
   // 초기화 - localStorage에서 토큰 복원
   function initialize() {
@@ -72,8 +73,12 @@ export const useAuthStore = defineStore("auth", () => {
         birthDate: response.birthDate,
         gender: response.gender,
         calendarType: response.calendarType,
+        role: response.role, // 'ADMIN' or 'USER'
         coin: response.coin, // ai 꿈해몽 할 수 있는 하루 횟수
       };
+
+      // localStorage에 사용자 정보 저장 (페이지 새로고침 시 복원용)
+      localStorage.setItem("currentUser", JSON.stringify(user.value));
 
       return response;
     } catch (err) {
@@ -166,6 +171,7 @@ export const useAuthStore = defineStore("auth", () => {
     // Getters
     isLoggedIn,
     currentUser,
+    isAdmin,
 
     // Actions
     initialize,

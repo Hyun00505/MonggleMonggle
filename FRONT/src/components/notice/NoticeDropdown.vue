@@ -15,6 +15,13 @@
       <div v-if="showNotice" class="glass-popover notice-popover">
         <div class="notice-header">
           <span class="notice-title">공지사항</span>
+          <button v-if="isAdmin" class="notice-write-btn" @click="openWriteModal">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            작성
+          </button>
         </div>
         <div v-if="noticesLoading" class="notice-loading">
           <span>불러오는 중...</span>
@@ -54,14 +61,35 @@
     </transition>
 
     <!-- 상세 팝업 모달 -->
-    <NoticeModal :notice="selectedNotice" @close="selectedNotice = null" />
+    <NoticeModal 
+      :notice="selectedNotice" 
+      @close="selectedNotice = null"
+      @edit="handleEditNotice"
+      @deleted="handleNoticeDeleted"
+    />
+    
+    <!-- 공지사항 작성/수정 모달 (관리자 전용) -->
+    <NoticeWriteModal 
+      v-if="isAdmin"
+      :show="showWriteModal" 
+      :editNotice="editingNotice"
+      @close="closeWriteModal" 
+      @created="handleNoticeCreated"
+      @updated="handleNoticeUpdated"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useAuthStore } from "../../stores/authStore";
 import { noticeService } from "../../services/noticeService";
 import NoticeModal from "./NoticeModal.vue";
+import NoticeWriteModal from "./NoticeWriteModal.vue";
+
+// 인증 스토어에서 관리자 여부 확인
+const authStore = useAuthStore();
+const isAdmin = computed(() => authStore.isAdmin);
 
 // 공지사항 관련 상태
 const showNotice = ref(false);
@@ -70,6 +98,8 @@ const notices = ref([]);
 const noticesLoading = ref(false);
 const selectedNotice = ref(null);
 const lastReadNoticeId = ref(null);
+const showWriteModal = ref(false);
+const editingNotice = ref(null);
 
 // 새 공지사항 여부 (로컬 스토리지와 비교)
 const hasNewNotice = computed(() => {
@@ -114,6 +144,41 @@ async function fetchNotices() {
 function openNoticeDetail(notice) {
   selectedNotice.value = notice;
   showNotice.value = false; // 드롭다운 닫기
+}
+
+// 공지사항 작성 모달 열기 (관리자 전용)
+function openWriteModal() {
+  editingNotice.value = null; // 작성 모드
+  showWriteModal.value = true;
+  showNotice.value = false; // 드롭다운 닫기
+}
+
+// 공지사항 작성/수정 모달 닫기
+function closeWriteModal() {
+  showWriteModal.value = false;
+  editingNotice.value = null;
+}
+
+// 공지사항 작성 완료 처리
+async function handleNoticeCreated() {
+  await fetchNotices(); // 목록 새로고침
+}
+
+// 공지사항 수정 모달 열기 (관리자 전용)
+function handleEditNotice(notice) {
+  selectedNotice.value = null; // 상세 모달 닫기
+  editingNotice.value = notice; // 수정할 공지사항 설정
+  showWriteModal.value = true;
+}
+
+// 공지사항 수정 완료 처리
+async function handleNoticeUpdated() {
+  await fetchNotices(); // 목록 새로고침
+}
+
+// 공지사항 삭제 완료 처리
+async function handleNoticeDeleted() {
+  await fetchNotices(); // 목록 새로고침
 }
 
 // 날짜 포맷팅 (간략)
@@ -223,6 +288,9 @@ onBeforeUnmount(() => {
 }
 
 .notice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid #f0f0f0;
   margin-bottom: 0.5rem;
@@ -232,6 +300,30 @@ onBeforeUnmount(() => {
   font-size: 1rem;
   font-weight: 700;
   color: #333;
+}
+
+.notice-write-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--gradient-purple-blue);
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notice-write-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--shadow-purple, rgba(205, 180, 219, 0.4));
+}
+
+.notice-write-btn svg {
+  stroke-width: 2.5;
 }
 
 .notice-loading,
