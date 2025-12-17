@@ -1,11 +1,12 @@
 package com.ssafy.finalproject.model.dao;
 
-import com.ssafy.finalproject.model.entity.Comment;
+import java.util.List;
+import java.util.Optional;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import java.util.List;
-import java.util.Optional;
+import com.ssafy.finalproject.model.entity.Comment;
 
 @Mapper
 public interface CommentDao {
@@ -15,6 +16,8 @@ public interface CommentDao {
     Optional<Comment> selectCommentById(@Param("commentId") Long commentId);
 
     void insertComment(Comment comment);
+
+    void updateComment(Comment comment);
 
     void deleteComment(@Param("commentId") Long commentId);
 }

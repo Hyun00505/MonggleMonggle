@@ -30,10 +30,18 @@
     </select>
 
     <!-- 댓글 등록 -->
-    <insert id="insertComment" parameterType="Comment">
+    <insert id="insertComment" parameterType="Comment" useGeneratedKeys="true" keyProperty="commentId">
         INSERT INTO notice_comment (notice_id, user_id, content, created_date)
         VALUES (#{noticeId}, #{userId}, #{content}, NOW())
     </insert>
+
+    <!-- 댓글 수정 -->
+    <update id="updateComment" parameterType="Comment">
+        UPDATE notice_comment
+        SET content = #{content}
+        WHERE comment_id = #{commentId}
+        AND deleted_date IS NULL
+    </update>
 
     <!-- 댓글 삭제 (Soft Delete) -->
     <update id="deleteComment">

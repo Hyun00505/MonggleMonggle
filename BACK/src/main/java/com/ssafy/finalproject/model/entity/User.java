@@ -23,6 +23,7 @@ public class User {
     private String role; // 'ADMIN' or 'USER' (기본값: USER)
     private Integer coin;
     private LocalDateTime lastCoinResetAt;
+    private String role; // 'USER' or 'ADMIN'
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
     private LocalDateTime deletedDate;
