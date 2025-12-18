@@ -17,8 +17,6 @@ public interface CommentDao {
 
     void insertComment(Comment comment);
 
-    void updateComment(Comment comment);
-
     void deleteComment(@Param("commentId") Long commentId);
 }
 

@@ -23,7 +23,6 @@ public class DreamResultService {
     
     private final DreamsResultsDao dreamsResultsDao;
     private final DreamsDao dreamsDao;
-    private final CoinService coinService;
     private final ImageService imageService;
     
     // AI 분석 결과 저장
@@ -41,9 +40,6 @@ public class DreamResultService {
         if (dreamsResultsDao.existsByDreamId(dreamId)) {
             throw new ConflictException("이미 분석 결과가 존재합니다.");
         }
-
-        // 코인 차감 (꿈 해몽 AI 1회)
-        coinService.consumeForDreamInterpretation(userId);
         
         // DreamResult 엔티티 생성
         DreamResult dreamResult = DreamResult.builder()
@@ -113,9 +109,6 @@ public class DreamResultService {
         // 분석 결과 조회
         DreamResult result = dreamsResultsDao.findByDreamId(dreamId)
                 .orElseThrow(() -> new ResourceNotFoundException("분석 결과를 찾을 수 없습니다."));
-
-        // 재해몽 요청도 코인 차감 (동일 꿈 내 재분석)
-        coinService.consumeForDreamInterpretation(userId);
         
         // 해몽/운세/행운 정보 업데이트
         if (request.getDreamInterpretation() != null) {

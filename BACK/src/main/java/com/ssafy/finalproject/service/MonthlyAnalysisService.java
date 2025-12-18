@@ -1,6 +1,5 @@
 package com.ssafy.finalproject.service;
 
-import com.ssafy.finalproject.exception.BadRequestException;
 import com.ssafy.finalproject.exception.ResourceNotFoundException;
 import com.ssafy.finalproject.exception.ServiceUnavailableException;
 import com.ssafy.finalproject.model.dao.DreamsDao;
@@ -81,8 +80,18 @@ public class MonthlyAnalysisService {
         // 해당 월의 꿈 일기 조회
         List<Dream> dreams = dreamsDao.findByUserIdAndYearMonth(userId, year, month);
         
+        // 해당 월에 꿈 일기가 없으면 빈 응답 반환
         if (dreams.isEmpty()) {
-            throw new BadRequestException("해당 월에 꿈 일기가 없습니다.");
+            return MonthlyAnalysisResponse.builder()
+                    .analysisId(null)
+                    .year(year)
+                    .month(month)
+                    .dreamCount(0)
+                    .avgEmotionScore(BigDecimal.ZERO)
+                    .monthlyReport(null)
+                    .createdDate(null)
+                    .updatedDate(null)
+                    .build();
         }
         
         // FastAPI 요청 데이터 생성

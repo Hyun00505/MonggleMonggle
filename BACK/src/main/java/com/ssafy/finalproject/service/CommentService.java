@@ -12,7 +12,6 @@ import com.ssafy.finalproject.model.dao.CommentDao;
 import com.ssafy.finalproject.model.dao.NoticeDao;
 import com.ssafy.finalproject.model.dao.UserDao;
 import com.ssafy.finalproject.model.dto.request.CreateCommentRequest;
-import com.ssafy.finalproject.model.dto.request.UpdateCommentRequest;
 import com.ssafy.finalproject.model.dto.response.CommentResponse;
 import com.ssafy.finalproject.model.entity.Comment;
 import com.ssafy.finalproject.model.entity.User;
@@ -92,40 +91,6 @@ public class CommentService {
                 .noticeId(noticeId)
                 .totalCount(commentResponses.size())
                 .comments(commentResponses)
-                .build();
-    }
-    
-    /**
-     * 댓글 수정 (본인만 가능)
-     */
-    public CommentResponse updateComment(Long userId, Long commentId, UpdateCommentRequest request) {
-        Comment comment = commentDao.selectCommentById(commentId)
-                .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다."));
-        
-        // 본인 확인
-        if (!comment.getUserId().equals(userId)) {
-            throw new ForbiddenException("댓글을 수정할 권한이 없습니다.");
-        }
-        
-        // 사용자 정보 조회
-        User user = userDao.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
-        
-        comment.setContent(request.getContent());
-        commentDao.updateComment(comment);
-        
-        // 수정된 댓글 다시 조회
-        Comment updatedComment = commentDao.selectCommentById(commentId)
-                .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다."));
-        
-        return CommentResponse.builder()
-                .commentId(updatedComment.getCommentId())
-                .noticeId(updatedComment.getNoticeId())
-                .userId(updatedComment.getUserId())
-                .userName(user.getName())
-                .content(updatedComment.getContent())
-                .createdDate(updatedComment.getCreatedDate())
-                .isOwner(true)
                 .build();
     }
     
