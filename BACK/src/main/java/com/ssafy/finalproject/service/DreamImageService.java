@@ -39,6 +39,9 @@ public class DreamImageService {
     public DreamImageGenerationResponseDto generateDreamImage(Long userId, DreamImageGenerationRequestDto request) {
         log.info("=== 이미지 생성 시작: userId={}, style={} ===", userId, request.getStyle());
         
+        // 0. 코인 충분한지 먼저 검증
+        coinService.validateCoinForImageVisualization(userId);
+        
         // 1. 코인 차감 (꿈 시각화 1회 = 2코인)
         try {
             coinService.consumeForImageVisualization(userId);

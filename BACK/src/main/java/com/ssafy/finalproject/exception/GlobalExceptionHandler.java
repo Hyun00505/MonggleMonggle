@@ -3,6 +3,8 @@ package com.ssafy.finalproject.exception;
 import com.ssafy.finalproject.model.dto.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -39,6 +41,28 @@ public class GlobalExceptionHandler {
         ErrorResponse error = ErrorResponse.builder()
                 .error(ex.getErrorCode())
                 .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+    
+    // Spring Security 권한 거부 예외 처리 (ADMIN 권한 필요 시)
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAuthorizationDeniedException(AuthorizationDeniedException ex) {
+        ErrorResponse error = ErrorResponse.builder()
+                .error("FORBIDDEN")
+                .message("접근 권한이 없습니다. 관리자만 이용 가능합니다.")
+                .timestamp(LocalDateTime.now())
+                .build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+    
+    // Spring Security AccessDenied 예외 처리
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex) {
+        ErrorResponse error = ErrorResponse.builder()
+                .error("FORBIDDEN")
+                .message("접근 권한이 없습니다.")
                 .timestamp(LocalDateTime.now())
                 .build();
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);

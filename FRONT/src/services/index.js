@@ -5,4 +5,5 @@ export { dreamService } from './dreamService';
 export { dreamResultService } from './dreamResultService';
 export { monthlyAnalysisService } from './monthlyAnalysisService';
 export { fortuneService } from './fortuneService';
+export { noticeService } from './noticeService';
 

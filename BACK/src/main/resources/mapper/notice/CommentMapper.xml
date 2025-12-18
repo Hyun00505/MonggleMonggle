@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.finalproject.model.dao.CommentDao">
+    <resultMap id="NoticeCommentResultMap" type="com.ssafy.finalproject.model.entity.Comment">
+        <id property="commentId" column="comment_id" />
+        <result property="noticeId" column="notice_id" />
+        <result property="userId" column="user_id" />
+        <result property="content" column="content" />
+        <result property="createdDate" column="created_date" />
+        <result property="deletedDate" column="deleted_date" />
+    </resultMap>
+
+    <!-- 댓글 전체 조회 -->
+    <select id="selectCommentsByNoticeId" resultMap="NoticeCommentResultMap">
+        SELECT *
+        FROM notice_comment
+        WHERE notice_id = #{noticeId}
+        AND deleted_date IS NULL
+        ORDER BY created_date ASC
+    </select>
+
+    <!-- 댓글 단건 조회 -->
+    <select id="selectCommentById" resultMap="NoticeCommentResultMap">
+        SELECT *
+        FROM notice_comment
+        WHERE comment_id = #{commentId}
+        AND deleted_date IS NULL
+    </select>
+
+    <!-- 댓글 등록 -->
+    <insert id="insertComment" parameterType="Comment" useGeneratedKeys="true" keyProperty="commentId">
+        INSERT INTO notice_comment (notice_id, user_id, content, created_date)
+        VALUES (#{noticeId}, #{userId}, #{content}, NOW())
+    </insert>
+
+    <!-- 댓글 삭제 (Soft Delete) -->
+    <update id="deleteComment">
+        UPDATE notice_comment
+        SET deleted_date = NOW()
+        WHERE comment_id = #{commentId}
+    </update>
+</mapper>

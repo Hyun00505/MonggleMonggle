@@ -30,6 +30,9 @@
         </div>
       </nav>
 
+      <!-- 공지사항 알림 -->
+      <NoticeDropdown ref="noticeDropdownRef" />
+
       <div class="spacer"></div>
 
       <div class="coin-wrapper" ref="coinWrapper" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
@@ -102,6 +105,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "../stores/authStore";
+import NoticeDropdown from "../components/notice/NoticeDropdown.vue";
 
 defineEmits(["navigate-mypage", "logout"]);
 
@@ -114,6 +118,7 @@ const coinWrapper = ref(null);
 const countdown = ref("00:00:00");
 const resetProgress = ref(0);
 const isTouchDevice = ref(false);
+const noticeDropdownRef = ref(null);
 let countdownTimer = null;
 let hoverTimeout = null;
 
@@ -130,6 +135,7 @@ const displayCoin = computed(() => {
 
 function toggleMenu() {
   showCoinInfo.value = false;
+  noticeDropdownRef.value?.closeDropdown();
   showMenu.value = !showMenu.value;
 }
 
@@ -139,25 +145,24 @@ function closeMenu() {
 
 function toggleCoinInfo() {
   showMenu.value = false;
+  noticeDropdownRef.value?.closeDropdown();
   showCoinInfo.value = !showCoinInfo.value;
 }
 
 function handleCoinClick() {
-  // 모바일에서는 클릭으로 토글, PC에서는 클릭해도 동작 (접근성)
   toggleCoinInfo();
 }
 
 function handleMouseEnter() {
-  // PC에서만 호버로 표시
   if (!isTouchDevice.value) {
     if (hoverTimeout) clearTimeout(hoverTimeout);
     showMenu.value = false;
+    noticeDropdownRef.value?.closeDropdown();
     showCoinInfo.value = true;
   }
 }
 
 function handleMouseLeave() {
-  // PC에서만 호버 해제 시 숨김 (약간의 딜레이)
   if (!isTouchDevice.value) {
     hoverTimeout = setTimeout(() => {
       showCoinInfo.value = false;
@@ -166,7 +171,6 @@ function handleMouseLeave() {
 }
 
 function handleOutsideClick(event) {
-  // 모바일에서만 외부 클릭 시 닫기
   if (!isTouchDevice.value) return;
   if (!coinWrapper.value) return;
   if (coinWrapper.value.contains(event.target)) return;
@@ -205,11 +209,9 @@ function updateCountdown() {
 }
 
 onMounted(() => {
-  // 호버 기능이 없는 디바이스 감지 (모바일/태블릿)
   const hoverQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
   isTouchDevice.value = !hoverQuery.matches;
   
-  // 미디어 쿼리 변경 감지 (예: 태블릿 모드 전환)
   hoverQuery.addEventListener('change', (e) => {
     isTouchDevice.value = !e.matches;
   });

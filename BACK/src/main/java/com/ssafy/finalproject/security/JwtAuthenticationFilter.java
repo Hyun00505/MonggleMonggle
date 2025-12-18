@@ -14,6 +14,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
+
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 @Component
 @RequiredArgsConstructor
@@ -30,9 +33,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             
             if (StringUtils.hasText(jwt) && jwtUtil.validateToken(jwt)) {
                 Long userId = jwtUtil.getUserIdFromToken(jwt);
+                String role = jwtUtil.getRoleFromToken(jwt);  // role 추출!
+                
+                // role 기반 권한 설정 (ROLE_ 접두사 필요)
+                List<SimpleGrantedAuthority> authorities = Collections.singletonList(
+                        new SimpleGrantedAuthority("ROLE_" + role)
+                );
                 
                 UsernamePasswordAuthenticationToken authentication = 
-                        new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+                        new UsernamePasswordAuthenticationToken(userId, null, authorities);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 
                 SecurityContextHolder.getContext().setAuthentication(authentication);

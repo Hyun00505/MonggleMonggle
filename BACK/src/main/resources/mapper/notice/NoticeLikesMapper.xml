@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.finalproject.model.dao.NoticeLikesDao">
+    <resultMap id="NoticeLikesResultMap" type="com.ssafy.finalproject.model.entity.NoticeLikes">
+        <id property="likeId" column="like_id" />
+        <result property="userId" column="user_id" />
+        <result property="noticeId" column="notice_id" />
+        <result property="createdDate" column="created_date" />
+    </resultMap>
+
+    <!--특정 공지사항의 좋아요 수 조회-->
+    <select id="countLikesByNoticeId" resultType="int">
+        SELECT COUNT(*)
+        FROM notice_likes
+        WHERE notice_id = #{noticeId}
+    </select>
+
+    <!--사용자가 해당 공지사항에 좋아요를 눌렀는지 확인(중복 좋아요 방지)-->
+    <select id="checkUserLiked" resultType="int">
+        SELECT COUNT(*)
+        FROM notice_likes
+        WHERE notice_id = #{noticeId}
+        AND user_id = #{userId}
+    </select>
+
+    <!--좋아요 추가-->
+    <insert id="insertNoticeLike" parameterType="NoticeLikes">
+        INSERT INTO notice_likes (user_id, notice_id, created_date)
+        VALUES (#{userId}, #{noticeId}, NOW())
+    </insert>
+
+    <!--좋아요 삭제-->
+    <delete id="deleteNoticeLike">
+        DELETE FROM notice_likes
+        WHERE user_id = #{userId}
+        AND notice_id = #{noticeId}
+    </delete>
+
+    <!--특정 공지사항의 좋아요 전체 조회-->
+    <select id="selectLikesByNoticeId" resultMap="NoticeLikesResultMap">
+        SELECT *
+        FROM notice_likes
+        WHERE notice_id = #{noticeId}
+        ORDER BY created_date DESC
+    </select>
+</mapper>
