@@ -60,7 +60,7 @@
           <!-- 댓글 섹션 -->
           <div class="comments-section">
             <div class="comments-header">
-              <span class="comments-title">💬 댓글</span>
+              <span class="comments-title">댓글</span>
               <span class="comments-count">{{ comments.length }}</span>
             </div>
 
@@ -369,6 +369,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 1rem;
+  font-family: 'Dongle', sans-serif;
 }
 
 .notice-modal-badge {
@@ -376,13 +377,13 @@ onBeforeUnmount(() => {
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 1.4rem;
   font-weight: 700;
 }
 
 .notice-modal-date {
   color: #999;
-  font-size: 0.85rem;
+  font-size: 1.5rem;
 }
 
 .notice-modal-views {
@@ -390,7 +391,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.25rem;
   color: #aaa;
-  font-size: 0.85rem;
+  font-size: 1.5rem;
 }
 
 .notice-modal-views svg {
@@ -472,6 +473,7 @@ onBeforeUnmount(() => {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: sans-serif;
 }
 
 .notice-like-btn:hover {
@@ -517,12 +519,20 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 1rem;
+  font-family: 'Dongle', sans-serif;
 }
 
 .comments-title {
-  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.7rem;
   font-weight: 700;
   color: #333;
+}
+
+.comments-title svg {
+  color: var(--color-purple, #cdb4db);
 }
 
 .comments-count {
@@ -532,6 +542,7 @@ onBeforeUnmount(() => {
   border-radius: 10px;
   font-size: 0.8rem;
   font-weight: 700;
+  font-family: sans-serif;
 }
 
 /* 댓글 입력 */
@@ -623,9 +634,10 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
+  font-size: 1.5rem;
   font-weight: 700;
   flex-shrink: 0;
+  font-family: 'Dongle', sans-serif;
 }
 
 .comment-body {
@@ -647,8 +659,9 @@ onBeforeUnmount(() => {
 }
 
 .comment-date {
-  font-size: 0.8rem;
+  font-size: 1.2rem;
   color: #999;
+  font-family: 'Dongle';
 }
 
 .comment-delete-btn {
