@@ -91,7 +91,7 @@ import { useRouter, useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
 import { getColorHex } from "../constants/luckyColors";
-import DreamImageGenerator from "../components/DreamImageGenerator.vue";
+import DreamImageGenerator from "../components/image/DreamImageGenerator.vue";
 
 const router = useRouter();
 const route = useRoute();

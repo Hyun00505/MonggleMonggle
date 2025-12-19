@@ -119,12 +119,12 @@
 import { ref, nextTick, computed } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
-import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
-import { useAuthStore } from "../stores/authStore";
-import { useGalleryStore } from "../stores/galleryStore";
-import { fortuneService } from "../services/fortuneService";
-import { dreamResultService } from "../services/dreamResultService";
-import { imageService } from "../services/imageService";
+import { useDreamEntriesStore } from "../../stores/dreamEntriesStore";
+import { useAuthStore } from "../../stores/authStore";
+import { useGalleryStore } from "../../stores/galleryStore";
+import { fortuneService } from "../../services/fortuneService";
+import { dreamResultService } from "../../services/dreamResultService";
+import { imageService } from "../../services/imageService";
 
 const props = defineProps({
   analysisResult: {
