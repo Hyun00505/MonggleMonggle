@@ -18,6 +18,7 @@ from services.dream_interprinter_service import load_llama_model, models
 from services.comprehensive_service import process_comprehensive_fortune
 from services.image_service import process_dream_image
 from services.monthly_analysis_service import process_monthly_analysis
+from services.Naver_fortune_api import init_driver_pool, cleanup_driver_pool
 
 # .env 파일 로드 (프로젝트 루트의 .env 파일을 항상 로드)
 load_dotenv(override=True)
@@ -31,27 +32,42 @@ if not GMS_API_KEY:
 async def lifespan(app: FastAPI):
     """
     앱 시작/종료 시 실행되는 수명주기 관리자
-    앱 시작 시 무거운 LLM 모델을 미리 로드합니다.
+    앱 시작 시 무거운 LLM 모델과 드라이버 풀을 미리 로드합니다.
     """
-    print("🚀 서버 시작: LLM 모델 로딩 중... (시간이 걸릴 수 있습니다)")
+    print("🚀 서버 시작: 리소스 초기화 중... (시간이 걸릴 수 있습니다)")
+    
+    # 1. LLM 모델 로드
+    print("   📦 LLM 모델 로딩 중...")
     try:
-        # 모델 로드 (dream_interprinter_service의 전역 models 변수에 저장)
         models["llm"] = load_llama_model(
             model_key="q4_k_m",
             n_ctx=2048,
             n_gpu_layers=-1, # GPU 가속 사용
             verbose=True
         )
-        print("✅ LLM 모델 로드 완료!")
+        print("   ✅ LLM 모델 로드 완료!")
     except Exception as e:
-        print(f"⚠️ 모델 로드 실패: {e}")
-        print("꿈 해몽 기능이 제한될 수 있습니다.")
+        print(f"   ⚠️ 모델 로드 실패: {e}")
+        print("   꿈 해몽 기능이 제한될 수 있습니다.")
+    
+    # 2. Chrome 드라이버 풀 초기화
+    print("   🏊 Chrome 드라이버 풀 초기화 중...")
+    try:
+        init_driver_pool(pool_size=2, headless=True)
+        print("   ✅ 드라이버 풀 초기화 완료!")
+    except Exception as e:
+        print(f"   ⚠️ 드라이버 풀 초기화 실패: {e}")
+        print("   네이버 운세 크롤링이 느릴 수 있습니다.")
+    
+    print("🎉 서버 준비 완료!")
     
     yield
     
     # 앱 종료 시 정리
+    print("🔚 서버 종료 중...")
     models.clear()
-    print("👋 서버 종료")
+    cleanup_driver_pool()
+    print("👋 서버 종료 완료")
 
 app = FastAPI(
     title="AI 통합 운세 서비스",
