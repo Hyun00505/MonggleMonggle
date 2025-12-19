@@ -333,7 +333,7 @@ async function generateImage() {
       // 생성된 이미지를 목록에 추가하고 자동 저장
       for (const img of response.images) {
         const imageEntry = {
-          id: Date.now() + Math.random(),
+          id: selectedDream.value.dreamId, // dreamId를 id로 사용하여 갤러리 중복 방지
           dreamId: selectedDream.value.dreamId,
           dreamKey: selectedDreamKey.value,
           dreamDate: selectedDreamKey.value,

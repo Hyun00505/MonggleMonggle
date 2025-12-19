@@ -22,10 +22,9 @@ const isPastMonth = computed(() => {
   const currentMonth = today.getMonth();
   const selectedYear = selectedDate.value.getFullYear();
   const selectedMonth = selectedDate.value.getMonth();
-  
+
   // 선택된 날짜가 현재 년월보다 이전이면 지난 달
-  return selectedYear < currentYear || 
-         (selectedYear === currentYear && selectedMonth < currentMonth);
+  return selectedYear < currentYear || (selectedYear === currentYear && selectedMonth < currentMonth);
 });
 
 const { saveDream, deleteDream, setEmotion, enableEditMode, resetWriteState, setSelectedDateWithResult, fetchDreamsByMonth, validateRequiredFields } = dreamEntriesStore;
@@ -124,14 +123,14 @@ function handleDelete() {
 }
 
 function handleEdit() {
-  if(!confirm("수정하시면 기존의 꿈 해몽 결과, 꿈 이미지 등이 모두 삭제됩니다.\n정말 수정하시겠습니까?")) {
+  if (!confirm("수정하시면 기존의 꿈 해몽 결과, 꿈 이미지 등이 모두 삭제됩니다.\n정말 수정하시겠습니까?")) {
     return;
   }
   enableEditMode();
 }
 
 function handleAnalysis() {
-  // 코인 0인데 ai 해몽 버튼 클릭 햇을 때 
+  // 코인 0인데 ai 해몽 버튼 클릭 햇을 때
   if (isCoinDepleted.value) {
     alert("오늘 사용 가능한 AI 티켓을 모두 사용했습니다.");
     return;
@@ -227,6 +226,12 @@ async function ensureMonthData(date) {
             <div class="range-marks">
               <span v-for="n in 5" :key="n" class="mark" :class="{ active: selectedEmotion === n }"></span>
             </div>
+            <div class="range-labels">
+              <span v-for="n in 5" :key="n" class="score-label" :class="{ active: selectedEmotion === n }">
+                {{ n }}
+                <span class="score-suffix">점</span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -265,23 +270,23 @@ async function ensureMonthData(date) {
               <span class="label">삭제하기</span>
             </button>
             <!-- 해몽 결과가 있을 때: 결과 보기 버튼 (지난 달도 조회 가능) -->
-              <button v-if="hasExistingResult" @click="handleViewResult" class="action-btn view-result-btn" aria-label="해몽 결과 보기">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <span class="label">결과 보기</span>
-              </button>
-              
-              <!-- 지난 달이 아닐 때만 AI 꿈해몽 버튼 표시 -->
-              <button v-if="!isPastMonth" @click="handleAnalysis" class="action-btn analysis-btn" :class="{ disabled: (currentUser?.coin ?? 0) <= 0 }">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sparkle-icon">
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
-                  <path d="M4.5 4.5L5.5 6.5L6.5 4.5L8.5 3.5L6.5 2.5L5.5 0.5L4.5 2.5L2.5 3.5L4.5 4.5Z" fill="currentColor" stroke="none" class="twinkle"></path>
-                  <path d="M19.5 19.5L20.5 21.5L21.5 19.5L23.5 18.5L21.5 17.5L20.5 15.5L19.5 17.5L17.5 18.5L19.5 19.5Z" fill="currentColor" stroke="none" class="twinkle delay-1"></path>
-                </svg>
-                <span class="label">AI 꿈해몽</span>
-              </button>
+            <button v-if="hasExistingResult" @click="handleViewResult" class="action-btn view-result-btn" aria-label="해몽 결과 보기">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <span class="label">결과 보기</span>
+            </button>
+
+            <!-- 지난 달이 아닐 때만 AI 꿈해몽 버튼 표시 -->
+            <button v-if="!isPastMonth" @click="handleAnalysis" class="action-btn analysis-btn" :class="{ disabled: (currentUser?.coin ?? 0) <= 0 }">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sparkle-icon">
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
+                <path d="M4.5 4.5L5.5 6.5L6.5 4.5L8.5 3.5L6.5 2.5L5.5 0.5L4.5 2.5L2.5 3.5L4.5 4.5Z" fill="currentColor" stroke="none" class="twinkle"></path>
+                <path d="M19.5 19.5L20.5 21.5L21.5 19.5L23.5 18.5L21.5 17.5L20.5 15.5L19.5 17.5L17.5 18.5L19.5 19.5Z" fill="currentColor" stroke="none" class="twinkle delay-1"></path>
+              </svg>
+              <span class="label">AI 꿈해몽</span>
+            </button>
           </div>
         </transition>
       </div>
@@ -394,16 +399,22 @@ async function ensureMonthData(date) {
 .slider-container {
   width: 100%;
   position: relative;
-  height: 40px;
+  height: auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  padding-bottom: 0.5rem;
 }
 
 @media (max-width: 767px) {
   .slider-container {
     max-width: 280px;
     margin-bottom: 10px;
+  }
+
+  .score-label {
+    font-size: 1rem;
+    min-width: 24px;
   }
 }
 
@@ -456,10 +467,9 @@ async function ensureMonthData(date) {
 
 .range-marks {
   position: absolute;
-  top: 50%;
+  top: 4px;
   left: 10px;
   right: 10px;
-  transform: translateY(-50%);
   display: flex;
   justify-content: space-between;
   pointer-events: none;
@@ -476,6 +486,29 @@ async function ensureMonthData(date) {
 
 .mark.active {
   background: var(--color-purple);
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding: 0 2px;
+}
+
+.score-label {
+  font-family: "Dongle", sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #bbb;
+  transition: all 0.2s ease;
+  min-width: 28px;
+  text-align: center;
+}
+
+.score-label.active {
+  color: var(--color-purple);
+  font-weight: 700;
+  transform: scale(1.15);
 }
 
 .scale-enter-active,
@@ -509,8 +542,8 @@ async function ensureMonthData(date) {
 @media (min-width: 768px) {
   .side-actions {
     flex-direction: column;
-    width: 120px;
-    justify-content: flex-start; /* flex-end -> flex-start */
+    width: 140px;
+    justify-content: flex-start;
     border-top: none;
     border-left: 1px solid #eee;
     padding-left: 1.5rem;
@@ -521,11 +554,28 @@ async function ensureMonthData(date) {
     margin-bottom: 2rem;
   }
 
+  .slider-container {
+    max-width: 130px;
+  }
+
+  .range-labels {
+    padding: 0;
+  }
+
+  .score-label {
+    font-size: 1.1rem;
+    min-width: 18px;
+  }
+
+  .score-suffix {
+    display: none;
+  }
+
   .button-group {
     flex-direction: column;
     gap: 1rem;
     width: 100%;
-    margin-top: auto; /* 버튼들을 아래로 밀어줌 */
+    margin-top: auto;
   }
 }
 
@@ -682,7 +732,6 @@ async function ensureMonthData(date) {
 .analysis-btn.disabled::before {
   display: none;
 }
-
 
 .analysis-btn.disabled .sparkle-icon {
   opacity: 0.4;

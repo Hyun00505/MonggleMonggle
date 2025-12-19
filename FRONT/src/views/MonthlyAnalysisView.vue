@@ -45,7 +45,7 @@
     <div class="monthly-analysis-content" v-if="!isLockedMonth">
       <!-- 왼쪽 컬럼 -->
       <div class="left-column">
-        <MonthlyStatsCard :total-dreams="monthlyStats.totalDreams" :streak="monthlyStats.streak" />
+        <MonthlyStatsCard :total-dreams="monthlyStats.totalDreams" :streak="monthlyStats.streak" :avg-emotion-score="avgEmotionScore" />
         <MonthlyDreamList :dreams="visibleDreams" :current-page="currentDreamPage" :total-pages="totalDreamPages" @select-dream="goToDream" @prev-page="prevDreamPage" @next-page="nextDreamPage" />
       </div>
 
@@ -113,6 +113,9 @@ const isReportOpen = ref(false);
 
 // 메모 상태
 const monthlyMemos = ref([]);
+
+// 감정 점수 상태
+const avgEmotionScore = ref(null);
 
 const isLockedMonth = computed(() => {
   const selectedKey = currentYear.value * 12 + currentMonth.value;
@@ -344,12 +347,33 @@ function loadMonthlyDreams() {
   dreamEntriesStore.fetchDreamsByMonth(currentYear.value, currentMonth.value);
 }
 
+// 월별 분석 데이터 로드 (avgEmotionScore 포함)
+async function loadMonthlyAnalysis() {
+  if (isLockedMonth.value) {
+    avgEmotionScore.value = null;
+    return;
+  }
+
+  try {
+    const analysis = await monthlyAnalysisService.getMonthlyAnalysis(currentYear.value, currentMonth.value);
+    avgEmotionScore.value = analysis?.avgEmotionScore ?? null;
+  } catch (err) {
+    if (err?.response?.status === 404) {
+      avgEmotionScore.value = null;
+    } else {
+      console.error("월별 분석 조회 실패:", err);
+      avgEmotionScore.value = null;
+    }
+  }
+}
+
 // 라이프사이클
 onMounted(() => {
   syncFromRoute();
   updateRouteQuery();
   loadMonthlyMemos();
   loadMonthlyDreams();
+  loadMonthlyAnalysis();
 
   nowTimer = setInterval(() => {
     now.value = new Date();
@@ -373,6 +397,7 @@ watch(
 watch([currentYear, currentMonth], () => {
   loadMonthlyMemos();
   loadMonthlyDreams();
+  loadMonthlyAnalysis();
 });
 </script>
 
