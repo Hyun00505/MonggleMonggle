@@ -298,17 +298,18 @@ onBeforeUnmount(() => {
 }
 
 .notice-title {
-  font-size: 1rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #333;
+  font-family: 'Dongle';
 }
 
 .notice-write-btn {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.35rem 0.7rem;
-  font-size: 0.8rem;
+  padding: 0.05rem 0.6rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: #fff;
   background: var(--gradient-purple-blue);
@@ -316,6 +317,7 @@ onBeforeUnmount(() => {
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: 'Dongle' !important;
 }
 
 .notice-write-btn:hover {
@@ -385,6 +387,7 @@ onBeforeUnmount(() => {
   gap: 0.2rem;
   font-size: 0.75rem;
   color: #aaa;
+  font-family: "Nunito";
 }
 
 .notice-stat svg {
@@ -392,10 +395,12 @@ onBeforeUnmount(() => {
 }
 
 .notice-item-date {
-  font-size: 0.8rem;
+  font-size: 1.2rem;
   color: #999;
   flex-shrink: 0;
   align-self: flex-start;
+  font-family: 'Dongle';
+  line-height: 1rem;
 }
 
 /* 반응형 */

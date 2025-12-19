@@ -222,8 +222,9 @@ onBeforeUnmount(() => {
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 1.2rem;
   font-weight: 700;
+  font-family: 'Dongle', sans-serif;
 }
 
 /* 폼 그룹 */
@@ -233,7 +234,8 @@ onBeforeUnmount(() => {
 
 .form-group label {
   display: block;
-  font-size: 0.9rem;
+  font-family: 'Dongle', sans-serif;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #333;
   margin-bottom: 0.5rem;
@@ -281,13 +283,14 @@ onBeforeUnmount(() => {
 .btn-cancel,
 .btn-submit {
   flex: 1;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.95rem;
+  padding: 0.35rem 1.5rem;
+  font-size: 1.5rem;
   font-weight: 700;
   border-radius: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
+  font-family: 'Dongle', sans-serif !important;
 }
 
 .btn-cancel {
