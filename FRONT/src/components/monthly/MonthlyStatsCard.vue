@@ -11,7 +11,7 @@
         </svg>
       </div>
       <div class="stat-content">
-        <div class="stat-value">{{ totalDreams }}</div>
+        <div class="stat-value">{{ totalDreams }}개</div>
         <div class="stat-label">기록된 꿈</div>
       </div>
     </div>
@@ -26,11 +26,30 @@
         <div class="stat-label">연속 기록</div>
       </div>
     </div>
+    <div class="stat-card emotion-card">
+      <div class="stat-icon-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+          <line x1="9" y1="9" x2="9.01" y2="9" />
+          <line x1="15" y1="9" x2="15.01" y2="9" />
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value score-value">
+          {{ displayScore }}
+          <span class="score-max">/5점</span>
+        </div>
+        <div class="stat-label">평균 감정 점수</div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
+import { computed } from "vue";
+
+const props = defineProps({
   totalDreams: {
     type: Number,
     default: 0,
@@ -39,6 +58,18 @@ defineProps({
     type: String,
     default: "0일",
   },
+  avgEmotionScore: {
+    type: Number,
+    default: null,
+  },
+});
+
+// 점수를 소수점 한 자리로 표시
+const displayScore = computed(() => {
+  if (props.avgEmotionScore === null || props.avgEmotionScore === undefined) {
+    return "-";
+  }
+  return props.avgEmotionScore.toFixed(1);
 });
 </script>
 
@@ -83,6 +114,16 @@ defineProps({
   box-shadow: 0 8px 28px rgba(255, 200, 221, 0.4);
 }
 
+.emotion-card {
+  background: linear-gradient(135deg, #d4edff 0%, #c4e4ff 100%);
+  color: #4a6a8a;
+  box-shadow: 0 6px 20px rgba(162, 210, 255, 0.25);
+}
+
+.emotion-card:hover {
+  box-shadow: 0 8px 28px rgba(162, 210, 255, 0.4);
+}
+
 .stat-icon-wrap {
   display: flex;
   align-items: center;
@@ -107,18 +148,23 @@ defineProps({
   top: 5px;
 }
 
+.emotion-card .stat-icon-wrap svg {
+  width: 28px;
+  height: 28px;
+  stroke: #5a8ab8;
+}
+
 .stat-content {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   min-width: 0;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
+  align-items: flex-start;
+  gap: 0.15rem;
 }
 
 .stat-value {
   font-family: "Dongle", sans-serif;
-  font-size: 3rem;
+  font-size: 2.6rem;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.5px;
@@ -126,22 +172,30 @@ defineProps({
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
+.score-value {
+  display: flex;
+  align-items: baseline;
+}
+
+.score-max {
+  font-size: 1.4rem;
+  font-weight: 600;
+  opacity: 0.6;
+  margin-left: 1px;
+}
+
 .stat-label {
-  font-size: 1rem;
-  opacity: 0.9;
-  font-weight: 700;
-  margin-top: 2px;
+  font-family: "Dongle", sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: inherit;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 @media (max-width: 1040px) {
-  .stat-content {
-    flex-direction: column;
-  }
-}
-
-@media (max-width: 900px) {
-  .stat-content {
-    flex-direction: row;
+  .stat-card {
+    gap: 1rem;
   }
 }
 
@@ -152,8 +206,16 @@ defineProps({
   }
 
   .stat-card {
-    padding: 0.9rem 1rem;
-    gap: 2rem;
+    flex-direction: row;
+    padding: 0.9rem 1.25rem;
+    gap: 1rem;
+  }
+
+  .stat-content {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
   }
 
   .stat-icon-wrap {
@@ -167,12 +229,15 @@ defineProps({
   }
 
   .stat-value {
-    font-size: 2.5rem;
+    font-size: 2.4rem;
   }
 
   .stat-label {
-    font-size: 0.9rem;
+    font-size: 1.2rem;
+  }
+
+  .score-max {
+    font-size: 1.2rem;
   }
 }
 </style>
-
