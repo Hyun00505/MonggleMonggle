@@ -1,6 +1,6 @@
 package com.ssafy.finalproject.service;
 
-import com.ssafy.finalproject.exception.BadRequestException;
+import com.ssafy.finalproject.exception.InsufficientCoinException;
 import com.ssafy.finalproject.exception.ResourceNotFoundException;
 import com.ssafy.finalproject.model.dao.UserDao;
 import com.ssafy.finalproject.model.entity.User;
@@ -74,7 +74,7 @@ public class CoinService {
     private void validateCoin(Long userId, int requiredCost) {
         int currentCoin = getCurrentCoin(userId);
         if (currentCoin < requiredCost) {
-            throw new BadRequestException(
+            throw new InsufficientCoinException(
                     String.format("코인이 부족합니다. 필요: %d개, 현재: %d개", requiredCost, currentCoin));
         }
     }
@@ -92,7 +92,7 @@ public class CoinService {
         // 코인 차감 (잔액이 충분할 때만 성공)
         int updatedRows = userDao.consumeCoin(userId, cost);
         if (updatedRows == 0) {
-            throw new BadRequestException(
+            throw new InsufficientCoinException(
                     String.format("코인이 부족합니다. 필요: %d개", cost));
         }
     }

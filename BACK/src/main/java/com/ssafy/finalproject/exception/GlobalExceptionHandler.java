@@ -88,6 +88,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
     
+    @ExceptionHandler(InsufficientCoinException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientCoinException(InsufficientCoinException ex) {
+        ErrorResponse error = ErrorResponse.builder()
+                .error(ex.getErrorCode())
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+        // 코인 부족은 200 OK로 응답하고 본문에 에러 정보 포함
+        return ResponseEntity.status(HttpStatus.OK).body(error);
+    }
+    
     @ExceptionHandler(ServiceUnavailableException.class)
     public ResponseEntity<ErrorResponse> handleServiceUnavailableException(ServiceUnavailableException ex) {
         ErrorResponse error = ErrorResponse.builder()

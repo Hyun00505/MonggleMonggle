@@ -24,6 +24,7 @@ public class DreamResultService {
     private final DreamsResultsDao dreamsResultsDao;
     private final DreamsDao dreamsDao;
     private final ImageService imageService;
+    private final CoinService coinService;
     
     // AI 분석 결과 저장
     public Long saveDreamResult(Long userId, Long dreamId, SaveDreamResultRequest request) {
@@ -39,6 +40,12 @@ public class DreamResultService {
         // 이미 분석 결과가 있는지 확인
         if (dreamsResultsDao.existsByDreamId(dreamId)) {
             throw new ConflictException("이미 분석 결과가 존재합니다.");
+        }
+        
+        // 코인 차감: 이미지 URL이 없는 경우에만 1코인 차감 (해몽만 요청)
+        // 이미지가 있는 경우는 이미지 생성 시 2코인이 이미 차감됨
+        if (request.getImageUrl() == null || request.getImageUrl().isEmpty()) {
+            coinService.consumeForDreamInterpretation(userId);
         }
         
         // DreamResult 엔티티 생성
@@ -137,8 +144,17 @@ public class DreamResultService {
             }
         }
         
-        // 이미지 URL은 null일 수 있으므로 분기 처리
+        // 이미지 URL 업데이트 시 이전 이미지 삭제
         if (request.getImageUrl() != null) {
+            // 기존 이미지가 있고, 새 이미지와 다르면 기존 이미지 삭제
+            String oldImageUrl = result.getImageUrl();
+            if (oldImageUrl != null && !oldImageUrl.isEmpty() && !oldImageUrl.equals(request.getImageUrl())) {
+                try {
+                    imageService.deleteImage(oldImageUrl);
+                } catch (IOException e) {
+                    // 이미지 삭제 실패해도 계속 진행 (로그만 남김)
+                }
+            }
             result.setImageUrl(request.getImageUrl());
         }
         dreamsResultsDao.updateDreamResult(result);
