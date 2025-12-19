@@ -31,12 +31,13 @@ async def process_dream_image(request: DreamImageRequest) -> DreamImageResponse:
     # 선택된 스타일에 맞는 키워드 가져오기 (기본값: 몽환적)
     style_keyword = STYLE_PROMPTS.get(request.style, STYLE_PROMPTS["몽환적"])
 
-    # 고정된 프롬프트 (텍스트/워터마크 금지)
+    # 고정된 프롬프트 (텍스트/워터마크 금지 - 강화 버전)
     DEFAULT_PROMPT = (
-        "다음 꿈 내용을 영화의 한 장면처럼 시각화해줘. "
-        "이미지에 글자, 자막, 숫자, 기호, 워터마크 등 어떤 텍스트도 넣지 마. "
-        "캔버스 위에 문장을 쓰지 말고 오직 장면만 그려. "
-        f"스타일은 '{style_keyword}'로, 정사각형 비율로 생성해. 꿈 내용: "
+        "Generate a purely visual image with ABSOLUTELY NO TEXT, NO LETTERS, NO WORDS, NO NUMBERS, NO SYMBOLS, NO WATERMARKS, NO CAPTIONS, NO SUBTITLES, NO SIGNATURES, NO LOGOS anywhere in the image. "
+        "This is extremely important: the image must contain ZERO text elements of any kind. "
+        "Visualize the following dream content as a cinematic scene. "
+        f"Style: {style_keyword}. Square aspect ratio. "
+        "Dream content: "
     )
     
     # 최종 프롬프트 조합

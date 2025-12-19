@@ -3,10 +3,13 @@ from __future__ import annotations
 import logging
 import os
 import traceback
+import threading
+import atexit
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
-from typing import Literal, Optional
+from queue import Queue, Empty
+from typing import Literal, Optional, Dict, Any
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -24,6 +27,167 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
+
+
+# ==================== 운세 캐싱 시스템 ====================
+class FortuneCache:
+    """
+    운세 캐싱 시스템
+    같은 날짜 + 같은 생년월일의 운세는 하루 동안 동일하므로 캐싱
+    """
+    def __init__(self):
+        self._cache: Dict[str, Any] = {}
+        self._lock = threading.Lock()
+    
+    def _make_key(self, gender: str, calendar_type: str, birth_date: str) -> str:
+        """캐시 키 생성 (오늘 날짜 포함)"""
+        today = date.today().isoformat()
+        return f"{gender}_{calendar_type}_{birth_date}_{today}"
+    
+    def get(self, gender: str, calendar_type: str, birth_date: str) -> Optional[Any]:
+        """캐시에서 운세 조회"""
+        key = self._make_key(gender, calendar_type, birth_date)
+        with self._lock:
+            if key in self._cache:
+                logger.info(f"📦 캐시 히트! (key: {key})")
+                return self._cache[key]
+        return None
+    
+    def set(self, gender: str, calendar_type: str, birth_date: str, result: Any) -> None:
+        """캐시에 운세 저장"""
+        key = self._make_key(gender, calendar_type, birth_date)
+        with self._lock:
+            self._cache[key] = result
+            logger.info(f"💾 캐시 저장 (key: {key})")
+    
+    def clear_old_entries(self) -> None:
+        """오래된 캐시 항목 정리 (오늘 날짜가 아닌 항목 삭제)"""
+        today = date.today().isoformat()
+        with self._lock:
+            keys_to_delete = [k for k in self._cache if not k.endswith(today)]
+            for key in keys_to_delete:
+                del self._cache[key]
+            if keys_to_delete:
+                logger.info(f"🧹 {len(keys_to_delete)}개의 오래된 캐시 삭제됨")
+
+
+# ==================== 드라이버 풀링 시스템 ====================
+class DriverPool:
+    """
+    Chrome 드라이버 풀링 시스템
+    드라이버를 미리 생성해두고 재사용하여 시간 절약
+    """
+    def __init__(self, pool_size: int = 2, headless: bool = True):
+        self._pool: Queue = Queue(maxsize=pool_size)
+        self._pool_size = pool_size
+        self._headless = headless
+        self._lock = threading.Lock()
+        self._initialized = False
+        self._drivers_created = 0
+    
+    def _create_driver(self) -> webdriver.Chrome:
+        """새 드라이버 생성"""
+        options = webdriver.ChromeOptions()
+        if self._headless:
+            options.add_argument("--headless=new")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--window-size=1280,900")
+        options.add_argument("--disable-extensions")
+        options.add_argument("--disable-popup-blocking")
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option('useAutomationExtension', False)
+        options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        options.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
+        
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
+        self._drivers_created += 1
+        logger.info(f"🚀 새 드라이버 생성 (총 {self._drivers_created}개)")
+        return driver
+    
+    def initialize(self) -> None:
+        """풀 초기화 (서버 시작 시 호출)"""
+        with self._lock:
+            if self._initialized:
+                return
+            logger.info(f"🏊 드라이버 풀 초기화 중... (크기: {self._pool_size})")
+            for _ in range(self._pool_size):
+                try:
+                    driver = self._create_driver()
+                    self._pool.put(driver)
+                except Exception as e:
+                    logger.error(f"❌ 드라이버 풀 초기화 실패: {e}")
+            self._initialized = True
+            logger.info(f"✅ 드라이버 풀 초기화 완료 ({self._pool.qsize()}개)")
+    
+    def get_driver(self, timeout: float = 30.0) -> webdriver.Chrome:
+        """풀에서 드라이버 가져오기"""
+        try:
+            driver = self._pool.get(timeout=timeout)
+            logger.debug(f"🔄 풀에서 드라이버 가져옴 (남은 수: {self._pool.qsize()})")
+            return driver
+        except Empty:
+            # 풀이 비어있으면 새로 생성
+            logger.warning("⚠️ 드라이버 풀이 비어있어 새로 생성합니다")
+            return self._create_driver()
+    
+    def return_driver(self, driver: webdriver.Chrome) -> None:
+        """드라이버를 풀에 반환"""
+        try:
+            # 브라우저 상태 초기화
+            driver.delete_all_cookies()
+            driver.get("about:blank")
+            self._pool.put_nowait(driver)
+            logger.debug(f"♻️ 드라이버 풀에 반환 (현재 수: {self._pool.qsize()})")
+        except Exception as e:
+            logger.warning(f"⚠️ 드라이버 반환 실패, 종료 후 새로 생성: {e}")
+            try:
+                driver.quit()
+            except:
+                pass
+            # 새 드라이버로 교체
+            try:
+                new_driver = self._create_driver()
+                self._pool.put_nowait(new_driver)
+            except Exception as e2:
+                logger.error(f"❌ 드라이버 교체 실패: {e2}")
+    
+    def shutdown(self) -> None:
+        """모든 드라이버 종료"""
+        logger.info("🛑 드라이버 풀 종료 중...")
+        while not self._pool.empty():
+            try:
+                driver = self._pool.get_nowait()
+                driver.quit()
+            except:
+                pass
+        logger.info("✅ 드라이버 풀 종료 완료")
+
+
+# 전역 캐시 및 드라이버 풀 인스턴스
+fortune_cache = FortuneCache()
+driver_pool: Optional[DriverPool] = None
+
+
+def init_driver_pool(pool_size: int = 2, headless: bool = True) -> None:
+    """드라이버 풀 초기화 (서버 시작 시 호출)"""
+    global driver_pool
+    if driver_pool is None:
+        driver_pool = DriverPool(pool_size=pool_size, headless=headless)
+        driver_pool.initialize()
+        # 서버 종료 시 드라이버 풀 정리
+        atexit.register(driver_pool.shutdown)
+
+
+def cleanup_driver_pool() -> None:
+    """드라이버 풀 정리 (서버 종료 시 호출)"""
+    global driver_pool
+    if driver_pool:
+        driver_pool.shutdown()
+        driver_pool = None
 
 # 로깅 설정
 logging.basicConfig(
@@ -483,22 +647,51 @@ def fetch_today_fortune(
     headless: bool = True,
     wait_seconds: int = 10,
     debug_mode: bool = False,
+    use_pool: bool = True,
 ) -> FortuneResult:
+    """
+    네이버 운세 크롤링 (최적화 버전)
+    - 캐싱: 같은 날짜+생년월일 운세는 캐시에서 반환
+    - 드라이버 풀링: 드라이버 재사용으로 시간 절약
+    - sleep 제거: WebDriverWait으로 대체
+    """
+    
+    # 1. 캐시 확인 (캐시 히트 시 즉시 반환)
+    cached_result = fortune_cache.get(gender, calendar_type, birth_date)
+    if cached_result:
+        logger.info("⚡ 캐시에서 운세 반환 (크롤링 스킵)")
+        return cached_result
+    
     logger.info("=" * 60)
     logger.info("🌟 네이버 운세 크롤링 시작")
     logger.info(f"   성별: {gender}, 달력: {calendar_type}, 생년월일: {birth_date}")
     logger.info(f"   headless: {headless}, wait_seconds: {wait_seconds}, debug_mode: {debug_mode}")
+    logger.info(f"   드라이버 풀 사용: {use_pool}")
     logger.info("=" * 60)
     
     start_time = datetime.now()
     
     year, month, day = parse_birth_date(birth_date)
 
-    driver = build_driver(headless=headless)
+    # 2. 드라이버 획득 (풀 사용 또는 새로 생성)
+    driver = None
+    using_pool = False
+    
+    if use_pool and driver_pool is not None:
+        try:
+            driver = driver_pool.get_driver(timeout=5.0)
+            using_pool = True
+            logger.info("🏊 드라이버 풀에서 드라이버 획득")
+        except Exception as e:
+            logger.warning(f"⚠️ 풀에서 드라이버 획득 실패, 새로 생성: {e}")
+            driver = build_driver(headless=headless)
+    else:
+        driver = build_driver(headless=headless)
+    
     wait = WebDriverWait(driver, wait_seconds)
 
     try:
-        # 1. 페이지 로드
+        # Step 1: 페이지 로드
         logger.info("📍 Step 1: 페이지 로드")
         logger.debug(f"   URL: {BASE_URL}")
         driver.get(BASE_URL)
@@ -509,40 +702,38 @@ def fetch_today_fortune(
             save_screenshot(driver, "step1_page_loaded")
             save_page_source(driver, "step1_page_loaded")
         
-        # 페이지 로드 후 잠시 대기 (동적 콘텐츠 로드를 위해)
-        import time
-        time.sleep(1)
-        logger.debug("   페이지 로드 후 1초 대기 완료")
+        # 페이지 로드 대기 (sleep 대신 명시적 대기 사용)
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, SELECTOR_GENDER)))
+        logger.debug("   페이지 로드 완료 (성별 선택기 발견)")
         
-        # 2. 성별 선택
+        # Step 2: 성별 선택
         logger.info("📍 Step 2: 성별 선택")
         click_dropdown_option(driver, wait, SELECTOR_GENDER, gender, debug_mode)
         if debug_mode:
             save_screenshot(driver, "step2_gender_selected")
         
-        # 3. 달력 유형 선택
+        # Step 3: 달력 유형 선택
         logger.info("📍 Step 3: 달력 유형 선택")
         click_dropdown_option(driver, wait, SELECTOR_CALENDAR, calendar_type, debug_mode)
         if debug_mode:
             save_screenshot(driver, "step3_calendar_selected")
         
-        # 4. 생년월일 선택
+        # Step 4: 생년월일 선택
         logger.info("📍 Step 4: 생년월일 선택")
         pick_birth_date(driver, wait, year, month, day, debug_mode)
         if debug_mode:
             save_screenshot(driver, "step4_birthdate_selected")
         
-        # 5. 제출 버튼 클릭
+        # Step 5: 제출 버튼 클릭
         logger.info("📍 Step 5: 운세 보기 버튼 클릭")
         click_button(driver, wait, SELECTOR_SUBMIT, debug_mode)
         if debug_mode:
             save_screenshot(driver, "step5_submit_clicked")
         
-        # 결과 로드 대기
-        time.sleep(1)
-        logger.debug("   결과 로드를 위해 1초 대기")
+        # 결과 로드 대기 (sleep 대신 명시적 대기 사용)
+        # extract_result 내부에서 WebDriverWait을 사용하므로 별도 대기 불필요
         
-        # 6. 결과 추출
+        # Step 6: 결과 추출
         logger.info("📍 Step 6: 결과 추출")
         result = extract_result(driver, wait, debug_mode)
         if debug_mode:
@@ -553,6 +744,9 @@ def fetch_today_fortune(
         logger.info(f"✅ 네이버 운세 크롤링 성공! (소요시간: {elapsed_time:.2f}초)")
         logger.info(f"   결과: {result.title} - {result.summary[:50]}...")
         logger.info("=" * 60)
+        
+        # 3. 결과 캐싱
+        fortune_cache.set(gender, calendar_type, birth_date, result)
         
         return result
         
@@ -583,8 +777,13 @@ def fetch_today_fortune(
         raise
         
     finally:
-        logger.info("🔚 Chrome 드라이버 종료")
-        driver.quit()
+        # 4. 드라이버 반환 또는 종료
+        if using_pool and driver_pool is not None:
+            logger.info("♻️ 드라이버를 풀에 반환")
+            driver_pool.return_driver(driver)
+        else:
+            logger.info("🔚 Chrome 드라이버 종료")
+            driver.quit()
 
 
 app = FastAPI(title="Naver Fortune API", version="1.0.0")
