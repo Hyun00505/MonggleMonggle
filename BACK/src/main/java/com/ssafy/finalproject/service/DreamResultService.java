@@ -146,16 +146,33 @@ public class DreamResultService {
         
         // 이미지 URL 업데이트 시 이전 이미지 삭제
         if (request.getImageUrl() != null) {
-            // 기존 이미지가 있고, 새 이미지와 다르면 기존 이미지 삭제
+            String newImageUrl = request.getImageUrl();
             String oldImageUrl = result.getImageUrl();
-            if (oldImageUrl != null && !oldImageUrl.isEmpty() && !oldImageUrl.equals(request.getImageUrl())) {
-                try {
-                    imageService.deleteImage(oldImageUrl);
-                } catch (IOException e) {
-                    // 이미지 삭제 실패해도 계속 진행 (로그만 남김)
+            
+            // 빈 문자열이면 이미지 삭제 요청으로 처리
+            if (newImageUrl.isEmpty()) {
+                // 기존 이미지 파일 삭제
+                if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+                    try {
+                        imageService.deleteImage(oldImageUrl);
+                    } catch (IOException e) {
+                        // 이미지 삭제 실패해도 계속 진행 (로그만 남김)
+                    }
                 }
+                // DB에서 이미지 URL을 null로 설정
+                result.setImageUrl(null);
+            } else {
+                // 새 이미지 URL로 업데이트
+                // 기존 이미지가 있고, 새 이미지와 다르면 기존 이미지 삭제
+                if (oldImageUrl != null && !oldImageUrl.isEmpty() && !oldImageUrl.equals(newImageUrl)) {
+                    try {
+                        imageService.deleteImage(oldImageUrl);
+                    } catch (IOException e) {
+                        // 이미지 삭제 실패해도 계속 진행 (로그만 남김)
+                    }
+                }
+                result.setImageUrl(newImageUrl);
             }
-            result.setImageUrl(request.getImageUrl());
         }
         dreamsResultsDao.updateDreamResult(result);
         

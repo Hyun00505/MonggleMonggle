@@ -153,6 +153,7 @@ import { storeToRefs } from "pinia";
 import { useGalleryStore } from "../stores/galleryStore";
 import { imageService } from "../services/imageService";
 import { dreamService } from "../services/dreamService";
+import { dreamResultService } from "../services/dreamResultService";
 import ImageDetailModal from "../components/image/ImageDetailModal.vue";
 
 const router = useRouter();
@@ -251,17 +252,30 @@ async function deleteImage(image) {
   }
 
   try {
-    // 서버에 저장된 이미지인 경우 백엔드에서도 삭제 (절대/상대 경로 모두 허용)
+    // 1. 서버에 저장된 이미지인 경우 물리적 파일 삭제
     if (image.imageSrc && image.imageSrc.includes("/uploads/images/")) {
       try {
         await imageService.deleteImage(image.imageSrc);
-        console.log("✅ 서버 이미지 삭제 완료");
+        console.log("✅ 서버 이미지 파일 삭제 완료");
       } catch (err) {
-        console.warn("⚠️ 서버 이미지 삭제 실패 (로컬만 삭제):", err.message);
+        console.warn("⚠️ 서버 이미지 파일 삭제 실패:", err.message);
       }
     }
 
-    // 갤러리에서 제거
+    // 2. DB에서 dream_results의 image_url을 삭제 (새로고침해도 다시 안 뜨도록)
+    if (image.dreamId) {
+      try {
+        // 빈 문자열을 보내면 백엔드에서 null로 처리
+        await dreamResultService.updateDreamResult(image.dreamId, {
+          imageUrl: "",
+        });
+        console.log("✅ DB에서 이미지 URL 삭제 완료");
+      } catch (err) {
+        console.warn("⚠️ DB 이미지 URL 삭제 실패:", err.message);
+      }
+    }
+
+    // 3. 로컬 갤러리에서 제거
     galleryStore.removeFromGallery(image.id);
 
     // 모달이 열려있으면 닫기
@@ -391,8 +405,6 @@ async function syncFromServer() {
   align-items: center;
   margin-bottom: 1.5rem;
 }
-
-/* .icon-btn은 global.css에서 정의됨 */
 
 .page-title {
   font-family: "Dongle", sans-serif;
