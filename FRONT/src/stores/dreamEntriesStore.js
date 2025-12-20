@@ -96,6 +96,7 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
           luckyColor: result.luckyColor,
           luckyColorHex: getColorHex(result.luckyColor?.name),
           luckyItem: result.luckyItem,
+          imageUrl: result.imageUrl,  // 기존 이미지 URL 추가
           date: dateKey,
           dreamTitle: existingPost.title,
           dreamContent: existingPost.content,

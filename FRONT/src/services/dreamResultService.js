@@ -47,6 +47,16 @@ export const dreamResultService = {
     const response = await api.delete(`/dreams/${dreamId}/result`);
     return response.data;
   },
+
+  /**
+   * 찜 토글
+   * @param {number} dreamId - 꿈 일기 ID
+   * @returns {Promise<Object>} { dreamId, isLiked, message }
+   */
+  async toggleLike(dreamId) {
+    const response = await api.post(`/dreams/${dreamId}/result/like`);
+    return response.data;
+  },
 };
 
 export default dreamResultService;

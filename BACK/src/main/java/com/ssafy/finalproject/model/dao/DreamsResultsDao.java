@@ -23,4 +23,7 @@ public interface DreamsResultsDao {
     
     // 꿈 ID로 분석 결과 존재 여부 확인
     boolean existsByDreamId(@Param("dreamId") Long dreamId);
+    
+    // 찜 토글
+    void toggleLike(@Param("dreamId") Long dreamId);
 }

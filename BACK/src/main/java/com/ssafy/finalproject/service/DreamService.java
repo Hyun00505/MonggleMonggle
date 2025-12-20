@@ -198,6 +198,7 @@ public class DreamService {
                                     .reason(result.getLuckyItemReason())
                                     .build())
                             .imageUrl(result.getImageUrl())
+                            .isLiked(result.getIsLiked())
                             .createdDate(result.getCreatedDate())
                             .build();
                 })

@@ -112,7 +112,7 @@ INSERT INTO `emotion_scores` (`emotion_id`, `emotion_name`, `score`) VALUES
 
 -- 9. users 테이블에 role 칼럼 추가
 ALTER TABLE `users`
-ADD COLUMN `role` VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '권한(USER, ADMIN)'
+ADD COLUMN `role` VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '권한(USER, ADMIN)';
 
 -- 10. 공지사항 테이블 (notices)
 CREATE TABLE `notice` (
@@ -126,7 +126,7 @@ CREATE TABLE `notice` (
     `deleted_date`   DATETIME        NULL COMMENT '삭제 일자(soft delete)',
     PRIMARY KEY (`notice_id`),
     FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) COMMENT = '공지사항'
+) COMMENT = '공지사항';
 
 -- 11. 공지사항 댓글 테이블 (comment)
 CREATE TABLE `notice_comment` (
@@ -139,7 +139,7 @@ CREATE TABLE `notice_comment` (
     PRIMARY KEY (`comment_id`),
     FOREIGN KEY (`notice_id`) REFERENCES `notice` (`notice_id`) ON DELETE CASCADE,
     FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) COMMENT = '공지사항 댓글'
+) COMMENT = '공지사항 댓글';
 
 -- 12. 공지사항 좋아요 테이블 (notice_likes)
 CREATE TABLE `notice_likes` (
@@ -153,4 +153,8 @@ CREATE TABLE `notice_likes` (
     UNIQUE KEY `uk_notice_like_user` (notice_id , `user_id`),
     FOREIGN KEY (`notice_id`) REFERENCES `notice` (`notice_id`) ON DELETE CASCADE,
     FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) COMMENT = '공지사항 좋아요'
+) COMMENT = '공지사항 좋아요';
+
+-- 13. 꿈 시각화 이미지 찜 기능 추가 
+ALTER TABLE `dream_results` 
+ADD COLUMN `is_liked` TINYINT NOT NULL DEFAULT 0 COMMENT '찜 여부 (0: 미찜, 1: 찜)';

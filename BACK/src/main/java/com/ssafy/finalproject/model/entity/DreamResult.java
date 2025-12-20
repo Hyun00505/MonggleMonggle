@@ -24,5 +24,6 @@ public class DreamResult {
     private String imageUrl;
     private LocalDateTime createdDate;
     private LocalDateTime deletedDate;
+    private Boolean isLiked; 
 }
 

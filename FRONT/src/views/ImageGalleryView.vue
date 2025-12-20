@@ -209,7 +209,7 @@ const filteredImages = computed(() => {
 });
 
 const totalLikes = computed(() => {
-  return galleryImages.value.reduce((sum, img) => sum + (img.likes || 0), 0);
+  return galleryImages.value.filter((img) => img.liked).length;
 });
 
 // 이미지 경로를 실제 접근 가능한 URL로 정규화
@@ -372,6 +372,7 @@ async function syncFromServer() {
           caption: item.title || "꿈 이미지",
           imageSrc: item.imageUrl,
           mimeType: "image/png",
+          liked: item.isLiked ?? false, // 서버에서 받은 찜 상태 반영
           createdAt: item.createdDate || new Date().toISOString(),
           savedAt: new Date().toISOString(),
         });
@@ -497,24 +498,23 @@ async function syncFromServer() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.7rem 1.25rem;
-  border: 2px solid var(--border-purple);
+  padding: calc(0.7rem + 2px) calc(1.25rem + 2px);
+  border: none;
   background: white;
   border-radius: 999px;
   font-weight: 700;
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  box-shadow: inset 0 0 0 2px var(--border-purple);
 }
 
 .filter-btn:hover {
-  border-color: var(--color-purple);
+  box-shadow: inset 0 0 0 2px var(--color-purple);
   background: var(--color-purple-light);
-  transform: translateY(-2px);
 }
 
 .filter-btn.active {
-  border-color: transparent;
   background: var(--gradient-purple-blue);
   color: white;
   box-shadow: 0 4px 15px var(--shadow-purple);

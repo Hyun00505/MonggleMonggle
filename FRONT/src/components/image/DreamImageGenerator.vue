@@ -68,13 +68,14 @@
         </div>
 
         <!-- 생성 버튼 -->
-        <button class="vis-generate-btn" :disabled="!selectedDream || isGenerating || !hasEnoughCoins" @click="generateImage">
+        <button class="vis-generate-btn" :disabled="!selectedDream || isGenerating || !hasEnoughCoins" @click="handleGenerateClick">
           <span v-if="!isGenerating" class="btn-content">
             <svg class="sparkle-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 0L14.59 8.41L23 11L14.59 13.59L12 22L9.41 13.59L1 11L9.41 8.41L12 0Z"/>
             </svg>
-            <template v-if="hasEnoughCoins">이미지 생성하기</template>
-            <template v-else>AI 티켓이 부족해요</template>
+            <template v-if="!hasEnoughCoins">AI 티켓이 부족해요</template>
+            <template v-else-if="hasExistingImage">이미지 다시 생성하기</template>
+            <template v-else>이미지 생성하기</template>
           </span>
           <span v-else class="generating">
             <span class="dot-pulse"></span>
@@ -82,7 +83,36 @@
           </span>
         </button>
 
-        <!-- 생성된 이미지 -->
+        <!-- 기존 저장된 이미지 (props에서 직접) -->
+        <div v-if="analysisResult?.imageUrl && generatedImages.length === 0" class="vis-results">
+          <div class="result-card">
+            <div class="result-image-wrapper">
+              <img :src="analysisResult.imageUrl" :alt="selectedDream?.title" class="result-image-actual" />
+            </div>
+            <div class="result-info">
+              <div class="result-actions">
+                <button @click="downloadExistingImage" class="result-action-btn download-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  다운로드
+                </button>
+                <button @click="goToGallery" class="result-action-btn gallery-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+                  갤러리로 가기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 새로 생성된 이미지 -->
         <div v-if="generatedImages.length > 0" class="vis-results">
           <div v-for="(img, index) in generatedImages" :key="img.id || index" class="result-card">
             <div class="result-image-wrapper">
@@ -161,11 +191,25 @@ const imageStyles = [
   { id: "fantasy", name: "판타지", icon: "unicorn", apiStyle: "판타지" },
 ];
 
-// 코인 충분 여부 확인 (이미지 생성에 1코인 필요)
+// 코인 충분 여부 확인 (이미지 생성에 2코인 필요)
 const hasEnoughCoins = computed(() => {
   const userCoin = authStore.currentUser?.coin ?? 0;
-  return userCoin >= 1;
+  return userCoin >= 2;
 });
+
+// 기존 이미지 존재 여부 확인
+const hasExistingImage = computed(() => {
+  return !!(props.analysisResult?.imageUrl || generatedImages.value.length > 0);
+});
+
+// 생성 버튼 클릭 핸들러 (재생성 시 경고)
+function handleGenerateClick() {
+  if (hasExistingImage.value) {
+    const confirmed = confirm("이미지를 재생성하시면 기존 이미지는 사라집니다.\n재생성 하시겠습니까?");
+    if (!confirmed) return;
+  }
+  generateImage();
+}
 
 function handleGenerateImage() {
   // 자동으로 최신 꿈 선택 (또는 현재 페이지에 해당하는 꿈)
@@ -181,6 +225,10 @@ function handleGenerateImage() {
 
   setTimeout(() => {
     showVisualization.value = true;
+    
+    // 기존 이미지가 있으면 불러오기
+    loadExistingImage();
+    
     // 모바일에서 자동 스크롤
     nextTick(() => {
       if (bubbleRef.value && window.innerWidth <= 1400) {
@@ -188,6 +236,29 @@ function handleGenerateImage() {
       }
     });
   }, 500);
+}
+
+// 기존에 생성된 이미지가 있으면 props에서 불러오기
+function loadExistingImage() {
+  // props.analysisResult에 imageUrl이 있으면 표시
+  if (props.analysisResult?.imageUrl && selectedDream.value) {
+    generatedImages.value = [{
+      id: selectedDream.value.dreamId,
+      dreamId: selectedDream.value.dreamId,
+      dreamKey: selectedDreamKey.value,
+      dreamDate: selectedDreamKey.value,
+      title: selectedDream.value.title,
+      content: selectedDream.value.content,
+      style: "저장된 이미지",
+      imageSrc: props.analysisResult.imageUrl,
+      mimeType: "image/png",
+      caption: selectedDream.value.title,
+      createdAt: new Date().toISOString(),
+    }];
+    console.log("✅ 기존 이미지 로드:", props.analysisResult.imageUrl);
+  } else {
+    generatedImages.value = [];
+  }
 }
 
 function handleBackToAnalysis() {
@@ -210,6 +281,9 @@ async function generateImage() {
   if (!selectedDream.value || !hasEnoughCoins.value) return;
 
   isGenerating.value = true;
+  
+  // 기존 이미지 초기화 (재생성 시 새 이미지만 표시)
+  generatedImages.value = [];
 
   try {
     // 선택된 스타일 정보 가져오기
@@ -349,6 +423,26 @@ function downloadImage(image) {
     const timestamp = new Date().toISOString().slice(0, 10);
     const ext = image.mimeType?.split("/")[1] || "png";
     link.download = `dream_${timestamp}_${image.style}.${ext}`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error("다운로드 실패:", error);
+    alert("다운로드 중 오류가 발생했습니다.");
+  }
+}
+
+// 기존 이미지 다운로드 (props에서)
+function downloadExistingImage() {
+  if (!props.analysisResult?.imageUrl) return;
+  
+  try {
+    const link = document.createElement("a");
+    link.href = props.analysisResult.imageUrl;
+
+    const timestamp = new Date().toISOString().slice(0, 10);
+    link.download = `dream_${timestamp}.png`;
 
     document.body.appendChild(link);
     link.click();

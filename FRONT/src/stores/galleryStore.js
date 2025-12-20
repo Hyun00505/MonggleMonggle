@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref, computed, watch } from "vue";
 import { useAuthStore } from "./authStore";
+import { dreamResultService } from "../services/dreamResultService";
 
 const STORAGE_PREFIX = "dreamGallery_";
 const LEGACY_KEY = "dreamGalleryStore";
@@ -70,14 +71,23 @@ export const useGalleryStore = defineStore("gallery", () => {
     persistGallery();
   }
 
-  function toggleImageLike(imageId) {
+  async function toggleImageLike(imageId) {
     const image = gallery.value.find((img) => img.id === imageId);
-    if (!image) return;
-
-    image.liked = !image.liked;
-    const delta = image.liked ? 1 : -1;
-    image.likes = Math.max(0, (image.likes || 0) + delta);
-    persistGallery();
+    if (!image?.dreamId) return;
+  
+    try {
+      // 서버 동기화
+      const response = await dreamResultService.toggleLike(image.dreamId);
+      
+      // 서버 응답으로 상태 업데이트
+      image.liked = response.isLiked;
+      persistGallery();
+    } catch (error) {
+      console.error("찜 토글 실패:", error);
+      // 서버 실패 시 로컬에서만 토글 (오프라인 대응)
+      image.liked = !image.liked;
+      persistGallery();
+    }
   }
 
   function resetGallery() {
