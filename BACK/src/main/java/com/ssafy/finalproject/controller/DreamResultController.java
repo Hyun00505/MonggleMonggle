@@ -85,5 +85,19 @@ public class DreamResultController {
                 .message("AI 분석 결과가 삭제되었습니다.")
                 .build());
     }
+    
+    @Operation(summary = "3.5 찜 토글", description = "꿈 이미지의 찜 상태를 토글합니다.")
+    @PostMapping("/like")
+    public ResponseEntity<Map<String, Object>> toggleLike(@PathVariable Long dreamId) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        Boolean isLiked = dreamResultService.toggleLike(userId, dreamId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("dreamId", dreamId);
+        response.put("isLiked", isLiked);
+        response.put("message", isLiked ? "찜 되었습니다." : "찜이 해제되었습니다.");
+        
+        return ResponseEntity.ok(response);
+    }
 }
 

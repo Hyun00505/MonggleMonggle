@@ -17,6 +17,7 @@
         <result property="imageUrl" column="image_url"/>
         <result property="createdDate" column="created_date"/>
         <result property="deletedDate" column="deleted_date"/>
+        <result property="isLiked" column="is_liked"/>
     </resultMap>
 
     <!-- AI 분석 결과 저장 -->
@@ -68,5 +69,12 @@
         WHERE dream_id = #{dreamId}
           AND deleted_date IS NULL
     </select>
+
+    <!-- 찜 토글 -->
+    <update id="toggleLike">
+        UPDATE dream_results 
+        SET is_liked = NOT is_liked 
+        WHERE dream_id = #{dreamId}
+    </update>
 
 </mapper>

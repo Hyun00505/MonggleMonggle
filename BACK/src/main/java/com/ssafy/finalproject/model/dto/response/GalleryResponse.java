@@ -36,6 +36,7 @@ public class GalleryResponse {
         private LuckyItemDto luckyItem;
         private String imageUrl;
         private LocalDateTime createdDate;
+        private Boolean isLiked; 
     }
     
     @Data

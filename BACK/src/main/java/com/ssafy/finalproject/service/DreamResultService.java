@@ -203,5 +203,27 @@ public class DreamResultService {
             dreamsResultsDao.deleteDreamResult(dreamId);
         });
     }
+    
+    // 찜 토글
+    public Boolean toggleLike(Long userId, Long dreamId) {
+        // 꿈 일기 존재 확인
+        Dream dream = dreamsDao.findById(dreamId)
+                .orElseThrow(() -> new ResourceNotFoundException("꿈 일기를 찾을 수 없습니다."));
+        
+        // 권한 확인
+        if (!dream.getUserId().equals(userId)) {
+            throw new ForbiddenException("접근 권한이 없습니다.");
+        }
+        
+        // 분석 결과 존재 확인
+        DreamResult result = dreamsResultsDao.findByDreamId(dreamId)
+                .orElseThrow(() -> new ResourceNotFoundException("분석 결과를 찾을 수 없습니다."));
+        
+        // 찜 토글
+        dreamsResultsDao.toggleLike(dreamId);
+        
+        // 토글 후 상태 반환 (기존 값의 반대)
+        return result.getIsLiked() == null || !result.getIsLiked();
+    }
 }
 

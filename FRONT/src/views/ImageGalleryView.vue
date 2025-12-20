@@ -209,7 +209,7 @@ const filteredImages = computed(() => {
 });
 
 const totalLikes = computed(() => {
-  return galleryImages.value.reduce((sum, img) => sum + (img.likes || 0), 0);
+  return galleryImages.value.filter((img) => img.liked).length;
 });
 
 // 이미지 경로를 실제 접근 가능한 URL로 정규화
@@ -372,6 +372,7 @@ async function syncFromServer() {
           caption: item.title || "꿈 이미지",
           imageSrc: item.imageUrl,
           mimeType: "image/png",
+          liked: item.isLiked ?? false, // 서버에서 받은 찜 상태 반영
           createdAt: item.createdDate || new Date().toISOString(),
           savedAt: new Date().toISOString(),
         });
