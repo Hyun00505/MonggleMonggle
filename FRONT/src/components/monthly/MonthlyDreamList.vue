@@ -250,7 +250,8 @@ defineEmits(["select-dream", "prev-page", "next-page"]);
 
 .empty-state p {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
+  font-style: italic;
 }
 
 @media (max-width: 768px) {
