@@ -142,6 +142,7 @@
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -155,6 +156,7 @@ import { useGalleryStore } from "../../stores/galleryStore";
 import { fortuneService } from "../../services/fortuneService";
 import { dreamResultService } from "../../services/dreamResultService";
 import { imageService } from "../../services/imageService";
+import { useConfirm } from "../../composables/useConfirm";
 
 const props = defineProps({
   analysisResult: {
@@ -168,6 +170,7 @@ const dreamEntriesStore = useDreamEntriesStore();
 const galleryStore = useGalleryStore();
 const authStore = useAuthStore();
 const { postedDates } = storeToRefs(dreamEntriesStore);
+const { confirm } = useConfirm();
 
 // Bubble expansion state
 const isExpanding = ref(false);
@@ -203,9 +206,14 @@ const hasExistingImage = computed(() => {
 });
 
 // 생성 버튼 클릭 핸들러 (재생성 시 경고)
-function handleGenerateClick() {
+async function handleGenerateClick() {
   if (hasExistingImage.value) {
-    const confirmed = confirm("이미지를 재생성하시면 기존 이미지는 사라집니다.\n재생성 하시겠습니까?");
+    const confirmed = await confirm({
+      title: '이미지 재생성',
+      message: '이미지를 재생성하시면\n기존 이미지는 사라집니다.',
+      subMessage: '재생성 하시겠습니까?',
+      type: 'warning'
+    });
     if (!confirmed) return;
   }
   generateImage();
@@ -1084,4 +1092,6 @@ defineExpose({
   }
 }
 </style>
+
+
 

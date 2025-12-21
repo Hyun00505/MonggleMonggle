@@ -129,8 +129,12 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { storeToRefs } from "pinia";
 import { useAuthStore } from "../../stores/authStore";
 import { noticeService } from "../../services/noticeService";
+import { useConfirm } from "../../composables/useConfirm";
+
+const { confirm } = useConfirm();
 
 const props = defineProps({
   notice: {
@@ -141,9 +145,9 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'edit', 'deleted', 'refreshList']);
 
-// 관리자 여부 확인
+// 관리자 여부 확인 (storeToRefs로 반응성 유지)
 const authStore = useAuthStore();
-const isAdmin = computed(() => authStore.isAdmin);
+const { isAdmin } = storeToRefs(authStore);
 
 // 공지사항 상세 데이터 (API에서 조회한 최신 데이터)
 const noticeDetail = ref(null);
@@ -270,7 +274,13 @@ async function addComment() {
 
 // 댓글 삭제
 async function deleteComment(commentId) {
-  if (!confirm('이 댓글을 삭제하시겠습니까?')) return;
+  const confirmed = await confirm({
+    title: '댓글 삭제',
+    message: '이 댓글을 삭제하시겠습니까?',
+    type: 'danger',
+    confirmText: '삭제'
+  });
+  if (!confirmed) return;
   
   try {
     await noticeService.deleteComment(commentId);
@@ -305,7 +315,13 @@ function handleEdit() {
 
 // 공지사항 삭제 (관리자 전용)
 async function handleDelete() {
-  if (!confirm('정말 이 공지사항을 삭제하시겠습니까?')) return;
+  const confirmed = await confirm({
+    title: '공지사항 삭제',
+    message: '정말 이 공지사항을 삭제하시겠습니까?',
+    type: 'danger',
+    confirmText: '삭제'
+  });
+  if (!confirmed) return;
   
   try {
     await noticeService.deleteNotice(noticeDetail.value.noticeId);

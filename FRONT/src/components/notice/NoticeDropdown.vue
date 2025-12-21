@@ -83,14 +83,15 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { storeToRefs } from "pinia";
 import { useAuthStore } from "../../stores/authStore";
 import { noticeService } from "../../services/noticeService";
 import NoticeModal from "./NoticeModal.vue";
 import NoticeWriteModal from "./NoticeWriteModal.vue";
 
-// 인증 스토어에서 관리자 여부 확인
+// 인증 스토어에서 관리자 여부 확인 (storeToRefs로 반응성 유지)
 const authStore = useAuthStore();
-const isAdmin = computed(() => authStore.isAdmin);
+const { isAdmin } = storeToRefs(authStore);
 
 // 공지사항 관련 상태
 const showNotice = ref(false);

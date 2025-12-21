@@ -72,6 +72,9 @@
 
 <script setup>
 import { ref } from "vue";
+import { useConfirm } from "../../composables/useConfirm";
+
+const { confirm } = useConfirm();
 
 const props = defineProps({
   memos: {
@@ -133,8 +136,14 @@ function cancelEditMemo() {
 }
 
 // 메모 삭제
-function deleteMemoItem(memoId) {
-  if (confirm("이 메모를 삭제하시겠습니까?")) {
+async function deleteMemoItem(memoId) {
+  const confirmed = await confirm({
+    title: '메모 삭제',
+    message: '이 메모를 삭제하시겠습니까?',
+    type: 'danger',
+    confirmText: '삭제'
+  });
+  if (confirmed) {
     emit("delete-memo", memoId);
   }
 }

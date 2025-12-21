@@ -155,10 +155,12 @@ import { imageService } from "../services/imageService";
 import { dreamService } from "../services/dreamService";
 import { dreamResultService } from "../services/dreamResultService";
 import ImageDetailModal from "../components/image/ImageDetailModal.vue";
+import { useConfirm } from "../composables/useConfirm";
 
 const router = useRouter();
 const galleryStore = useGalleryStore();
 const { galleryImages } = storeToRefs(galleryStore);
+const { confirm } = useConfirm();
 
 const searchQuery = ref("");
 const activeFilter = ref("all");
@@ -247,9 +249,13 @@ function toggleLike(image) {
 
 
 async function deleteImage(image) {
-  if (!confirm("정말 이 이미지를 삭제하시겠습니까?")) {
-    return;
-  }
+  const confirmed = await confirm({
+    title: '이미지 삭제',
+    message: '정말 이 이미지를 삭제하시겠습니까?',
+    type: 'danger',
+    confirmText: '삭제'
+  });
+  if (!confirmed) return;
 
   try {
     // 1. 서버에 저장된 이미지인 경우 물리적 파일 삭제

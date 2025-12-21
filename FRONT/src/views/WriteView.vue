@@ -5,6 +5,9 @@ import { storeToRefs } from "pinia";
 import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
 import { useAuthStore } from "../stores/authStore";
 import { formatDateKey, isTodayDate, isFutureDate } from "../utils/dateUtils";
+import { useConfirm } from "../composables/useConfirm";
+
+const { confirm } = useConfirm();
 
 const router = useRouter();
 const route = useRoute();
@@ -115,17 +118,28 @@ function handleSave() {
   }
 }
 
-function handleDelete() {
-  if (confirm("삭제하시면 기존의 꿈 일기, 꿈 해몽 결과, 꿈 이미지 등이 모두 삭제됩니다.\n정말 삭제하시겠습니까?")) {
+async function handleDelete() {
+  const confirmed = await confirm({
+    title: '꿈 일기 삭제',
+    message: '삭제하시면 기존의 꿈 일기, 꿈 해몽 결과, 꿈 이미지 등이 모두 삭제됩니다.',
+    subMessage: '정말 삭제하시겠습니까?',
+    type: 'danger',
+    confirmText: '삭제'
+  });
+  if (confirmed) {
     deleteDream();
     router.push({ name: "calendar" });
   }
 }
 
-function handleEdit() {
-  if (!confirm("수정하시면 기존의 꿈 해몽 결과, 꿈 이미지 등이 모두 삭제됩니다.\n정말 수정하시겠습니까?")) {
-    return;
-  }
+async function handleEdit() {
+  const confirmed = await confirm({
+    title: '꿈 일기 수정',
+    message: '수정하시면 기존의 꿈 해몽 결과, 꿈 이미지 등이 모두 삭제됩니다.',
+    subMessage: '정말 수정하시겠습니까?',
+    type: 'warning'
+  });
+  if (!confirmed) return;
   enableEditMode();
 }
 
