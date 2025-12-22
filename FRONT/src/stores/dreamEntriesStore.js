@@ -69,7 +69,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
       return result;
     } catch (err) {
       // 결과가 없는 경우 404 에러
-      console.log("해몽 결과 없음:", err.response?.status);
       return null;
     }
   }
@@ -172,7 +171,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
           const imageToRemove = galleryStore.galleryImages.find((img) => img.dreamId === existingDreamId);
           if (imageToRemove) {
             galleryStore.removeFromGallery(imageToRemove.id);
-            console.log(`🗑️ 꿈 수정으로 인해 갤러리에서 이미지 제거: dreamId=${existingDreamId}`);
           }
         } else {
           // 새로 생성
@@ -313,8 +311,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
     analysisError.value = null;
     analysisDate.value = dateKey;
 
-    console.log("📤 FastAPI 요청 시작...");
-
     // gender 변환 (male/female → M/F)
     const convertGender = (gender) => {
       if (!gender) return "M";
@@ -332,8 +328,6 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
         calendar_type: userInfo.calendarType || "solar",
         birth_date: userInfo.birthDate || "1990-01-01",
       };
-
-      console.log("📤 FastAPI 요청 데이터:", request);
 
       // 1. FastAPI에서 AI 분석 결과 받기
       const result = await fortuneService.getComprehensiveFortune(request);
@@ -380,11 +374,9 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
           if (hasExistingResult.value) {
             // 기존 결과 업데이트
             dbResult = await dreamResultService.updateDreamResult(dreamId, saveRequest);
-            console.log("✅ AI 분석 결과가 업데이트되었습니다.");
           } else {
             // 최초 해몽: 새로 저장
             dbResult = await dreamResultService.saveDreamResult(dreamId, saveRequest);
-            console.log("✅ AI 분석 결과가 DB에 저장되었습니다:", dbResult);
           }
 
           analysisResult.value.resultId = dbResult.resultId;

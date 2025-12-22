@@ -263,7 +263,6 @@ function loadExistingImage() {
       caption: selectedDream.value.title,
       createdAt: new Date().toISOString(),
     }];
-    console.log("✅ 기존 이미지 로드:", props.analysisResult.imageUrl);
   } else {
     generatedImages.value = [];
   }
@@ -300,18 +299,11 @@ async function generateImage() {
     // 꿈 내용으로 프롬프트 구성 (제목 + 내용)
     const dreamPrompt = `${selectedDream.value.title}. ${selectedDream.value.content}`;
 
-    console.log("🎨 이미지 생성 요청:", {
-      dream_prompt: dreamPrompt,
-      style: styleInfo.apiStyle,
-    });
-
     // AI API 호출 (코인 차감 포함)
     const response = await fortuneService.generateDreamImage({
       dream_prompt: dreamPrompt,
       style: styleInfo.apiStyle,
     });
-
-    console.log("✅ 이미지 생성 응답:", response);
 
     if (response.success && response.images && response.images.length > 0) {
       // 생성된 이미지를 목록에 추가하고 자동 저장
@@ -362,19 +354,16 @@ async function saveToGallery(image, showAlert = true) {
 
     // 1. 백엔드에 이미지 업로드 (Base64 -> 파일 저장 -> URL 반환)
     try {
-      console.log("📤 이미지 업로드 중...");
       const uploadResponse = await imageService.uploadImage(image.imageSrc, image.dreamId);
 
       if (uploadResponse.success && uploadResponse.imageUrl) {
         savedImageUrl = uploadResponse.imageUrl;
-        console.log("✅ 이미지 업로드 성공:", savedImageUrl);
 
         // 2. dream_results 테이블에 이미지 URL 업데이트
         if (image.dreamId) {
           await dreamResultService.updateDreamResult(image.dreamId, {
             imageUrl: savedImageUrl,
           });
-          console.log("✅ 이미지 URL이 DB에 저장되었습니다.");
         }
       }
     } catch (uploadError) {
@@ -403,8 +392,6 @@ async function saveToGallery(image, showAlert = true) {
 
     if (showAlert) {
       alert("갤러리에 저장되었습니다! 🎉");
-    } else {
-      console.log("✅ 갤러리에 자동 저장됨");
     }
   } catch (error) {
     console.error("갤러리 저장 실패:", error);

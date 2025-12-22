@@ -167,7 +167,6 @@ export const useGalleryStore = defineStore("gallery", () => {
         // 새 키로 저장하고 레거시 키 삭제
         localStorage.setItem(userKey, JSON.stringify(gallery.value));
         localStorage.removeItem(LEGACY_KEY);
-        console.log("✅ 레거시 갤러리 데이터 마이그레이션 완료");
       } catch (e) {
         console.error("레거시 데이터 마이그레이션 실패:", e);
         gallery.value = [];
@@ -187,7 +186,6 @@ export const useGalleryStore = defineStore("gallery", () => {
     () => authStore.currentUser?.value?.userId ?? authStore.user?.value?.userId,
     (newUserId, oldUserId) => {
       if (newUserId !== oldUserId) {
-        console.log("👤 사용자 변경 감지 - 갤러리 리로드:", newUserId);
         hydrateFromLocalStorage();
       }
     },

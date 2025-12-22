@@ -309,25 +309,17 @@ async function fetchMonthlyReport() {
 
 // 생성 후 결과 다시 조회 (polling)
 async function retryFetchReport(retries = 3, delay = 2000) {
-  console.log(`[retryFetchReport] 시작: ${retries}회, ${delay}ms 간격`);
-  
   for (let i = 0; i < retries; i++) {
-    console.log(`[retryFetchReport] ${i + 1}/${retries} 시도 중...`);
     await new Promise((resolve) => setTimeout(resolve, delay));
 
     try {
       const response = await monthlyAnalysisService.getMonthlyAnalysis(props.year, props.month);
-      console.log(`[retryFetchReport] 응답:`, response);
-      
       const report = response?.monthlyReport || "";
 
       if (report) {
         monthlyReport.value = report;
         reportError.value = "";
-        console.log(`[retryFetchReport] 성공!`);
         return;
-      } else {
-        console.log(`[retryFetchReport] 리포트가 아직 비어있음`);
       }
     } catch (err) {
       console.error(`[retryFetchReport] 오류:`, err);
@@ -365,18 +357,13 @@ async function handleRegenerate() {
   monthlyReport.value = ""; // 기존 내용 초기화
 
   try {
-    console.log("[ADMIN] 재분석 요청 시작:", props.year, props.month);
     const generated = await monthlyAnalysisService.generateMonthlyAnalysis(props.year, props.month);
-    console.log("[ADMIN] 재분석 응답:", generated);
-    
     const report = generated?.monthlyReport || "";
     
     if (report) {
       monthlyReport.value = report;
-      console.log("[ADMIN] 리포트 설정 완료");
     } else {
       // 생성 요청은 성공했지만 결과가 비어있으면 조회로 재시도
-      console.log("[ADMIN] 리포트가 비어있음, 재조회 시도");
       await retryFetchReport(5, 3000); // 5번, 3초 간격으로 재시도
     }
   } catch (err) {

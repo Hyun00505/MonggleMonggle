@@ -93,13 +93,9 @@ function completeProgress() {
 }
 
 async function performAnalysis() {
-  console.log("🚀 분석 시작...");
-
   // 사용자 정보 가져오기
   const userInfo = getSessionUser() || {};
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
-
-  console.log("📋 사용자 정보:", { userInfo, currentUser });
 
   const mergedUserInfo = {
     name: userInfo.name || currentUser.name || "사용자",
@@ -108,13 +104,9 @@ async function performAnalysis() {
     birthDate: userInfo.birthDate || currentUser.birthDate || "1990-01-01",
   };
 
-  console.log("📤 요청할 사용자 정보:", mergedUserInfo);
-
   try {
     // 스토어에서 직접 함수 호출
     const success = await dreamEntriesStore.requestDreamAnalysis(mergedUserInfo);
-
-    console.log("📥 분석 결과:", success);
 
     // 진행률 완료
     completeProgress();

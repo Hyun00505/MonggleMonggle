@@ -262,7 +262,6 @@ async function deleteImage(image) {
     if (image.imageSrc && image.imageSrc.includes("/uploads/images/")) {
       try {
         await imageService.deleteImage(image.imageSrc);
-        console.log("✅ 서버 이미지 파일 삭제 완료");
       } catch (err) {
         console.warn("⚠️ 서버 이미지 파일 삭제 실패:", err.message);
       }
@@ -275,7 +274,6 @@ async function deleteImage(image) {
         await dreamResultService.updateDreamResult(image.dreamId, {
           imageUrl: "",
         });
-        console.log("✅ DB에서 이미지 URL 삭제 완료");
       } catch (err) {
         console.warn("⚠️ DB 이미지 URL 삭제 실패:", err.message);
       }
@@ -288,8 +286,6 @@ async function deleteImage(image) {
     if (selectedImage.value?.id === image.id) {
       selectedImage.value = null;
     }
-
-    console.log("🗑️ 이미지 삭제 완료");
   } catch (error) {
     console.error("삭제 실패:", error);
     alert("삭제 중 오류가 발생했습니다.");
@@ -338,7 +334,6 @@ async function syncFromServer() {
     const response = await dreamService.getDreamsWithImages();
 
     if (!response?.items) {
-      console.log("갤러리에 표시할 이미지가 없습니다.");
       // 서버에 이미지가 없으면 로컬 갤러리도 비우기
       galleryStore.resetGallery();
       return;
@@ -355,7 +350,6 @@ async function syncFromServer() {
         const imageToRemove = galleryImages.value.find((img) => img.dreamId === localDreamId);
         if (imageToRemove) {
           galleryStore.removeFromGallery(imageToRemove.id);
-          console.log(`🗑️ 서버에서 삭제된 항목 제거: dreamId=${localDreamId}`);
         }
       }
     }
@@ -384,8 +378,6 @@ async function syncFromServer() {
         });
       }
     }
-
-    console.log(`✅ 갤러리 동기화 완료: ${response.items.length}개의 이미지를 불러왔습니다.`);
   } catch (error) {
     console.error("갤러리 동기화 실패:", error);
   } finally {
