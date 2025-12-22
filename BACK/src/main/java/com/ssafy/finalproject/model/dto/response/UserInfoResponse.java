@@ -21,5 +21,6 @@ public class UserInfoResponse {
     private String calendarType;
     private Integer coin;
     private LocalDateTime createdDate;
+    private String role;
 }
 
