@@ -1,11 +1,27 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
+import { useRouter } from "vue-router";
 import { getDreamCountRanking } from "../services/rankingService";
+
+const router = useRouter();
 
 const rankings = ref([]);
 const totalUsers = ref(0);
 const isLoading = ref(true);
 const error = ref(null);
+
+function handleBack() {
+  const historyLength = window.history.length;
+  if (historyLength > 1) {
+    router.back();
+  } else {
+    router.push({ name: "calendar" });
+  }
+}
+
+function handleClose() {
+  router.push({ name: "calendar" });
+}
 
 onMounted(async () => {
   try {
@@ -44,143 +60,127 @@ function getTopCardClass(rank) {
 
 <template>
   <div class="ranking-container">
-    <header class="ranking-header">
-      <h1 class="title">
-        <span class="title-icon">
-          <!-- Trophy SVG -->
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-            <path d="M4 22h16"></path>
-            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+    <div class="ranking-card">
+      <div class="card-header">
+        <button @click="handleBack" class="icon-btn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h2 class="page-title">
+          꿈 일기 랭킹
+          <span class="title-badge">Ranking</span>
+        </h2>
+        <div class="header-actions">
+          <button @click="handleClose" class="icon-btn" aria-label="닫기">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <p class="subtitle">가장 많은 꿈 일기를 작성한 몽글러들!</p>
+
+      <!-- 로딩 상태 -->
+      <div v-if="isLoading" class="loading-state">
+        <div class="spinner"></div>
+        <p>랭킹을 불러오는 중...</p>
+      </div>
+
+      <!-- 에러 상태 -->
+      <div v-else-if="error" class="error-state">
+        <span class="error-icon">
+          <!-- Sad Face SVG -->
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M16 16s-1.5-2-4-2-4 2-4 2"></path>
+            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+            <line x1="15" y1="9" x2="15.01" y2="9"></line>
           </svg>
         </span>
-        꿈 일기 랭킹
-      </h1>
-      <p class="subtitle">가장 많은 꿈 일기를 작성한 몽글러들!</p>
-    </header>
-
-    <!-- 로딩 상태 -->
-    <div v-if="isLoading" class="loading-state">
-      <div class="spinner"></div>
-      <p>랭킹을 불러오는 중...</p>
-    </div>
-
-    <!-- 에러 상태 -->
-    <div v-else-if="error" class="error-state">
-      <span class="error-icon">
-        <!-- Sad Face SVG -->
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <path d="M16 16s-1.5-2-4-2-4 2-4 2"></path>
-          <line x1="9" y1="9" x2="9.01" y2="9"></line>
-          <line x1="15" y1="9" x2="15.01" y2="9"></line>
-        </svg>
-      </span>
-      <p>{{ error }}</p>
-    </div>
-
-    <!-- 데이터 없음 -->
-    <div v-else-if="rankings.length === 0" class="empty-state">
-      <span class="empty-icon">
-        <!-- Note/Edit SVG -->
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-          <line x1="10" y1="9" x2="8" y2="9"></line>
-        </svg>
-      </span>
-      <p>아직 꿈 일기를 작성한 사용자가 없습니다.</p>
-      <p class="empty-hint">첫 번째 랭커가 되어보세요!</p>
-    </div>
-
-    <!-- 랭킹 표시 -->
-    <div v-else class="ranking-content">
-      <!-- 상위 3명 포디움 -->
-      <div class="podium-section">
-        <div class="podium">
-          <!-- 2등 (왼쪽) -->
-          <div v-if="topThree[1]" :class="getTopCardClass(2)">
-            <div class="medal silver-medal">
-              <!-- Silver Medal SVG -->
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="8" fill="#C0C0C0" stroke="#A8A8A8" stroke-width="2" />
-                <text x="12" y="16" text-anchor="middle" fill="#666" font-size="10" font-weight="bold">2</text>
-              </svg>
-            </div>
-            <div class="avatar silver-avatar">2</div>
-            <div class="name">{{ topThree[1].maskedName }}</div>
-            <div class="dream-count">{{ topThree[1].dreamCount }}개</div>
-            <div class="podium-stand silver-stand"></div>
-          </div>
-          <div v-else class="top-card placeholder"></div>
-
-          <!-- 1등 (가운데) -->
-          <div v-if="topThree[0]" :class="getTopCardClass(1)">
-            <div class="crown">
-              <!-- Crown SVG -->
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <path d="M2 20h20L19 8l-5 4-2-6-2 6-5-4-3 12z" fill="#FFD700" stroke="#DAA520" stroke-width="1.5" />
-                <circle cx="12" cy="6" r="2" fill="#FFD700" stroke="#DAA520" stroke-width="1" />
-                <circle cx="4" cy="8" r="1.5" fill="#FFD700" stroke="#DAA520" stroke-width="1" />
-                <circle cx="20" cy="8" r="1.5" fill="#FFD700" stroke="#DAA520" stroke-width="1" />
-              </svg>
-            </div>
-            <div class="medal gold-medal">
-              <!-- Gold Medal SVG -->
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="8" fill="#FFD700" stroke="#DAA520" stroke-width="2" />
-                <text x="12" y="16" text-anchor="middle" fill="#8B6914" font-size="10" font-weight="bold">1</text>
-              </svg>
-            </div>
-            <div class="avatar gold-avatar">1</div>
-            <div class="name">{{ topThree[0].maskedName }}</div>
-            <div class="dream-count">{{ topThree[0].dreamCount }}개</div>
-            <div class="podium-stand gold-stand"></div>
-          </div>
-          <div v-else class="top-card placeholder"></div>
-
-          <!-- 3등 (오른쪽) -->
-          <div v-if="topThree[2]" :class="getTopCardClass(3)">
-            <div class="medal bronze-medal">
-              <!-- Bronze Medal SVG -->
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="8" fill="#CD7F32" stroke="#8B4513" stroke-width="2" />
-                <text x="12" y="16" text-anchor="middle" fill="#5C3317" font-size="10" font-weight="bold">3</text>
-              </svg>
-            </div>
-            <div class="avatar bronze-avatar">3</div>
-            <div class="name">{{ topThree[2].maskedName }}</div>
-            <div class="dream-count">{{ topThree[2].dreamCount }}개</div>
-            <div class="podium-stand bronze-stand"></div>
-          </div>
-          <div v-else class="top-card placeholder"></div>
-        </div>
+        <p>{{ error }}</p>
       </div>
 
-      <!-- 나머지 랭킹 리스트 -->
-      <div v-if="restRankings.length > 0" class="ranking-list">
-        <div class="list-header">
-          <span>순위</span>
-          <span>이름</span>
-          <span>꿈 일기 수</span>
-        </div>
-        <div v-for="item in restRankings" :key="item.rank" class="ranking-item">
-          <span class="rank">{{ item.rank }}</span>
-          <span class="name">{{ item.maskedName }}</span>
-          <span class="count">{{ item.dreamCount }}개</span>
-        </div>
+      <!-- 데이터 없음 -->
+      <div v-else-if="rankings.length === 0" class="empty-state">
+        <span class="empty-icon">
+          <!-- Note/Edit SVG -->
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <line x1="10" y1="9" x2="8" y2="9"></line>
+          </svg>
+        </span>
+        <p>아직 꿈 일기를 작성한 사용자가 없습니다.</p>
+        <p class="empty-hint">첫 번째 랭커가 되어보세요!</p>
       </div>
 
-      <!-- 총 참여자 수 -->
-      <div class="total-users">
-        총
-        <strong>{{ totalUsers }}</strong>
-        명의 몽글러가 참여 중!
+      <!-- 랭킹 표시 -->
+      <div v-else class="ranking-content">
+        <!-- 상위 3명 포디움 -->
+        <div class="podium-section">
+          <div class="podium">
+            <!-- 2등 (왼쪽) -->
+            <div v-if="topThree[1]" :class="getTopCardClass(2)">
+              <div class="avatar silver-avatar">2</div>
+              <div class="name">{{ topThree[1].maskedName }}</div>
+              <div class="dream-count">{{ topThree[1].dreamCount }}개</div>
+              <div class="podium-stand silver-stand"></div>
+            </div>
+            <div v-else class="top-card placeholder"></div>
+
+            <!-- 1등 (가운데) -->
+            <div v-if="topThree[0]" :class="getTopCardClass(1)">
+              <div class="crown">
+                <!-- Crown SVG -->
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <path d="M2 20h20L19 8l-5 4-2-6-2 6-5-4-3 12z" fill="#FFD700" stroke="#DAA520" stroke-width="1.5" />
+                  <circle cx="12" cy="6" r="2" fill="#FFD700" stroke="#DAA520" stroke-width="1" />
+                  <circle cx="4" cy="8" r="1.5" fill="#FFD700" stroke="#DAA520" stroke-width="1" />
+                  <circle cx="20" cy="8" r="1.5" fill="#FFD700" stroke="#DAA520" stroke-width="1" />
+                </svg>
+              </div>
+              <div class="avatar gold-avatar">1</div>
+              <div class="name">{{ topThree[0].maskedName }}</div>
+              <div class="dream-count">{{ topThree[0].dreamCount }}개</div>
+              <div class="podium-stand gold-stand"></div>
+            </div>
+            <div v-else class="top-card placeholder"></div>
+
+            <!-- 3등 (오른쪽) -->
+            <div v-if="topThree[2]" :class="getTopCardClass(3)">
+              <div class="avatar bronze-avatar">3</div>
+              <div class="name">{{ topThree[2].maskedName }}</div>
+              <div class="dream-count">{{ topThree[2].dreamCount }}개</div>
+              <div class="podium-stand bronze-stand"></div>
+            </div>
+            <div v-else class="top-card placeholder"></div>
+          </div>
+        </div>
+
+        <!-- 나머지 랭킹 리스트 -->
+        <div v-if="restRankings.length > 0" class="ranking-list">
+          <div class="list-header">
+            <span>순위</span>
+            <span>이름</span>
+            <span>꿈 일기 수</span>
+          </div>
+          <div v-for="item in restRankings" :key="item.rank" class="ranking-item">
+            <span class="rank">{{ item.rank }}</span>
+            <span class="name">{{ item.maskedName }}</span>
+            <span class="count">{{ item.dreamCount }}개</span>
+          </div>
+        </div>
+
+        <!-- 총 참여자 수 -->
+        <div class="total-users">
+          총
+          <strong>{{ totalUsers }}</strong>
+          명의 몽글러가 참여 중!
+        </div>
       </div>
     </div>
   </div>
@@ -190,11 +190,10 @@ function getTopCardClass(rank) {
 .ranking-container {
   width: 100%;
   max-width: 600px;
-  padding: 2rem;
-  animation: fadeIn 0.5s ease;
+  animation: fadeSlideUp 0.5s ease;
 }
 
-@keyframes fadeIn {
+@keyframes fadeSlideUp {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -205,51 +204,78 @@ function getTopCardClass(rank) {
   }
 }
 
-.ranking-header {
-  text-align: center;
+/* 랭킹 카드 */
+.ranking-card {
+  background: white;
+  border-radius: 32px;
+  padding: 1.5rem 2rem 2rem;
+  box-shadow: 0 16px 48px rgba(100, 100, 200, 0.12);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 2rem;
 }
 
-.title {
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  padding: 8px;
+  border-radius: 10px;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  font-family: "Nunito", sans-serif;
-  font-size: 2rem;
-  font-weight: 800;
-  color: white;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.icon-btn:hover {
+  background: #f5f5f5;
+  color: #555;
+}
+
+.page-title {
+  font-family: "Dongle", sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
   margin: 0;
-}
-
-.title-icon {
   display: flex;
   align-items: center;
-  justify-content: center;
-  animation: bounce 2s infinite;
-  color: #ffd700;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  background: var(--gradient-title-badge);
+  color: #4c2b7b;
+  -webkit-text-fill-color: #4c2b7b;
+  line-height: 1.2;
 }
 
-.title-icon svg {
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+.title-badge {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: white;
+  color: var(--color-purple-dark);
+  font-weight: 600;
 }
 
-@keyframes bounce {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+.header-actions {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .subtitle {
-  color: rgba(255, 255, 255, 0.85);
-  font-family: "Nunito", sans-serif;
+  text-align: center;
+  color: var(--color-text-muted);
   font-size: 1rem;
-  margin-top: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
 }
 
 /* 로딩 상태 */
@@ -259,14 +285,14 @@ function getTopCardClass(rank) {
   align-items: center;
   gap: 1rem;
   padding: 3rem;
-  color: white;
+  color: var(--color-text-secondary);
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border: 4px solid var(--color-purple-20);
+  border-top-color: var(--color-purple);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -285,7 +311,7 @@ function getTopCardClass(rank) {
   align-items: center;
   gap: 0.5rem;
   padding: 3rem;
-  color: white;
+  color: var(--color-text-secondary);
   text-align: center;
 }
 
@@ -294,11 +320,11 @@ function getTopCardClass(rank) {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-purple);
 }
 
 .empty-hint {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-muted);
   font-size: 0.9rem;
 }
 
@@ -311,7 +337,8 @@ function getTopCardClass(rank) {
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  gap: 1rem;
+  gap: 0.75rem;
+  margin-top: 4rem;
 }
 
 .top-card {
@@ -319,16 +346,17 @@ function getTopCardClass(rank) {
   flex-direction: column;
   align-items: center;
   padding: 1.5rem 1rem 0;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border-radius: 20px 20px 0 0;
+  background: var(--gradient-bg-15);
+  border: 1px solid var(--border-purple);
+  border-radius: 24px 24px 0 0;
   min-width: 100px;
   position: relative;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .top-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 8px 24px var(--shadow-purple);
 }
 
 .top-card.placeholder {
@@ -336,23 +364,23 @@ function getTopCardClass(rank) {
 }
 
 .top-card.gold {
-  background: linear-gradient(180deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.1));
-  border: 2px solid rgba(255, 215, 0, 0.5);
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05));
+  border: 2px solid rgba(255, 215, 0, 0.4);
 }
 
 .top-card.silver {
-  background: linear-gradient(180deg, rgba(192, 192, 192, 0.3), rgba(192, 192, 192, 0.1));
-  border: 2px solid rgba(192, 192, 192, 0.5);
+  background: linear-gradient(180deg, rgba(192, 192, 192, 0.2), rgba(192, 192, 192, 0.08));
+  border: 2px solid rgba(192, 192, 192, 0.4);
 }
 
 .top-card.bronze {
-  background: linear-gradient(180deg, rgba(205, 127, 50, 0.3), rgba(205, 127, 50, 0.1));
-  border: 2px solid rgba(205, 127, 50, 0.5);
+  background: linear-gradient(180deg, rgba(205, 127, 50, 0.15), rgba(205, 127, 50, 0.05));
+  border: 2px solid rgba(205, 127, 50, 0.4);
 }
 
 .crown {
   position: absolute;
-  top: -30px;
+  top: -37px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -367,13 +395,6 @@ function getTopCardClass(rank) {
   50% {
     transform: translateY(-5px);
   }
-}
-
-.medal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.5rem;
 }
 
 .avatar {
@@ -405,20 +426,24 @@ function getTopCardClass(rank) {
   box-shadow: 0 4px 15px rgba(205, 127, 50, 0.4);
 }
 
+.top-card {
+  font-family: 'Dongle', sans-serif;
+}
+
 .top-card .name {
-  font-family: "Nunito", sans-serif;
   font-weight: 700;
-  font-size: 1rem;
-  color: white;
-  margin-bottom: 0.25rem;
+  font-size: 1.6rem;
+  color: var(--color-text-primary);
+  margin-bottom: 0;
+  line-height: 1.2;
 }
 
 .top-card .dream-count {
-  font-family: "Nunito", sans-serif;
   font-weight: 600;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.85);
-  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
 }
 
 .podium-stand {
@@ -443,8 +468,7 @@ function getTopCardClass(rank) {
 
 /* 랭킹 리스트 */
 .ranking-list {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: #fafafa;
   border-radius: 20px;
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -453,20 +477,24 @@ function getTopCardClass(rank) {
 .list-header {
   display: grid;
   grid-template-columns: 60px 1fr 100px;
+  justify-items: center;
   padding: 0.75rem 1rem;
-  font-family: "Nunito", sans-serif;
+  font-family: 'Dongle', sans-serif;
   font-weight: 700;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 1.4rem;
+  line-height: 1.2;
+  color: var(--color-text-muted);
+  border-bottom: 1px dashed var(--border-purple);
 }
 
 .ranking-item {
   display: grid;
   grid-template-columns: 60px 1fr 100px;
+  justify-items: center;
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid #f0f0f0;
   transition: background 0.2s ease;
+  font-family: 'Dongle', sans-serif;
 }
 
 .ranking-item:last-child {
@@ -474,59 +502,75 @@ function getTopCardClass(rank) {
 }
 
 .ranking-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
+  background: var(--color-purple-light);
+  border-radius: 12px;
 }
 
 .ranking-item .rank {
   font-family: "Nunito", sans-serif;
   font-weight: 800;
   font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
 }
 
 .ranking-item .name {
-  font-family: "Nunito", sans-serif;
   font-weight: 600;
-  color: white;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  color: var(--color-text-secondary);
 }
 
 .ranking-item .count {
-  font-family: "Nunito", sans-serif;
   font-weight: 700;
-  color: #a8d8ea;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  color: var(--color-purple);
   text-align: right;
 }
 
 /* 총 참여자 수 */
 .total-users {
   text-align: center;
-  font-family: "Nunito", sans-serif;
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.85);
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 30px;
+  font-family: 'Dongle', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+  padding: 0.75rem 1.5rem;
+  background: var(--gradient-bg-15);
+  border-radius: 999px;
+  border: 1px solid var(--border-purple);
 }
 
 .total-users strong {
-  color: #f3e366;
+  font-size: 2.2rem;
   font-weight: 800;
+  color: var(--color-purple);
+  -webkit-text-fill-color: var(--color-purple);
+  margin: 0 0.15rem;
 }
 
 /* 반응형 */
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 1.8rem;
+    padding: 0.4rem 1rem;
+  }
+
+  .title-badge {
+    display: none;
+  }
+}
+
 @media (max-width: 480px) {
-  .ranking-container {
-    padding: 1rem;
+  .ranking-card {
+    padding: 1.25rem;
+    border-radius: 24px;
   }
 
-  .title {
-    font-size: 1.5rem;
-  }
-
-  .title-icon svg {
-    width: 32px;
-    height: 32px;
+  .page-title {
+    font-size: 1.6rem;
+    padding: 0.35rem 0.85rem;
   }
 
   .podium {
@@ -536,11 +580,7 @@ function getTopCardClass(rank) {
   .top-card {
     min-width: 80px;
     padding: 1rem 0.5rem 0;
-  }
-
-  .medal svg {
-    width: 24px;
-    height: 24px;
+    border-radius: 16px 16px 0 0;
   }
 
   .crown svg {
@@ -555,17 +595,35 @@ function getTopCardClass(rank) {
   }
 
   .top-card .name {
-    font-size: 0.85rem;
+    font-size: 1.3rem;
   }
 
   .top-card .dream-count {
-    font-size: 0.8rem;
+    font-size: 1.1rem;
   }
 
-  .list-header,
+  .list-header {
+    grid-template-columns: 50px 1fr 80px;
+    padding: 0.75rem;
+    font-size: 1.2rem;
+  }
+
   .ranking-item {
     grid-template-columns: 50px 1fr 80px;
     padding: 0.75rem;
+  }
+
+  .ranking-item .name,
+  .ranking-item .count {
+    font-size: 1.3rem;
+  }
+
+  .total-users {
+    font-size: 1.5rem;
+  }
+
+  .total-users strong {
+    font-size: 1.8rem;
   }
 }
 </style>
