@@ -131,9 +131,16 @@ async function performAnalysis() {
       });
     } else {
       // 분석 실패 시 에러 메시지와 함께 이전 페이지로
-      // 취소된 경우에는 alert 표시하지 않음
+      // 취소된 경우에는 모달 표시하지 않음
       if (analysisError.value && !analysisError.value.includes("취소")) {
-        alert(analysisError.value || "AI 분석에 실패했습니다. 다시 시도해주세요.");
+        await confirm({
+          title: '분석 실패',
+          message: analysisError.value || "AI 분석에 실패했습니다.",
+          subMessage: '다시 시도해주세요.',
+          type: 'warning',
+          confirmText: '확인',
+          showCancel: false
+        });
       }
       router.push({
         name: "write",
@@ -144,9 +151,16 @@ async function performAnalysis() {
     console.error("❌ 분석 오류:", err);
     completeProgress();
     isAnalyzing.value = false;
-    // 취소된 요청은 alert 표시하지 않음
+    // 취소된 요청은 모달 표시하지 않음
     if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
-      alert("AI 분석 중 오류가 발생했습니다: " + err.message);
+      await confirm({
+        title: '분석 오류',
+        message: 'AI 분석 중 오류가 발생했습니다.',
+        subMessage: err.message,
+        type: 'danger',
+        confirmText: '확인',
+        showCancel: false
+      });
     }
     router.push({
       name: "write",
@@ -189,13 +203,20 @@ function handleBeforeUnload(e) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   const targetDate = route.query.date?.toString();
   const requestedDate = sessionStorage.getItem("analysisRequestedDate");
 
   // 버튼을 통한 정상 접근이 아니면 즉시 차단
   if (!requestedDate || !targetDate || requestedDate !== targetDate) {
-    alert("올바른 경로로 접근해주세요. 꿈 작성 화면에서 해몽을 다시 요청해주세요.");
+    await confirm({
+      title: '잘못된 접근',
+      message: '올바른 경로로 접근해주세요.',
+      subMessage: '꿈 작성 화면에서 해몽을 다시 요청해주세요.',
+      type: 'warning',
+      confirmText: '확인',
+      showCancel: false
+    });
     router.replace({
       name: "write",
       query: targetDate ? { date: targetDate } : {},
