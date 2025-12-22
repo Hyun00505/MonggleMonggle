@@ -187,7 +187,7 @@
           </div>
           <div class="formula-op" style="--delay: 0.2s">+</div>
           <div class="formula-item" style="--delay: 0.4s">
-            <span class="formula-char">글</span>
+            <span class="formula-char formula-char-korean">글</span>
             <span class="formula-label">기록하다</span>
           </div>
           <div class="formula-op" style="--delay: 0.6s">=</div>
@@ -946,6 +946,10 @@ onUnmounted(() => {
   line-height: 1;
 }
 
+.formula-char-korean {
+  font-family: 'Nunito', sans-serif;
+}
+
 .formula-item.result .formula-char {
   font-family: 'Dongle', sans-serif;
   font-size: 6rem;
@@ -1005,9 +1009,10 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 1rem 2rem;
+  padding: 0.8rem 2rem;
   border-radius: 50px;
-  font-size: 1.1rem;
+  font-family: 'Dongle', sans-serif;
+  font-size: 1.8rem;
   color: rgba(255, 255, 255, 0.9);
   opacity: 0;
   transform: translateY(20px);
@@ -1038,8 +1043,9 @@ onUnmounted(() => {
 }
 
 .section-title {
-  font-size: 2.5rem;
-  font-weight: 800;
+  font-family: 'Dongle', sans-serif;
+  font-size: 4rem;
+  font-weight: 700;
   color: white;
   text-align: center;
   margin-bottom: 3rem;
@@ -1212,8 +1218,9 @@ onUnmounted(() => {
 }
 
 .cta-title {
-  font-size: 2.5rem;
-  font-weight: 800;
+  font-family: 'Dongle', sans-serif;
+  font-size: 4rem;
+  font-weight: 700;
   color: white;
   margin-bottom: 2.5rem;
   text-shadow: 0 0 30px rgba(167, 139, 250, 0.5);
@@ -1298,9 +1305,10 @@ onUnmounted(() => {
   background: linear-gradient(135deg, #a78bfa, #f0abfc);
   color: white;
   border: none;
-  padding: 1.2rem 3rem;
+  padding: 1rem 3rem;
   border-radius: 50px;
-  font-size: 1.2rem;
+  font-family: 'Dongle', sans-serif !important;
+  font-size: 2rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -1352,11 +1360,16 @@ onUnmounted(() => {
   }
 
   .section-title {
-    font-size: 1.8rem;
+    font-size: 3rem;
   }
 
   .meaning-text {
     font-size: 1rem;
+  }
+
+  .mongler-badge {
+    font-size: 1.5rem;
+    padding: 0.7rem 1.5rem;
   }
 
   .ticket-cards {
@@ -1391,6 +1404,15 @@ onUnmounted(() => {
   .feature-info p {
     font-size: 0.8rem;
   }
+
+  .cta-title {
+    font-size: 3rem;
+  }
+
+  .cta-btn {
+    font-size: 1.7rem;
+    padding: 0.9rem 2.5rem;
+  }
 }
 
 @media (max-width: 500px) {
@@ -1424,7 +1446,7 @@ onUnmounted(() => {
   }
 
   .section-title {
-    font-size: 1.5rem;
+    font-size: 2.5rem;
   }
 
   .meaning-text {
@@ -1432,8 +1454,8 @@ onUnmounted(() => {
   }
 
   .mongler-badge {
-    font-size: 0.9rem;
-    padding: 0.8rem 1.2rem;
+    font-size: 1.3rem;
+    padding: 0.6rem 1.2rem;
   }
 
   .features-grid {
@@ -1493,9 +1515,13 @@ onUnmounted(() => {
     font-size: 0.9rem;
   }
 
+  .cta-title {
+    font-size: 2.5rem;
+  }
+
   .cta-btn {
-    padding: 0.9rem 1.8rem;
-    font-size: 0.9rem;
+    padding: 0.8rem 1.8rem;
+    font-size: 1.4rem;
   }
 }
 </style>
