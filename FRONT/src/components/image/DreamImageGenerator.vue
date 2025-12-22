@@ -147,7 +147,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, computed } from "vue";
+import { ref, nextTick, computed, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useDreamEntriesStore } from "../../stores/dreamEntriesStore";
@@ -157,6 +157,9 @@ import { fortuneService } from "../../services/fortuneService";
 import { dreamResultService } from "../../services/dreamResultService";
 import { imageService } from "../../services/imageService";
 import { useConfirm } from "../../composables/useConfirm";
+
+// 이미지 생성 취소용 AbortController
+let imageAbortController = null;
 
 const props = defineProps({
   analysisResult: {
@@ -284,8 +287,27 @@ function handleBackToAnalysis() {
   }, 500);
 }
 
+// 이미지 생성 취소
+function cancelImageGeneration() {
+  if (imageAbortController) {
+    imageAbortController.abort();
+    imageAbortController = null;
+    isGenerating.value = false;
+    return true;
+  }
+  return false;
+}
+
 async function generateImage() {
   if (!selectedDream.value || !hasEnoughCoins.value) return;
+
+  // 기존 요청이 있으면 취소
+  if (imageAbortController) {
+    imageAbortController.abort();
+  }
+  
+  // 새 AbortController 생성
+  imageAbortController = new AbortController();
 
   isGenerating.value = true;
   
@@ -299,11 +321,11 @@ async function generateImage() {
     // 꿈 내용으로 프롬프트 구성 (제목 + 내용)
     const dreamPrompt = `${selectedDream.value.title}. ${selectedDream.value.content}`;
 
-    // AI API 호출 (코인 차감 포함)
+    // AI API 호출 (코인 차감 포함, 취소 가능)
     const response = await fortuneService.generateDreamImage({
       dream_prompt: dreamPrompt,
       style: styleInfo.apiStyle,
-    });
+    }, imageAbortController.signal);
 
     if (response.success && response.images && response.images.length > 0) {
       // 생성된 이미지를 목록에 추가하고 자동 저장
@@ -342,9 +364,15 @@ async function generateImage() {
       console.error("❌ 이미지 생성 실패:", response.message);
     }
   } catch (error) {
+    // 요청이 취소된 경우
+    if (error.name === 'CanceledError' || error.name === 'AbortError') {
+      console.log("ℹ️ 이미지 생성 요청이 사용자에 의해 취소됨");
+      return;
+    }
     console.error("❌ 이미지 생성 에러:", error);
   } finally {
     isGenerating.value = false;
+    imageAbortController = null;
   }
 }
 
@@ -452,10 +480,20 @@ function goToGallery() {
   router.push("/gallery");
 }
 
-// 외부에서 확장 상태 확인용
+// 브라우저 새로고침/닫기 시 경고 (beforeunload는 부모 컴포넌트에서 처리)
+onUnmounted(() => {
+  // 생성 중이면 취소
+  if (isGenerating.value) {
+    cancelImageGeneration();
+  }
+});
+
+// 외부에서 확장 상태 및 생성 상태 확인용
 defineExpose({
   isExpanding,
   showVisualization,
+  isGenerating,
+  cancelImageGeneration,
 });
 </script>
 

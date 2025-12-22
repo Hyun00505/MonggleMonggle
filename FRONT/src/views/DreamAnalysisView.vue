@@ -86,11 +86,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { ref, onMounted, onUnmounted, computed } from "vue";
+import { useRouter, useRoute, onBeforeRouteLeave } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
 import { getColorHex } from "../constants/luckyColors";
+import { useConfirm } from "../composables/useConfirm";
 import DreamImageGenerator from "../components/image/DreamImageGenerator.vue";
 
 const router = useRouter();
@@ -98,6 +99,7 @@ const route = useRoute();
 const dreamEntriesStore = useDreamEntriesStore();
 const { currentLuckyColor, postedDates, analysisResult, analysisDate } = storeToRefs(dreamEntriesStore);
 const { setSelectedDateWithResult, fetchDreamsByMonth } = dreamEntriesStore;
+const { confirm } = useConfirm();
 
 // 꿈 그리기 컴포넌트 ref
 const imageGeneratorRef = ref(null);
@@ -117,6 +119,9 @@ const displayLuckyColor = computed(() => {
 // URL에서 날짜 복원 및 새로고침 시 결과 복구
 onMounted(async () => {
   const dateKey = route.query.date?.toString();
+
+  // 브라우저 새로고침/닫기 경고 이벤트 등록
+  window.addEventListener('beforeunload', handleBeforeUnload);
 
   // 기존 결과가 없다면 스토어나 서버에서 복구 시도
   if (!analysisResult.value && dateKey) {
@@ -142,6 +147,43 @@ function handleClose() {
   // 캘린더 페이지로 이동
   router.push({ name: "calendar" });
 }
+
+// 페이지 이탈 시 이미지 생성 중이면 경고
+onBeforeRouteLeave(async (to, from, next) => {
+  if (imageGeneratorRef.value?.isGenerating) {
+    const confirmed = await confirm({
+      title: '이미지 생성 중',
+      message: '이미지 생성이 진행 중입니다.\n페이지를 떠나면 생성이 취소됩니다.',
+      subMessage: '정말 나가시겠습니까?',
+      type: 'warning',
+      confirmText: '나가기',
+      cancelText: '계속 기다리기'
+    });
+    
+    if (confirmed) {
+      // 이미지 생성 취소
+      imageGeneratorRef.value?.cancelImageGeneration?.();
+      next();
+    } else {
+      next(false);
+    }
+  } else {
+    next();
+  }
+});
+
+// 브라우저 새로고침/닫기 시 경고
+function handleBeforeUnload(e) {
+  if (imageGeneratorRef.value?.isGenerating) {
+    e.preventDefault();
+    e.returnValue = '이미지 생성이 진행 중입니다. 정말 나가시겠습니까?';
+    return e.returnValue;
+  }
+}
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+});
 </script>
 
 <style scoped>

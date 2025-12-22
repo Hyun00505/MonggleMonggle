@@ -33,17 +33,22 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { useRouter, useRoute, onBeforeRouteLeave } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useDreamEntriesStore } from "../stores/dreamEntriesStore";
 import { useUserStorage } from "../composables/useUserStorage";
+import { useConfirm } from "../composables/useConfirm";
 import dreamFactsData from "../data/dream_facts.json";
 
 const router = useRouter();
 const route = useRoute();
 const dreamEntriesStore = useDreamEntriesStore();
-const { analysisError, analysisDate } = storeToRefs(dreamEntriesStore);
+const { analysisError, analysisDate, analysisLoading } = storeToRefs(dreamEntriesStore);
 const { getSessionUser } = useUserStorage();
+const { confirm } = useConfirm();
+
+// 분석 진행 중 여부
+const isAnalyzing = ref(false);
 
 // 로딩 바 진행률
 const progress = ref(0);
@@ -104,6 +109,8 @@ async function performAnalysis() {
     birthDate: userInfo.birthDate || currentUser.birthDate || "1990-01-01",
   };
 
+  isAnalyzing.value = true;
+
   try {
     // 스토어에서 직접 함수 호출
     const success = await dreamEntriesStore.requestDreamAnalysis(mergedUserInfo);
@@ -114,6 +121,8 @@ async function performAnalysis() {
     // 잠시 대기 후 페이지 이동 (100% 표시를 보여주기 위해)
     await new Promise((resolve) => setTimeout(resolve, 500));
 
+    isAnalyzing.value = false;
+
     if (success) {
       // 분석 성공 시 날짜와 함께 결과 페이지로 이동
       router.push({
@@ -122,7 +131,10 @@ async function performAnalysis() {
       });
     } else {
       // 분석 실패 시 에러 메시지와 함께 이전 페이지로
-      alert(analysisError.value || "AI 분석에 실패했습니다. 다시 시도해주세요.");
+      // 취소된 경우에는 alert 표시하지 않음
+      if (analysisError.value && !analysisError.value.includes("취소")) {
+        alert(analysisError.value || "AI 분석에 실패했습니다. 다시 시도해주세요.");
+      }
       router.push({
         name: "write",
         query: { date: route.query.date },
@@ -131,11 +143,49 @@ async function performAnalysis() {
   } catch (err) {
     console.error("❌ 분석 오류:", err);
     completeProgress();
-    alert("AI 분석 중 오류가 발생했습니다: " + err.message);
+    isAnalyzing.value = false;
+    // 취소된 요청은 alert 표시하지 않음
+    if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+      alert("AI 분석 중 오류가 발생했습니다: " + err.message);
+    }
     router.push({
       name: "write",
       query: { date: route.query.date },
     });
+  }
+}
+
+// 페이지 이탈 시 경고
+onBeforeRouteLeave(async (to, from, next) => {
+  if (isAnalyzing.value) {
+    const confirmed = await confirm({
+      title: '해몽 분석 중',
+      message: '해몽 분석이 진행 중입니다.\n페이지를 떠나면 분석이 취소됩니다.',
+      subMessage: '정말 나가시겠습니까?',
+      type: 'warning',
+      confirmText: '나가기',
+      cancelText: '취소'
+    });
+    
+    if (confirmed) {
+      // 분석 취소
+      dreamEntriesStore.cancelDreamAnalysis();
+      isAnalyzing.value = false;
+      next();
+    } else {
+      next(false);
+    }
+  } else {
+    next();
+  }
+});
+
+// 브라우저 새로고침/닫기 시 경고
+function handleBeforeUnload(e) {
+  if (isAnalyzing.value) {
+    e.preventDefault();
+    e.returnValue = '해몽 분석이 진행 중입니다. 정말 나가시겠습니까?';
+    return e.returnValue;
   }
 }
 
@@ -167,6 +217,9 @@ onMounted(() => {
   // 진행률 시뮬레이션 시작
   startProgressSimulation();
 
+  // 브라우저 새로고침/닫기 경고 이벤트 등록
+  window.addEventListener('beforeunload', handleBeforeUnload);
+
   // 실제 AI 분석 요청
   performAnalysis();
 });
@@ -174,6 +227,14 @@ onMounted(() => {
 onUnmounted(() => {
   if (intervalId) clearInterval(intervalId);
   if (progressIntervalId) clearInterval(progressIntervalId);
+  
+  // 브라우저 새로고침/닫기 경고 이벤트 해제
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+  
+  // 분석 중이면 취소
+  if (isAnalyzing.value) {
+    dreamEntriesStore.cancelDreamAnalysis();
+  }
 });
 </script>
 

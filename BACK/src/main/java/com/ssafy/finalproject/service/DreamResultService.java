@@ -117,6 +117,25 @@ public class DreamResultService {
         DreamResult result = dreamsResultsDao.findByDreamId(dreamId)
                 .orElseThrow(() -> new ResourceNotFoundException("분석 결과를 찾을 수 없습니다."));
         
+        // 해몽 내용이 업데이트되는지 확인 (재해몽 여부)
+        boolean isReinterpretation = request.getDreamInterpretation() != null 
+                || request.getTodayFortuneSummary() != null
+                || request.getLuckyColor() != null 
+                || request.getLuckyItem() != null;
+        
+        // 재해몽 시 기존 이미지 삭제 및 imageUrl을 null로 초기화
+        if (isReinterpretation) {
+            String oldImageUrl = result.getImageUrl();
+            if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+                try {
+                    imageService.deleteImage(oldImageUrl);
+                } catch (IOException e) {
+                    // 이미지 삭제 실패해도 계속 진행 (로그만 남김)
+                }
+            }
+            result.setImageUrl(null);
+        }
+        
         // 해몽/운세/행운 정보 업데이트
         if (request.getDreamInterpretation() != null) {
             result.setDreamInterpretation(request.getDreamInterpretation());
@@ -144,8 +163,8 @@ public class DreamResultService {
             }
         }
         
-        // 이미지 URL 업데이트 시 이전 이미지 삭제
-        if (request.getImageUrl() != null) {
+        // 이미지 URL만 단독으로 업데이트하는 경우 (재해몽이 아닌 경우)
+        if (!isReinterpretation && request.getImageUrl() != null) {
             String newImageUrl = request.getImageUrl();
             String oldImageUrl = result.getImageUrl();
             

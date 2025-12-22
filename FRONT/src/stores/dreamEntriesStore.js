@@ -31,6 +31,9 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
   const analysisError = ref(null);
   const analysisDate = ref(null); // 분석 요청한 날짜
   const hasExistingResult = ref(false); // 기존 해몽 결과 존재 여부
+  
+  // API 요청 취소용 AbortController
+  let analysisAbortController = null;
 
   function setSelectedDate(date) {
     selectedDate.value = date;
@@ -292,6 +295,18 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
     }
   }
 
+  // AI 꿈 해몽 요청 취소
+  function cancelDreamAnalysis() {
+    if (analysisAbortController) {
+      analysisAbortController.abort();
+      analysisAbortController = null;
+      analysisLoading.value = false;
+      analysisError.value = "분석이 취소되었습니다.";
+      return true;
+    }
+    return false;
+  }
+
   // AI 꿈 해몽 요청
   async function requestDreamAnalysis(userInfo) {
     if (!selectedDate.value || !dreamContent.value) {
@@ -306,6 +321,14 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
     if (!dreamId) {
       console.warn("⚠️ dreamId가 없습니다. 분석은 진행하되 DB 저장은 건너뜁니다.");
     }
+
+    // 기존 요청이 있으면 취소
+    if (analysisAbortController) {
+      analysisAbortController.abort();
+    }
+    
+    // 새 AbortController 생성
+    analysisAbortController = new AbortController();
 
     analysisLoading.value = true;
     analysisError.value = null;
@@ -329,8 +352,8 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
         birth_date: userInfo.birthDate || "1990-01-01",
       };
 
-      // 1. FastAPI에서 AI 분석 결과 받기
-      const result = await fortuneService.getComprehensiveFortune(request);
+      // 1. FastAPI에서 AI 분석 결과 받기 (취소 가능)
+      const result = await fortuneService.getComprehensiveFortune(request, analysisAbortController.signal);
 
       // 2. 분석 결과를 스토어에 저장
       analysisResult.value = {
@@ -407,11 +430,17 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
 
       return true;
     } catch (err) {
+      // 요청이 취소된 경우
+      if (err.name === 'CanceledError' || err.name === 'AbortError') {
+        analysisError.value = "분석이 취소되었습니다.";
+        return false;
+      }
       analysisError.value = err.response?.data?.detail || err.message || "AI 분석에 실패했습니다.";
       console.error("Dream analysis error:", err);
       return false;
     } finally {
       analysisLoading.value = false;
+      analysisAbortController = null;
     }
   }
 
@@ -546,6 +575,7 @@ export const useDreamEntriesStore = defineStore("dreamEntries", () => {
     validateRequiredFields,
     // AI 분석 함수
     requestDreamAnalysis,
+    cancelDreamAnalysis,
     clearAnalysisResult,
   };
 });
