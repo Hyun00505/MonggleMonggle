@@ -59,15 +59,26 @@
             </span>
             <span>랭킹</span>
           </router-link>
+          <div class="menu-divider"></div>
+          <router-link to="/landing" class="menu-item about-item" @click="closeMenu">
+            <span class="menu-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 16v-4"></path>
+                <path d="M12 8h.01"></path>
+              </svg>
+            </span>
+            <span>서비스 소개</span>
+          </router-link>
         </div>
       </nav>
 
       <!-- 공지사항 알림 -->
-      <NoticeDropdown ref="noticeDropdownRef" />
+      <NoticeDropdown v-if="!isMinimalHeader" ref="noticeDropdownRef" />
 
       <div class="spacer"></div>
 
-      <div class="coin-wrapper" ref="coinWrapper" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
+      <div v-if="!isMinimalHeader" class="coin-wrapper" ref="coinWrapper" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
         <button type="button" class="glass-btn coin-container" aria-label="AI 티켓 (해몽 가능 횟수)" :aria-expanded="showCoinInfo" @click="handleCoinClick">
           <span class="coin-icon" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -109,7 +120,7 @@
         </transition>
       </div>
 
-      <button @click="$emit('logout')" class="glass-btn logout-btn" aria-label="Logout">
+      <button v-if="!isMinimalHeader" @click="$emit('logout')" class="glass-btn logout-btn" aria-label="Logout">
         <span class="btn-text">Logout</span>
         <div class="btn-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -120,7 +131,7 @@
         </div>
       </button>
 
-      <button @click="$emit('navigate-mypage')" class="glass-btn profile-btn" aria-label="My Page">
+      <button v-if="!isMinimalHeader" @click="$emit('navigate-mypage')" class="glass-btn profile-btn" aria-label="My Page">
         <span class="btn-text">{{ displayName }}</span>
         <div class="btn-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -135,11 +146,15 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "../stores/authStore";
 import NoticeDropdown from "../components/notice/NoticeDropdown.vue";
 
 defineEmits(["navigate-mypage", "logout"]);
+
+const route = useRoute();
+const isMinimalHeader = computed(() => route.meta.minimalHeader === true);
 
 const authStore = useAuthStore();
 const { currentUser } = storeToRefs(authStore);
@@ -351,6 +366,20 @@ onBeforeUnmount(() => {
 .menu-item.router-link-active {
   background: linear-gradient(135deg, var(--color-blue), var(--color-blue-dark));
   color: white;
+}
+
+.menu-divider {
+  height: 1px;
+  background: #F0F0F0;
+  margin: 0.3rem 0.5rem;
+}
+
+.about-item {
+  color: var(--color-purple-dark);
+}
+
+.about-item:hover {
+  background: linear-gradient(135deg, var(--color-purple-light), var(--color-pink-light));
 }
 
 .menu-icon {

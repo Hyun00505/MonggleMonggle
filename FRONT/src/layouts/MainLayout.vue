@@ -5,12 +5,14 @@ import CloudBackground from '../components/CloudBackground.vue';
 import TheHeader from './TheHeader.vue';
 import { useDreamEntriesStore } from '../stores/dreamEntriesStore';
 import { useAuthStore } from '../stores/authStore';
+import { useConfirm } from '../composables/useConfirm';
 
 const route = useRoute();
 const router = useRouter();
 const dreamEntriesStore = useDreamEntriesStore();
 const authStore = useAuthStore();
 const { resetAll } = dreamEntriesStore;
+const { confirm } = useConfirm();
 
 const showHeader = computed(() => route.meta.hideHeader !== true);
 
@@ -21,8 +23,14 @@ function handleNavigateMypage() {
 async function handleLogout() {
   await authStore.logout();
   resetAll();
-  alert('로그아웃 되었습니다.');
-  router.push({ name: 'auth' });
+  await confirm({
+    title: '로그아웃',
+    message: '로그아웃 되었습니다.',
+    type: 'info',
+    confirmText: '확인',
+    showCancel: false
+  });
+  router.push({ name: 'landing' });
 }
 </script>
 

@@ -7,12 +7,19 @@ const router = createRouter({
       path: "/",
       component: () => import("../layouts/MainLayout.vue"),
       children: [
-        { path: "", redirect: { name: "auth" } },
+        {
+          path: "",
+          redirect: { name: "landing" },
+        },
+        {
+          path: "main",
+          name: "landing",
+          component: () => import("../views/LandingView.vue"),
+          meta: { hideHeader: true },
+        },
         {
           path: "auth",
-          name: "auth",
-          component: () => import("../views/AuthView.vue"),
-          meta: { hideHeader: true, requiresGuest: true },
+          redirect: { name: "landing" },
         },
         {
           path: "calendar",
@@ -62,7 +69,7 @@ const router = createRouter({
           component: () => import("../views/RankingView.vue"),
           meta: { requiresAuth: true },
         },
-        { path: ":pathMatch(.*)*", redirect: { name: "auth" } },
+        { path: ":pathMatch(.*)*", redirect: "/main" },
       ],
     },
   ],
@@ -75,14 +82,19 @@ router.beforeEach((to, from, next) => {
 
   // 인증이 필요한 페이지
   if (to.meta.requiresAuth && !isLoggedIn) {
-    next({ name: "auth" });
+    next({ name: "landing" });
     return;
   }
 
-  // 이미 로그인한 사용자가 auth 페이지 접근 시
-  if (to.meta.requiresGuest && isLoggedIn) {
-    next({ name: "calendar" });
-    return;
+  // landing 페이지: 로그인 상태에 따라 헤더 표시 방식 변경
+  if (to.name === "landing") {
+    if (isLoggedIn) {
+      to.meta.hideHeader = false;
+      to.meta.minimalHeader = true;
+    } else {
+      to.meta.hideHeader = true;
+      to.meta.minimalHeader = false;
+    }
   }
 
   next();

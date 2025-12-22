@@ -11,7 +11,7 @@
       <p class="page-subtitle">내 정보를 수정해보세요</p>
     </div>
 
-    <div class="common-form">
+    <form class="common-form" @submit.prevent>
       <!-- 이름 -->
       <div class="input-group labeled">
         <label class="input-label">이름</label>
@@ -101,6 +101,7 @@
             type="text" 
             class="custom-input"
             placeholder="아이디"
+            autocomplete="username"
             disabled
           />
           <div class="disabled-overlay"></div>
@@ -116,6 +117,7 @@
           type="password" 
           class="custom-input"
           placeholder="새 비밀번호 (영문, 숫자, 특수문자 8~20자)"
+          autocomplete="new-password"
           @input="validation.filterPassword"
           @blur="formData.password && validation.validatePassword(formData.password)"
         />
@@ -129,6 +131,7 @@
           type="password" 
           class="custom-input"
           placeholder="새 비밀번호 확인"
+          autocomplete="new-password"
           @input="validation.filterPassword"
           @blur="formData.password && validation.validateConfirmPassword(formData.password, formData.confirmPassword)"
         />
@@ -143,7 +146,7 @@
       <div class="footer-actions">
         <span class="withdraw-text" @click="handleWithdraw">서비스 탈퇴</span>
       </div>
-    </div>
+    </form>
   </div>
 </template>
 
@@ -309,7 +312,13 @@ async function saveUserInfo() {
     validation.clearError('password');
     validation.clearError('confirmPassword');
 
-    alert('정보가 수정되었습니다.');
+    await confirm({
+      title: '수정 완료',
+      message: '정보가 수정되었습니다.',
+      type: 'success',
+      confirmText: '확인',
+      showCancel: false
+    });
     router.push({ name: 'calendar' });
   } catch (error) {
     // 서버 에러 메시지를 화면에 표시
@@ -331,10 +340,22 @@ async function handleWithdraw() {
       await authStore.deleteAccount();
       resetAll();
       clearSessionUser();
-      alert('서비스 탈퇴가 완료되었습니다.');
+      await confirm({
+        title: '탈퇴 완료',
+        message: '서비스 탈퇴가 완료되었습니다.\n그동안 이용해주셔서 감사합니다.',
+        type: 'info',
+        confirmText: '확인',
+        showCancel: false
+      });
       router.push({ name: 'auth' });
     } catch (err) {
-      alert(authStore.error || '탈퇴 처리 중 오류가 발생했습니다.');
+      await confirm({
+        title: '오류',
+        message: authStore.error || '탈퇴 처리 중 오류가 발생했습니다.',
+        type: 'warning',
+        confirmText: '확인',
+        showCancel: false
+      });
     }
   }
 }
