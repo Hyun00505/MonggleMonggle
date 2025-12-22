@@ -170,6 +170,8 @@ public class DreamResultService {
                     } catch (IOException e) {
                         // 이미지 삭제 실패해도 계속 진행 (로그만 남김)
                     }
+                    // 이미지가 변경되면 찜 상태 초기화
+                    result.setIsLiked(false);
                 }
                 result.setImageUrl(newImageUrl);
             }

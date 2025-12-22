@@ -52,7 +52,8 @@
             lucky_color_reason    = #{luckyColorReason},
             lucky_item_name       = #{luckyItemName},
             lucky_item_reason     = #{luckyItemReason},
-            image_url             = #{imageUrl}
+            image_url             = #{imageUrl},
+            is_liked              = #{isLiked}
         WHERE dream_id = #{dreamId}
     </update>
 
