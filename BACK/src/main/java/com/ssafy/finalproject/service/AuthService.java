@@ -129,6 +129,7 @@ public class AuthService {
                 .calendarType(user.getCalendarType())
                 .coin(user.getCoin())
                 .createdDate(user.getCreatedDate())
+                .role(user.getRole() != null ? user.getRole() : "USER")
                 .build();
     }
     
