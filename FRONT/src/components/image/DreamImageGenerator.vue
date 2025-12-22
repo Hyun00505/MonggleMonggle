@@ -16,13 +16,18 @@
 
     <!-- Visualization Card -->
     <div v-if="showVisualization" class="vis-card" ref="visCardRef">
-      <div class="vis-card-header">
-        <button @click="handleBackToAnalysis" class="icon-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <h2 class="vis-title">꿈 그리기</h2>
+      <div class="card-header">
+        <h2 class="page-title">
+          꿈 그리기
+          <span class="title-badge">Draw</span>
+        </h2>
+        <div class="header-actions">
+          <button @click="handleBackToAnalysis" class="icon-btn" aria-label="닫기">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div class="vis-body">
@@ -689,21 +694,64 @@ defineExpose({
   }
 }
 
-.vis-card-header {
+.card-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.header-actions {
+  position: absolute;
+  right: 0;
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  padding: 8px;
+  border-radius: 10px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn:hover {
+  background: #f5f5f5;
+  color: #555;
+}
+
+.page-title {
+  font-family: "Dongle", sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px dashed var(--border-dashed-purple);
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  background: var(--gradient-title-badge);
+  -webkit-text-fill-color: #4c2b7b;
+  line-height: 1.2;
 }
 
-.vis-title {
-  font-family: 'Dongle', sans-serif;
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0;
+.title-badge {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: white;
+  color: var(--color-purple-dark);
+  font-weight: 600;
 }
 
 .vis-body {
@@ -1100,6 +1148,15 @@ defineExpose({
 
   .vis-card {
     padding: 1.25rem;
+  }
+
+  .page-title {
+    font-size: 1.8rem;
+    padding: 0.4rem 1rem;
+  }
+
+  .title-badge {
+    display: none;
   }
 
   .vis-preview {

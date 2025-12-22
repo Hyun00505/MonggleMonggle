@@ -701,11 +701,11 @@ watch([currentYear, currentMonth], () => {
 @media (max-width: 768px) {
   .monthly-analysis-card {
     border-radius: 24px;
-    padding: 1.25rem 1.5rem 1.5rem;
+    padding: 1.25rem;
   }
 
   .page-title {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     padding: 0.4rem 1rem;
   }
 

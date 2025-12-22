@@ -578,7 +578,6 @@ function isToday(day) {
 @media (max-width: 768px) {
   .calendar-card {
     padding: 1.2rem;
-    max-width: 95%;
   }
 
   .day-number {
@@ -600,10 +599,6 @@ function isToday(day) {
 }
 
 @media (max-width: 500px) {
-  .calendar-wrapper {
-    max-width: 95%;
-  }
-
   .calendar-card {
     padding: 0.9rem;
     border-radius: 25px;

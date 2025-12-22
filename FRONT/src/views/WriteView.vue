@@ -859,8 +859,8 @@ async function ensureMonthData(date) {
   /* 수정, 삭제 버튼: 아이콘만 표시 */
   .edit-btn,
   .delete-btn {
-    flex: 0 0 56px; /* 정사각형 형태 */
-    width: 56px;
+    flex: 0 0 50px;
+    width: 50px;
   }
 
   .edit-btn .label,
@@ -868,12 +868,12 @@ async function ensureMonthData(date) {
     display: none;
   }
 
-  /* 꿈 분석 버튼: 남은 공간 차지 */
+  /* 꿈 분석 버튼: 글자 표시 */
   .analysis-btn,
   .view-result-btn {
     flex: 1;
     padding: 0 0.75rem;
-    gap: 0.3rem;
+    gap: 0.4rem;
   }
 
   .save-btn {
@@ -884,6 +884,26 @@ async function ensureMonthData(date) {
 
   .icon {
     font-size: 1.2rem;
+  }
+}
+
+/* 더 좁은 화면에서는 아이콘만 */
+@media (max-width: 420px) {
+  .analysis-btn,
+  .view-result-btn {
+    flex: 0 0 50px;
+    width: 50px;
+    padding: 0;
+  }
+
+  .analysis-btn .label,
+  .view-result-btn .label {
+    display: none;
+  }
+
+  .save-btn {
+    flex: 1;
+    min-width: 0;
   }
 }
 

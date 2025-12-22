@@ -10,37 +10,42 @@
             </svg>
           </button>
           
-          <!-- 공지사항 본문 -->
-          <div class="notice-modal-header">
-            <span class="notice-modal-badge">공지</span>
-            <span class="notice-modal-date">{{ formatFullDate(noticeDetail.createdDate) }}</span>
-            <span class="notice-modal-views">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-              {{ noticeDetail.viewCount || 0 }}
-            </span>
-            <!-- 관리자 전용 수정/삭제 버튼 -->
-            <div v-if="isAdmin" class="admin-actions">
-              <button class="admin-btn edit-btn" @click="handleEdit" title="수정">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          <!-- 고정 헤더 영역 -->
+          <div class="notice-modal-fixed">
+            <div class="notice-modal-header">
+              <span class="notice-modal-badge">공지</span>
+              <span class="notice-modal-date">{{ formatFullDate(noticeDetail.createdDate) }}</span>
+              <span class="notice-modal-views">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
                 </svg>
-              </button>
-              <button class="admin-btn delete-btn" @click="handleDelete" title="삭제">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  <line x1="10" y1="11" x2="10" y2="17"></line>
-                  <line x1="14" y1="11" x2="14" y2="17"></line>
-                </svg>
-              </button>
+                {{ noticeDetail.viewCount || 0 }}
+              </span>
+              <!-- 관리자 전용 수정/삭제 버튼 -->
+              <div v-if="isAdmin" class="admin-actions">
+                <button class="admin-btn edit-btn" @click="handleEdit" title="수정">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+                <button class="admin-btn delete-btn" @click="handleDelete" title="삭제">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                </button>
+              </div>
             </div>
+            <h2 class="notice-modal-title">{{ noticeDetail.title }}</h2>
           </div>
-          <h2 class="notice-modal-title">{{ noticeDetail.title }}</h2>
-          <div class="notice-modal-content">{{ noticeDetail.content }}</div>
+
+          <!-- 스크롤 영역 -->
+          <div class="notice-modal-body">
+            <div class="notice-modal-content">{{ noticeDetail.content }}</div>
 
           <!-- 좋아요 버튼 -->
           <div class="notice-like-section">
@@ -120,6 +125,7 @@
                 </div>
               </li>
             </ul>
+          </div>
           </div>
         </div>
       </div>
@@ -371,13 +377,58 @@ onBeforeUnmount(() => {
 .notice-modal {
   background: white;
   border-radius: 24px;
-  padding: 1.5rem 2rem 2rem 2rem;
+  padding: 1.5rem 0.5rem 1.5rem 2rem;
   width: 100%;
   max-width: 540px;
   max-height: 85vh;
-  overflow-y: auto;
+  overflow: hidden;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 고정 헤더 영역 */
+.notice-modal-fixed {
+  flex-shrink: 0;
+  padding-right: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f5f5f5;
+  margin-bottom: 1rem;
+}
+
+/* 스크롤 영역 */
+.notice-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 1rem;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-purple) transparent;
+}
+
+.notice-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notice-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notice-modal-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--color-purple), var(--color-pink));
+  border-radius: 6px;
+}
+
+.notice-modal-body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--color-purple-dark, #b39ddb), var(--color-pink-dark, #f48fb1));
+}
+
+/* 스크롤바 화살표 버튼 제거 */
+.notice-modal-body::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
 }
 
 .notice-modal-header {
@@ -456,7 +507,7 @@ onBeforeUnmount(() => {
   font-size: 1.25rem;
   font-weight: 700;
   color: #333;
-  margin: 0 0 1.5rem 0;
+  margin: 0;
   line-height: 1.4;
   padding-right: 2rem;
 }
@@ -741,44 +792,206 @@ onBeforeUnmount(() => {
 
 /* 반응형 */
 @media (max-width: 768px) {
+  .notice-modal-overlay {
+    padding: 0.75rem;
+  }
+
   .notice-modal {
-    padding: 1.5rem;
-    max-width: 90%;
+    padding: 1.25rem 0.5rem 1.25rem 1.5rem;
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 20px;
+  }
+
+  .notice-modal-body {
+    padding-right: 0.75rem;
   }
 
   .notice-modal-title {
     font-size: 1.1rem;
+    padding-right: 1.5rem;
+  }
+
+  .notice-modal-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .admin-actions {
+    margin-left: auto;
   }
 }
 
 @media (max-width: 480px) {
+  .notice-modal-overlay {
+    padding: 0.75rem;
+    align-items: center;
+  }
+
   .notice-modal {
-    padding: 1.25rem;
-    border-radius: 20px;
+    padding: 1rem 0.4rem 1rem 1.25rem;
+    border-radius: 16px;
+    max-height: 85vh;
+  }
+
+  .notice-modal-body {
+    padding-right: 0.6rem;
+  }
+
+  .notice-modal-header {
+    margin-bottom: 0.75rem;
+    gap: 0.35rem 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .notice-modal-badge {
+    padding: 0.15rem 0.5rem;
+    font-size: 1.1rem;
+  }
+
+  .notice-modal-date {
+    font-size: 1.2rem;
+  }
+
+  .notice-modal-views {
+    font-size: 1.2rem;
+  }
+
+  .notice-modal-views svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .admin-actions {
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 0.25rem;
+  }
+
+  .admin-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  .admin-btn svg {
+    width: 13px;
+    height: 13px;
   }
 
   .notice-modal-title {
     font-size: 1rem;
+    margin-bottom: 1rem;
+    padding-right: 0;
   }
 
   .notice-modal-content {
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+
+  /* 좋아요 섹션 */
+  .notice-like-section {
+    padding: 1rem 0;
+  }
+
+  .notice-like-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .notice-like-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* 댓글 섹션 */
+  .comments-section {
+    margin-top: 1rem;
+  }
+
+  .comments-header {
+    margin-bottom: 0.75rem;
+  }
+
+  .comments-title {
+    font-size: 1.5rem;
+  }
+
+  .comments-count {
+    font-size: 0.75rem;
+    padding: 0.1rem 0.4rem;
   }
 
   .comment-input-wrapper {
-    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .comment-input {
+    padding: 0.6rem 0.875rem;
+    font-size: 0.85rem;
+    border-radius: 14px;
+    min-height: 70px;
   }
 
   .comment-submit-btn {
-    width: 100%;
-    height: 40px;
+    width: 50px;
+    height: 50px;
+  }
+
+  .comment-submit-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .comments-loading,
+  .comments-empty {
+    font-size: 0.85rem;
+    padding: 1.5rem 1rem;
     border-radius: 12px;
   }
 
+  .comments-list {
+    gap: 0.75rem;
+  }
+
+  .comment-item {
+    gap: 0.6rem;
+  }
+
   .comment-avatar {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
+    font-size: 1.3rem;
+  }
+
+  .comment-meta {
+    gap: 0.4rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .comment-author {
     font-size: 0.8rem;
+  }
+
+  .comment-date {
+    font-size: 1.1rem;
+  }
+
+  .comment-delete-btn {
+    width: 24px;
+    height: 24px;
+    opacity: 0.7;
+  }
+
+  .comment-delete-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .comment-text {
+    font-size: 0.85rem;
+    line-height: 1.4;
   }
 }
 </style>

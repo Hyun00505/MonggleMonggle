@@ -387,7 +387,6 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 2rem;
-  padding: 1rem;
   min-height: 80vh;
 }
 

@@ -392,7 +392,7 @@ async function syncFromServer() {
 .gallery-card {
   background: white;
   border-radius: 40px;
-  padding: 2rem;
+  padding: 1.5rem 2rem 2rem;
   width: 100%;
   max-width: 1200px;
   box-shadow: 0 20px 60px rgba(100, 100, 200, 0.15);
@@ -817,22 +817,41 @@ async function syncFromServer() {
     grid-template-columns: 1fr;
   }
 
+  .filter-section {
+    gap: 0.75rem;
+  }
+
   .filter-buttons {
+    flex-wrap: wrap;
     gap: 0.5rem;
+    justify-content: center;
   }
 
   .filter-btn {
-    padding: 0.55rem 1rem;
-    font-size: 0.85rem;
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+    padding: 0.5rem 0.4rem;
+    font-size: 0.8rem;
+    gap: 0.25rem;
+  }
+
+  .filter-icon svg {
+    width: 14px;
+    height: 14px;
   }
 
   .gallery-stats {
-    gap: 1rem;
-    padding: 0.85rem 1rem;
+    width: 100%;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 0.6rem 1rem;
+    margin-left: 0;
+    order: 1;
   }
 
   .stat-item {
-    font-size: 0.9rem;
+    font-size: 1.3rem;
   }
 }
 </style>
