@@ -148,6 +148,8 @@ async def process_comprehensive_fortune(request: ComprehensiveFortuneRequest) ->
 ### 요청 사항
 위 정보를 종합하여 JSON 형식으로 운세 리포트를 작성해주세요.
 특히 생년월일과 성별을 고려하여 오늘 사용자에게 행운을 가져다줄 아이템을 추천해주세요.
+물건은 8자 이내의 한국에서 구할 수 있는 물건이어야 합니다.
+괄호를 사용하지 않아야 하며, 수식어도 사용하지 않아야 합니다. 그냥 물건 이름만 추천해주세요.
 
 ### 출력 형식 (JSON Only)
 {{
