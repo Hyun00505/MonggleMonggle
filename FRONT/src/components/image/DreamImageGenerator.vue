@@ -160,7 +160,6 @@ import { useAuthStore } from "../../stores/authStore";
 import { useGalleryStore } from "../../stores/galleryStore";
 import { fortuneService } from "../../services/fortuneService";
 import { dreamResultService } from "../../services/dreamResultService";
-import { imageService } from "../../services/imageService";
 import { useConfirm } from "../../composables/useConfirm";
 
 // 이미지 생성 취소용 AbortController
@@ -383,28 +382,21 @@ async function generateImage() {
 
 async function saveToGallery(image, showAlert = true) {
   try {
-    let savedImageUrl = image.imageSrc;
+    // Base64 Data URI를 그대로 DB에 저장 (파일 저장 없음)
+    const savedImageUrl = image.imageSrc;
 
-    // 1. 백엔드에 이미지 업로드 (Base64 -> 파일 저장 -> URL 반환)
-    try {
-      const uploadResponse = await imageService.uploadImage(image.imageSrc, image.dreamId);
-
-      if (uploadResponse.success && uploadResponse.imageUrl) {
-        savedImageUrl = uploadResponse.imageUrl;
-
-        // 2. dream_results 테이블에 이미지 URL 업데이트
-        if (image.dreamId) {
-          await dreamResultService.updateDreamResult(image.dreamId, {
-            imageUrl: savedImageUrl,
-          });
-        }
+    // dream_results 테이블에 Base64 Data URI 저장
+    if (image.dreamId) {
+      try {
+        await dreamResultService.updateDreamResult(image.dreamId, {
+          imageUrl: savedImageUrl,
+        });
+      } catch (dbError) {
+        console.warn("⚠️ DB 저장 실패:", dbError.message);
       }
-    } catch (uploadError) {
-      console.warn("⚠️ 서버 업로드 실패, 로컬에만 저장:", uploadError.message);
-      // 업로드 실패 시 기존 Base64 데이터로 저장 (폴백)
     }
 
-    // 3. 갤러리 스토어에 저장 (꿈 내용과 해석 정보 포함)
+    // 갤러리 스토어에 저장 (꿈 내용과 해석 정보 포함)
     galleryStore.addToGallery({
       id: image.id,
       dreamId: image.dreamId,

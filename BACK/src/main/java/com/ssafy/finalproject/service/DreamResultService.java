@@ -14,8 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -23,7 +21,6 @@ public class DreamResultService {
     
     private final DreamsResultsDao dreamsResultsDao;
     private final DreamsDao dreamsDao;
-    private final ImageService imageService;
     private final CoinService coinService;
     
     // AI 분석 결과 저장
@@ -123,16 +120,8 @@ public class DreamResultService {
                 || request.getLuckyColor() != null 
                 || request.getLuckyItem() != null;
         
-        // 재해몽 시 기존 이미지 삭제 및 imageUrl을 null로 초기화
+        // 재해몽 시 기존 이미지 URL을 null로 초기화 (Base64 Data URI는 DB에서만 삭제)
         if (isReinterpretation) {
-            String oldImageUrl = result.getImageUrl();
-            if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
-                try {
-                    imageService.deleteImage(oldImageUrl);
-                } catch (IOException e) {
-                    // 이미지 삭제 실패해도 계속 진행 (로그만 남김)
-                }
-            }
             result.setImageUrl(null);
         }
         
@@ -170,26 +159,12 @@ public class DreamResultService {
             
             // 빈 문자열이면 이미지 삭제 요청으로 처리
             if (newImageUrl.isEmpty()) {
-                // 기존 이미지 파일 삭제
-                if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
-                    try {
-                        imageService.deleteImage(oldImageUrl);
-                    } catch (IOException e) {
-                        // 이미지 삭제 실패해도 계속 진행 (로그만 남김)
-                    }
-                }
-                // DB에서 이미지 URL을 null로 설정
+                // DB에서 이미지 URL을 null로 설정 (Base64 Data URI는 파일 삭제 불필요)
                 result.setImageUrl(null);
             } else {
                 // 새 이미지 URL로 업데이트
-                // 기존 이미지가 있고, 새 이미지와 다르면 기존 이미지 삭제
+                // 기존 이미지가 있고, 새 이미지와 다르면 찜 상태 초기화
                 if (oldImageUrl != null && !oldImageUrl.isEmpty() && !oldImageUrl.equals(newImageUrl)) {
-                    try {
-                        imageService.deleteImage(oldImageUrl);
-                    } catch (IOException e) {
-                        // 이미지 삭제 실패해도 계속 진행 (로그만 남김)
-                    }
-                    // 이미지가 변경되면 찜 상태 초기화
                     result.setIsLiked(false);
                 }
                 result.setImageUrl(newImageUrl);
@@ -211,18 +186,8 @@ public class DreamResultService {
             throw new ForbiddenException("접근 권한이 없습니다.");
         }
         
-        // 기존 결과가 있으면 이미지부터 정리 (하드 삭제)
-        dreamsResultsDao.findByDreamId(dreamId).ifPresent(result -> {
-            if (result.getImageUrl() != null) {
-                try {
-                    imageService.deleteImage(result.getImageUrl());
-                } catch (IOException e) {
-                    throw new RuntimeException("꿈 해몽 이미지 삭제 중 오류가 발생했습니다.", e);
-                }
-            }
-            // 결과 레코드 하드 삭제
-            dreamsResultsDao.deleteDreamResult(dreamId);
-        });
+        // 결과 레코드 하드 삭제 (Base64 Data URI는 DB에서 함께 삭제됨)
+        dreamsResultsDao.deleteDreamResult(dreamId);
     }
     
     // 찜 토글

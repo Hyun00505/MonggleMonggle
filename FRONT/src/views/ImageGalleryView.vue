@@ -151,7 +151,6 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useGalleryStore } from "../stores/galleryStore";
-import { imageService } from "../services/imageService";
 import { dreamService } from "../services/dreamService";
 import { dreamResultService } from "../services/dreamResultService";
 import ImageDetailModal from "../components/image/ImageDetailModal.vue";
@@ -217,6 +216,8 @@ const totalLikes = computed(() => {
 // 이미지 경로를 실제 접근 가능한 URL로 정규화
 function resolveImageSrc(src) {
   if (!src) return "";
+  // Base64 Data URI인 경우 그대로 반환
+  if (src.startsWith("data:")) return src;
   if (src.startsWith("http://") || src.startsWith("https://")) return src;
   if (src.startsWith("/")) return src;
   // 슬래시가 없는 상대경로로 온 경우 /uploads/... 형태로 접근할 수 있게 보정
@@ -258,16 +259,7 @@ async function deleteImage(image) {
   if (!confirmed) return;
 
   try {
-    // 1. 서버에 저장된 이미지인 경우 물리적 파일 삭제
-    if (image.imageSrc && image.imageSrc.includes("/uploads/images/")) {
-      try {
-        await imageService.deleteImage(image.imageSrc);
-      } catch (err) {
-        console.warn("⚠️ 서버 이미지 파일 삭제 실패:", err.message);
-      }
-    }
-
-    // 2. DB에서 dream_results의 image_url을 삭제 (새로고침해도 다시 안 뜨도록)
+    // DB에서 dream_results의 image_url을 삭제 (Base64 Data URI도 DB에서 삭제됨)
     if (image.dreamId) {
       try {
         // 빈 문자열을 보내면 백엔드에서 null로 처리
@@ -275,11 +267,11 @@ async function deleteImage(image) {
           imageUrl: "",
         });
       } catch (err) {
-        console.warn("⚠️ DB 이미지 URL 삭제 실패:", err.message);
+        console.warn("⚠️ DB 이미지 삭제 실패:", err.message);
       }
     }
 
-    // 3. 로컬 갤러리에서 제거
+    // 로컬 갤러리에서 제거
     galleryStore.removeFromGallery(image.id);
 
     // 모달이 열려있으면 닫기
