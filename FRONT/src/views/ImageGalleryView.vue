@@ -599,7 +599,7 @@ async function syncFromServer() {
 .gallery-image {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   background: linear-gradient(135deg, #454278 0%, #7C78B8 50%, #C4B6DC 100%);
   transition: transform 0.3s ease;
 }
