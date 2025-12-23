@@ -20,17 +20,21 @@ import com.ssafy.finalproject.model.dto.response.NoticeResponse;
 import com.ssafy.finalproject.service.NoticeService;
 import com.ssafy.finalproject.util.SecurityUtil;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@RestController                    // REST API 컨트롤러임을 표시
-@RequestMapping("/api/notices")    // 기본 URL 경로
-@RequiredArgsConstructor           // 생성자 주입
+@Tag(name = "07. 공지사항 API", description = "공지사항 작성, 조회, 수정, 삭제 API (관리자 전용 작성/수정/삭제)")
+@RestController
+@RequestMapping("/api/notices")
+@RequiredArgsConstructor
 public class NoticeController {
 
     private final NoticeService noticeService;  // Service 주입
 
-    // 전체 조회 
+    @Operation(summary = "07-1. 공지사항 전체 조회", description = "모든 공지사항 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<NoticeListResponse> getAllNotices() {
         // 1. Service 호출
@@ -40,7 +44,7 @@ public class NoticeController {
         return ResponseEntity.ok(response);
     }
 
-    // 상세 조회 
+    @Operation(summary = "07-2. 공지사항 상세 조회", description = "특정 공지사항의 상세 내용을 조회합니다.")
     @GetMapping("/{noticeId}")
     public ResponseEntity<NoticeResponse> getNotice(@PathVariable Long noticeId) {
         //                                          ↑ URL에서 값 추출
@@ -48,7 +52,8 @@ public class NoticeController {
         return ResponseEntity.ok(response);
     }
 
-    // 등록 (ADMIN만 가능)
+    @Operation(summary = "07-3. 공지사항 등록 (관리자)", description = "새로운 공지사항을 등록합니다. 관리자만 가능합니다.")
+    @SecurityRequirement(name = "Bearer Authentication")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<NoticeResponse> createNotice(@Valid @RequestBody CreateNoticeRequest request) {
@@ -57,7 +62,8 @@ public class NoticeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // 수정 (ADMIN만 가능)
+    @Operation(summary = "07-4. 공지사항 수정 (관리자)", description = "공지사항을 수정합니다. 관리자만 가능합니다.")
+    @SecurityRequirement(name = "Bearer Authentication")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{noticeId}")
     public ResponseEntity<NoticeResponse> updateNotice(@PathVariable Long noticeId, @Valid @RequestBody UpdateNoticeRequest request) {
@@ -65,7 +71,8 @@ public class NoticeController {
         return ResponseEntity.ok(response);
     }
 
-    // 삭제 (ADMIN만 가능)
+    @Operation(summary = "07-5. 공지사항 삭제 (관리자)", description = "공지사항을 삭제합니다. 관리자만 가능합니다.")
+    @SecurityRequirement(name = "Bearer Authentication")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{noticeId}")
     public ResponseEntity<ApiResponse> deleteNotice(@PathVariable Long noticeId) {

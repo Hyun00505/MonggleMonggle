@@ -20,7 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "5. 월별 분석 API", description = "월별 꿈 통계 및 AI 리포트 생성 API")
+@Tag(name = "05. 월별 분석 API", description = "월별 꿈 통계 및 AI 리포트 생성 API")
 @RestController
 @RequestMapping("/api/analysis/monthly")
 @RequiredArgsConstructor
@@ -29,7 +29,7 @@ public class MonthlyAnalysisController {
     
     private final MonthlyAnalysisService monthlyAnalysisService;
     
-    @Operation(summary = "5.0 지난달 리포트 조회/생성", description = "지난달 리포트를 조회하고, 없으면 생성하여 반환합니다.")
+    @Operation(summary = "05-1. 지난달 리포트 조회/생성", description = "지난달 리포트를 조회하고, 없으면 생성하여 반환합니다.")
     @GetMapping("/auto")
     public ResponseEntity<MonthlyAnalysisResponse> getPreviousMonthAnalysis() {
         Long userId = SecurityUtil.getCurrentUserId();
@@ -37,7 +37,7 @@ public class MonthlyAnalysisController {
         return ResponseEntity.ok(response);
     }
     
-    @Operation(summary = "5.1 월별 꿈 통계 조회", description = "특정 월의 꿈 통계 및 분석 결과를 조회합니다.")
+    @Operation(summary = "05-2. 월별 꿈 통계 조회", description = "특정 월의 꿈 통계 및 분석 결과를 조회합니다.")
     @GetMapping
     public ResponseEntity<MonthlyAnalysisResponse> getMonthlyAnalysis(
             @RequestParam Integer year,
@@ -47,7 +47,7 @@ public class MonthlyAnalysisController {
         return ResponseEntity.ok(response);
     }
     
-    @Operation(summary = "5.2 월별 AI 리포트 생성", description = "FastAPI를 통해 월별 AI 분석 리포트를 생성합니다.")
+    @Operation(summary = "05-3. 월별 AI 리포트 생성", description = "FastAPI를 통해 월별 AI 분석 리포트를 생성합니다.")
     @PostMapping
     public ResponseEntity<MonthlyAnalysisResponse> generateMonthlyReport(
             @Valid @RequestBody MonthlyAnalysisRequest request) {

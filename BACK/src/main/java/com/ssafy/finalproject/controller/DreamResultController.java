@@ -27,7 +27,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "3. AI 분석 결과 API", description = "꿈 해몽 및 운세 분석 결과 관리 API")
+@Tag(name = "03. AI 분석 결과 API", description = "꿈 해몽 및 운세 분석 결과 관리 API")
 @RestController
 @RequestMapping("/api/dreams/{dreamId}/result")
 @RequiredArgsConstructor
@@ -36,7 +36,7 @@ public class DreamResultController {
     
     private final DreamResultService dreamResultService;
     
-    @Operation(summary = "3.1 AI 분석 결과 저장", description = "FastAPI에서 받은 AI 분석 결과를 저장합니다.")
+    @Operation(summary = "03-1. AI 분석 결과 저장", description = "FastAPI에서 받은 AI 분석 결과를 저장합니다.")
     @PostMapping
     public ResponseEntity<Map<String, Object>> saveDreamResult(
             @PathVariable Long dreamId,
@@ -52,7 +52,7 @@ public class DreamResultController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
-    @Operation(summary = "3.2 AI 분석 결과 조회", description = "특정 꿈 일기의 AI 분석 결과를 조회합니다.")
+    @Operation(summary = "03-2. AI 분석 결과 조회", description = "특정 꿈 일기의 AI 분석 결과를 조회합니다.")
     @GetMapping
     public ResponseEntity<DreamResultResponse> getDreamResult(@PathVariable Long dreamId) {
         Long userId = SecurityUtil.getCurrentUserId();
@@ -60,7 +60,7 @@ public class DreamResultController {
         return ResponseEntity.ok(response);
     }
     
-    @Operation(summary = "3.3 AI 분석 결과 수정", description = "AI 분석 결과를 수정합니다 (재해몽 포함).")
+    @Operation(summary = "03-3. AI 분석 결과 수정", description = "AI 분석 결과를 수정합니다 (재해몽 포함).")
     @PutMapping
     public ResponseEntity<Map<String, Object>> updateDreamResult(
             @PathVariable Long dreamId,
@@ -76,7 +76,7 @@ public class DreamResultController {
         return ResponseEntity.ok(response);
     }
     
-    @Operation(summary = "3.4 AI 분석 결과 삭제", description = "AI 분석 결과를 삭제합니다 (재분석을 위한 초기화).")
+    @Operation(summary = "03-4. AI 분석 결과 삭제", description = "AI 분석 결과를 삭제합니다 (재분석을 위한 초기화).")
     @DeleteMapping
     public ResponseEntity<ApiResponse> deleteDreamResult(@PathVariable Long dreamId) {
         Long userId = SecurityUtil.getCurrentUserId();
@@ -86,7 +86,7 @@ public class DreamResultController {
                 .build());
     }
     
-    @Operation(summary = "3.5 찜 토글", description = "꿈 이미지의 찜 상태를 토글합니다.")
+    @Operation(summary = "03-5. 찜 토글", description = "꿈 이미지의 찜 상태를 토글합니다.")
     @PostMapping("/like")
     public ResponseEntity<Map<String, Object>> toggleLike(@PathVariable Long dreamId) {
         Long userId = SecurityUtil.getCurrentUserId();

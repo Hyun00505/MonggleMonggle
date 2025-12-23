@@ -79,7 +79,7 @@ function getTopCardClass(rank) {
           </button>
         </div>
       </div>
-      
+
       <p class="subtitle">가장 많은 꿈 일기를 작성한 몽글러들!</p>
 
       <!-- 로딩 상태 -->
@@ -427,7 +427,7 @@ function getTopCardClass(rank) {
 }
 
 .top-card {
-  font-family: 'Dongle', sans-serif;
+  font-family: "Dongle", sans-serif;
 }
 
 .top-card .name {
@@ -479,7 +479,7 @@ function getTopCardClass(rank) {
   grid-template-columns: 60px 1fr 100px;
   justify-items: center;
   padding: 0.75rem 1rem;
-  font-family: 'Dongle', sans-serif;
+  font-family: "Dongle", sans-serif;
   font-weight: 700;
   font-size: 1.4rem;
   line-height: 1.2;
@@ -494,7 +494,7 @@ function getTopCardClass(rank) {
   padding: 1rem;
   border-bottom: 1px solid #f0f0f0;
   transition: background 0.2s ease;
-  font-family: 'Dongle', sans-serif;
+  font-family: "Dongle", sans-serif;
 }
 
 .ranking-item:last-child {
@@ -531,7 +531,7 @@ function getTopCardClass(rank) {
 /* 총 참여자 수 */
 .total-users {
   text-align: center;
-  font-family: 'Dongle', sans-serif;
+  font-family: "Dongle", sans-serif;
   font-size: 1.8rem;
   font-weight: 700;
   line-height: 1.2;

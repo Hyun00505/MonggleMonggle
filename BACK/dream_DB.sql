@@ -62,7 +62,7 @@ CREATE TABLE `dream_results` (
     `lucky_color_reason`     TEXT          NOT NULL COMMENT '색 추천 이유',
     `lucky_item_name`        VARCHAR(100)  NOT NULL COMMENT '행운 아이템',
     `lucky_item_reason`      TEXT          NOT NULL COMMENT '아이템 추천 이유',
-    `image_url`              VARCHAR(255)  NULL COMMENT '이미지 URL',
+    `image_url`              LONGTEXT      NULL COMMENT '이미지 Base64 Data URI',
     `is_liked`               TINYINT       NOT NULL DEFAULT 0 COMMENT '찜 여부',
     `created_date`           DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_date`           DATETIME      NULL ON UPDATE CURRENT_TIMESTAMP,

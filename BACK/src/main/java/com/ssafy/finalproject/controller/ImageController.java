@@ -16,12 +16,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/images")
 @RequiredArgsConstructor
-@Tag(name = "5. Image", description = "이미지 업로드 API")
+@Tag(name = "12. 이미지 업로드 API", description = "이미지 업로드 및 삭제 API")
 public class ImageController {
 
     private final ImageService imageService;
 
-    @Operation(summary = "이미지 업로드", description = "Base64 인코딩된 이미지를 서버에 저장하고 URL을 반환합니다. (코인 차감 없음 - 이미지 생성 시 이미 차감됨)")
+    @Operation(summary = "12-1. 이미지 업로드", description = "Base64 인코딩된 이미지를 서버에 저장하고 URL을 반환합니다. (코인 차감 없음 - 이미지 생성 시 이미 차감됨)")
     @PostMapping("/upload")
     public ResponseEntity<Map<String, Object>> uploadImage(@RequestBody Map<String, Object> request) {
         Long userId = SecurityUtil.getCurrentUserId();
@@ -55,7 +55,7 @@ public class ImageController {
         }
     }
 
-    @Operation(summary = "이미지 삭제", description = "서버에 저장된 이미지를 삭제합니다.")
+    @Operation(summary = "12-2. 이미지 삭제", description = "서버에 저장된 이미지를 삭제합니다.")
     @DeleteMapping
     public ResponseEntity<ApiResponse> deleteImage(@RequestParam String imageUrl) {
         Long userId = SecurityUtil.getCurrentUserId();

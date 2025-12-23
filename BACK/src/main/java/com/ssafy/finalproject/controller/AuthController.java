@@ -27,7 +27,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "1. 인증 API", description = "회원가입, 로그인, 사용자 정보 관리 API")
+@Tag(name = "01. 인증 API", description = "회원가입, 로그인, 사용자 정보 관리 API")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -35,7 +35,7 @@ public class AuthController {
     
     private final AuthService authService;
     
-    @Operation(summary = "1.1 회원가입", description = "새로운 사용자 계정을 생성합니다.")
+    @Operation(summary = "01-1. 회원가입", description = "새로운 사용자 계정을 생성합니다.")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "회원가입 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력 데이터"),
@@ -47,7 +47,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
-    @Operation(summary = "1.2 로그인", description = "사용자 로그인 및 JWT 토큰 발급")
+    @Operation(summary = "01-2. 로그인", description = "사용자 로그인 및 JWT 토큰 발급")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
@@ -59,7 +59,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
     
-    @Operation(summary = "1.3 로그아웃", description = "사용자 로그아웃 (클라이언트에서 토큰 제거)")
+    @Operation(summary = "01-3. 로그아웃", description = "사용자 로그아웃 (클라이언트에서 토큰 제거)")
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse> logout() {
@@ -68,7 +68,7 @@ public class AuthController {
                 .build());
     }
     
-    @Operation(summary = "1.4 사용자 정보 조회", description = "현재 로그인한 사용자 정보를 조회합니다.")
+    @Operation(summary = "01-4. 사용자 정보 조회", description = "현재 로그인한 사용자 정보를 조회합니다.")
     @SecurityRequirement(name = "Bearer Authentication")
     @GetMapping("/me")
     public ResponseEntity<UserInfoResponse> getUserInfo() {
@@ -78,7 +78,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
     
-    @Operation(summary = "1.5 사용자 정보 수정", description = "사용자 정보를 수정합니다.")
+    @Operation(summary = "01-5. 사용자 정보 수정", description = "사용자 정보를 수정합니다.")
     @SecurityRequirement(name = "Bearer Authentication")
     @PutMapping("/me")
     public ResponseEntity<ApiResponse> updateUser(@RequestBody UpdateUserRequest request) {
@@ -89,7 +89,7 @@ public class AuthController {
                 .build());
     }
     
-    @Operation(summary = "1.6 회원 탈퇴", description = "회원 탈퇴 처리 (Soft Delete)")
+    @Operation(summary = "01-6. 회원 탈퇴", description = "회원 탈퇴 처리 (Soft Delete)")
     @SecurityRequirement(name = "Bearer Authentication")
     @DeleteMapping("/me")
     public ResponseEntity<ApiResponse> deleteUser() {

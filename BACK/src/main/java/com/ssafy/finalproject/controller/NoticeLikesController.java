@@ -16,7 +16,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "8. 공지사항 좋아요 API", description = "공지사항 좋아요 토글 및 조회 API")
+@Tag(name = "09. 공지사항 좋아요 API", description = "공지사항 좋아요 토글 및 조회 API")
 @RestController
 @RequestMapping("/api/notices/likes")
 @RequiredArgsConstructor
@@ -25,7 +25,7 @@ public class NoticeLikesController {
     
     private final NoticeLikesService noticeLikesService;
     
-    @Operation(summary = "8.1 좋아요 토글", description = "공지사항에 좋아요를 누르거나 취소합니다.")
+    @Operation(summary = "09-1. 좋아요 토글", description = "공지사항에 좋아요를 누르거나 취소합니다.")
     @PostMapping("/{noticeId}")
     public ResponseEntity<NoticeLikesResponse> toggleLike(@PathVariable Long noticeId) {
         Long userId = SecurityUtil.getCurrentUserId();
@@ -33,7 +33,7 @@ public class NoticeLikesController {
         return ResponseEntity.ok(response);
     }
     
-    @Operation(summary = "8.2 좋아요 상태 조회", description = "공지사항의 좋아요 수와 현재 사용자의 좋아요 여부를 조회합니다.")
+    @Operation(summary = "09-2. 좋아요 상태 조회", description = "공지사항의 좋아요 수와 현재 사용자의 좋아요 여부를 조회합니다.")
     @GetMapping("/{noticeId}")
     public ResponseEntity<NoticeLikesResponse> getLikeStatus(@PathVariable Long noticeId) {
         Long userId = SecurityUtil.getCurrentUserId();

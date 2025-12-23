@@ -1,21 +1,12 @@
-import axios from "axios";
 import api from "./api";
 
-// FastAPI 전용 axios 인스턴스 (AI 서버) - 레거시 유지
-const fortuneApi = axios.create({
-  baseURL: "/ai-api",
-  timeout: 120000, // 2분 (LLM 처리 시간 고려)
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
 /**
- * AI 운세 서비스 (FastAPI 연동)
+ * AI 운세 서비스 (Spring Boot를 통해 FastAPI 연동)
  */
 export const fortuneService = {
   /**
    * 통합 운세 조회 (꿈 해몽 + 오늘의 운세)
+   * Spring Boot API를 통해 FastAPI 호출
    * @param {Object} request - 요청 데이터
    * @param {string} request.name - 사용자 이름
    * @param {string} request.dream_content - 꿈 내용
@@ -26,8 +17,8 @@ export const fortuneService = {
    * @returns {Promise<Object>} 분석 결과
    */
   async getComprehensiveFortune(request, signal = null) {
-    const config = signal ? { signal } : {};
-    const response = await fortuneApi.post("/api/v1/fortune/comprehensive", request, config);
+    const config = signal ? { signal, timeout: 120000 } : { timeout: 120000 }; // 2분 타임아웃
+    const response = await api.post("/fortune/comprehensive", request, config);
     return response.data;
   },
 
@@ -42,20 +33,14 @@ export const fortuneService = {
   async generateDreamImage(request, signal = null) {
     const config = signal ? { signal } : {};
     // Spring Boot API를 통해 호출 (코인 차감 포함)
-    const response = await api.post("/dream-images/generate", {
-      dream_prompt: request.dream_prompt,
-      style: request.style,
-    }, config);
-    return response.data;
-  },
-
-  /**
-   * 월간 분석 조회
-   * @param {Object} request - 요청 데이터
-   * @returns {Promise<Object>} 월간 분석 결과
-   */
-  async getMonthlyAnalysis(request) {
-    const response = await fortuneApi.post("/api/v1/fortune/monthly-analysis", request);
+    const response = await api.post(
+      "/dream-images/generate",
+      {
+        dream_prompt: request.dream_prompt,
+        style: request.style,
+      },
+      config
+    );
     return response.data;
   },
 };

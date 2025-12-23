@@ -27,7 +27,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "2. 꿈 일기 API", description = "꿈 일기 작성, 조회, 수정, 삭제 API")
+@Tag(name = "02. 꿈 일기 API", description = "꿈 일기 작성, 조회, 수정, 삭제 API")
 @RestController
 @RequestMapping("/api/dreams")
 @RequiredArgsConstructor
@@ -36,7 +36,7 @@ public class DreamController {
     
     private final DreamService dreamService;
     
-    @Operation(summary = "2.1 꿈 일기 작성", description = "새로운 꿈 일기를 작성합니다.")
+    @Operation(summary = "02-1. 꿈 일기 작성", description = "새로운 꿈 일기를 작성합니다.")
     @PostMapping
     public ResponseEntity<DreamResponse> createDream(@Valid @RequestBody CreateDreamRequest request) {
         Long userId = SecurityUtil.getCurrentUserId();
@@ -44,7 +44,7 @@ public class DreamController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
-    @Operation(summary = "2.2 월별 꿈 일기 목록 조회", description = "특정 월의 꿈 일기 목록을 조회합니다.")
+    @Operation(summary = "02-2. 월별 꿈 일기 목록 조회", description = "특정 월의 꿈 일기 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<DreamListResponse> getDreamsByMonth(
             @RequestParam Integer year,
@@ -54,7 +54,7 @@ public class DreamController {
         return ResponseEntity.ok(response);
     }
     
-    @Operation(summary = "2.3 꿈 일기 상세 조회", description = "특정 꿈 일기의 상세 정보를 조회합니다.")
+    @Operation(summary = "02-3. 꿈 일기 상세 조회", description = "특정 꿈 일기의 상세 정보를 조회합니다.")
     @GetMapping("/{dreamId}")
     public ResponseEntity<DreamResponse> getDream(@PathVariable Long dreamId) {
         Long userId = SecurityUtil.getCurrentUserId();
@@ -62,7 +62,7 @@ public class DreamController {
         return ResponseEntity.ok(response);
     }
     
-    @Operation(summary = "2.4 꿈 일기 수정", description = "꿈 일기를 수정합니다.")
+    @Operation(summary = "02-4. 꿈 일기 수정", description = "꿈 일기를 수정합니다.")
     @PutMapping("/{dreamId}")
     public ResponseEntity<ApiResponse> updateDream(
             @PathVariable Long dreamId,
@@ -74,7 +74,7 @@ public class DreamController {
                 .build());
     }
     
-    @Operation(summary = "2.5 꿈 일기 삭제", description = "꿈 일기를 삭제합니다 (Soft Delete).")
+    @Operation(summary = "02-5. 꿈 일기 삭제", description = "꿈 일기를 삭제합니다 (Soft Delete).")
     @DeleteMapping("/{dreamId}")
     public ResponseEntity<ApiResponse> deleteDream(@PathVariable Long dreamId) {
         Long userId = SecurityUtil.getCurrentUserId();
@@ -84,7 +84,7 @@ public class DreamController {
                 .build());
     }
     
-    @Operation(summary = "2.6 이미지가 있는 꿈 전체 조회 (갤러리용)", description = "사용자의 이미지가 있는 모든 꿈과 해몽 결과를 조회합니다.")
+    @Operation(summary = "02-6. 이미지가 있는 꿈 전체 조회 (갤러리용)", description = "사용자의 이미지가 있는 모든 꿈과 해몽 결과를 조회합니다.")
     @GetMapping("/gallery")
     public ResponseEntity<GalleryResponse> getDreamsWithImages() {
         Long userId = SecurityUtil.getCurrentUserId();

@@ -26,7 +26,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "6. 월별 메모 API", description = "월별 메모 작성, 조회, 삭제 API")
+@Tag(name = "06. 월별 메모 API", description = "월별 메모 작성, 조회, 삭제 API")
 @RestController
 @RequestMapping("/api/memo/monthly")
 @RequiredArgsConstructor
@@ -35,7 +35,7 @@ public class MonthlyMemoController {
     
     private final MonthlyMemoService monthlyMemoService;
     
-    @Operation(summary = "6.1 월별 메모 조회", description = "특정 월의 메모를 조회합니다.")
+    @Operation(summary = "06-1. 월별 메모 조회", description = "특정 월의 메모를 조회합니다.")
     @GetMapping
     public ResponseEntity<java.util.List<MonthlyMemoResponse>> getMemo(
             @RequestParam Integer year,
@@ -45,7 +45,7 @@ public class MonthlyMemoController {
         return ResponseEntity.ok(response);
     }
     
-    @Operation(summary = "6.2 월별 메모 작성/수정", description = "월별 메모를 작성하거나 수정합니다.")
+    @Operation(summary = "06-2. 월별 메모 작성/수정", description = "월별 메모를 작성하거나 수정합니다.")
     @PostMapping
     public ResponseEntity<Map<String, Object>> saveMemo(@Valid @RequestBody SaveMemoRequest request) {
         Long userId = SecurityUtil.getCurrentUserId();
@@ -58,7 +58,7 @@ public class MonthlyMemoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
-    @Operation(summary = "6.3 월별 메모 삭제", description = "월별 메모를 삭제합니다.")
+    @Operation(summary = "06-3. 월별 메모 삭제", description = "월별 메모를 삭제합니다.")
     @DeleteMapping("/{memoId}")
     public ResponseEntity<ApiResponse> deleteMemo(@PathVariable Long memoId) {
         Long userId = SecurityUtil.getCurrentUserId();

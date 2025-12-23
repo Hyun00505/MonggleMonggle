@@ -1,11 +1,18 @@
 # 서버 포트
 server:
   port: ${SERVER_PORT:8080}
+  # Base64 이미지 데이터 전송을 위한 크기 제한 설정
+  tomcat:
+    max-http-form-post-size: 50MB
+    max-swallow-size: 50MB
 
 # 데이터베이스 연동 설정 (env 처리해야함)
 spring:
   config:
     import: optional:file:.env[.properties]
+  # JSON 요청 크기 제한 (Base64 이미지용)
+  codec:
+    max-in-memory-size: 50MB
   datasource:
     driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/dream_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}

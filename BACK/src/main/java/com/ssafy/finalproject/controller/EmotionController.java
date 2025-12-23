@@ -13,7 +13,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "4. 감정 점수 API", description = "감정 점수 목록 조회 API")
+@Tag(name = "04. 감정 점수 API", description = "감정 점수 목록 조회 API")
 @RestController
 @RequestMapping("/api/emotions")
 @RequiredArgsConstructor
@@ -22,7 +22,7 @@ public class EmotionController {
     
     private final EmotionService emotionService;
     
-    @Operation(summary = "4.1 감정 점수 목록 조회", description = "사용 가능한 감정 점수 목록을 조회합니다.")
+    @Operation(summary = "04-1. 감정 점수 목록 조회", description = "사용 가능한 감정 점수 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<EmotionListResponse> getAllEmotions() {
         EmotionListResponse response = emotionService.getAllEmotions();
