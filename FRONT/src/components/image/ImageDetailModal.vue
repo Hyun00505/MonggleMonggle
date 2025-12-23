@@ -141,6 +141,8 @@ const emit = defineEmits(["close", "prev", "next", "delete"]);
 // 이미지 경로를 실제 접근 가능한 URL로 정규화
 function resolveImageSrc(src) {
   if (!src) return "";
+  // Base64 Data URI는 그대로 반환
+  if (src.startsWith("data:")) return src;
   if (src.startsWith("http://") || src.startsWith("https://")) return src;
   if (src.startsWith("/")) return src;
   return `/${src}`;
