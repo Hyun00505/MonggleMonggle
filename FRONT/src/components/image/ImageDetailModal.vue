@@ -184,7 +184,36 @@ function getLuckyColorHex(colorName) {
 
 function openOriginalImage() {
   if (!props.image?.imageSrc) return;
-  window.open(props.image.imageSrc, "_blank");
+  
+  const src = props.image.imageSrc;
+  
+  // Base64 Data URI인 경우 Blob URL로 변환하여 열기
+  if (src.startsWith("data:")) {
+    try {
+      // Data URI에서 base64 데이터 추출
+      const [header, base64Data] = src.split(",");
+      const mimeType = header.match(/data:(.*?);/)?.[1] || "image/png";
+      
+      // Base64를 Blob으로 변환
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      
+      // Blob URL 생성 및 새 창에서 열기
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank");
+    } catch (error) {
+      console.error("원본 이미지 열기 실패:", error);
+      alert("이미지를 열 수 없습니다.");
+    }
+  } else {
+    // 일반 URL인 경우 그대로 열기
+    window.open(src, "_blank");
+  }
 }
 
 function handleDownload() {
