@@ -347,11 +347,14 @@ async function syncFromServer() {
     }
 
     // 서버에서 받은 꿈들을 갤러리에 추가 또는 업데이트
+    const updatedGallery = [...galleryImages.value];
+
     for (const item of response.items) {
       // 이미지가 있는 경우만 갤러리에 추가/업데이트
       if (item.imageUrl) {
-        galleryStore.addToGallery({
-          id: item.dreamId, // dreamId를 일관된 식별자로 사용하여 중복 방지
+        const entryId = item.dreamId;
+        const entry = {
+          id: entryId,
           dreamId: item.dreamId,
           dreamDate: item.dreamDate,
           title: item.title,
@@ -364,12 +367,22 @@ async function syncFromServer() {
           caption: item.title || "꿈 이미지",
           imageSrc: item.imageUrl,
           mimeType: "image/png",
-          liked: item.isLiked ?? false, // 서버에서 받은 찜 상태 반영
+          liked: item.isLiked ?? false,
           createdAt: item.createdDate || new Date().toISOString(),
           savedAt: new Date().toISOString(),
-        });
+        };
+
+        const existingIndex = updatedGallery.findIndex((img) => img.id === entryId);
+        if (existingIndex >= 0) {
+          updatedGallery[existingIndex] = { ...updatedGallery[existingIndex], ...entry };
+        } else {
+          updatedGallery.push(entry);
+        }
       }
     }
+
+    // 변경된 갤러리 데이터를 한 번에 저장
+    galleryStore.setGallery(updatedGallery);
   } catch (error) {
     console.error("갤러리 동기화 실패:", error);
   } finally {

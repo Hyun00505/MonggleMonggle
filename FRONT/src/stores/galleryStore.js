@@ -74,11 +74,11 @@ export const useGalleryStore = defineStore("gallery", () => {
   async function toggleImageLike(imageId) {
     const image = gallery.value.find((img) => img.id === imageId);
     if (!image?.dreamId) return;
-  
+
     try {
       // 서버 동기화
       const response = await dreamResultService.toggleLike(image.dreamId);
-      
+
       // 서버 응답으로 상태 업데이트
       image.liked = response.isLiked;
       persistGallery();
@@ -95,12 +95,35 @@ export const useGalleryStore = defineStore("gallery", () => {
     persistGallery();
   }
 
+  function setGallery(newGallery) {
+    // gallery.value가 ref이므로 직접 대입
+    gallery.value = newGallery;
+    persistGallery();
+  }
+
   function persistGallery() {
     if (typeof window === "undefined") return;
 
     const key = getStorageKey();
     if (key) {
-      localStorage.setItem(key, JSON.stringify(gallery.value));
+      try {
+        // 로컬 스토리지 용량 최적화를 위해 이미지는 제외하고 메타데이터만 저장
+        // 이미지는 hydrate 후에 syncFromServer를 통해 다시 채워짐
+        const lightGallery = gallery.value.map((img) => {
+          const { imageSrc, ...rest } = img;
+          // data: URI(Base64)인 경우만 제외하고, 일반 URL 경로는 유지해도 무방함
+          return imageSrc && imageSrc.startsWith("data:") ? { ...rest, imageSrc: null } : img;
+        });
+
+        localStorage.setItem(key, JSON.stringify(lightGallery));
+      } catch (error) {
+        // 여전히 실패할 경우 (데이터 양 자체가 너무 많을 때)
+        if (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED" || error.code === 22) {
+          console.warn("로컬 스토리지가 가득 찼습니다. 캐싱 없이 진행합니다.");
+        } else {
+          console.error("로컬 스토리지 저장 실패:", error);
+        }
+      }
     }
   }
 
@@ -165,7 +188,7 @@ export const useGalleryStore = defineStore("gallery", () => {
         }));
 
         // 새 키로 저장하고 레거시 키 삭제
-        localStorage.setItem(userKey, JSON.stringify(gallery.value));
+        persistGallery();
         localStorage.removeItem(LEGACY_KEY);
       } catch (e) {
         console.error("레거시 데이터 마이그레이션 실패:", e);
@@ -202,6 +225,7 @@ export const useGalleryStore = defineStore("gallery", () => {
     removeFromGallery,
     toggleImageLike,
     resetGallery,
+    setGallery,
     persistGallery,
     hydrateFromLocalStorage,
     onUserChange,

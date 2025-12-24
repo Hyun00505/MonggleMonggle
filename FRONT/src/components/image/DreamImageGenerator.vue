@@ -53,7 +53,9 @@
               </svg>
               <!-- 팔레트 아이콘 (수채화) -->
               <svg v-else-if="style.icon === 'palette'" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z"></path>
+                <path
+                  d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z"
+                ></path>
                 <circle cx="13.5" cy="6.5" r="1.5"></circle>
                 <circle cx="17.5" cy="10.5" r="1.5"></circle>
                 <circle cx="8.5" cy="7.5" r="1.5"></circle>
@@ -76,7 +78,7 @@
         <button class="vis-generate-btn" :disabled="!selectedDream || isGenerating || !hasEnoughCoins" @click="handleGenerateClick">
           <span v-if="!isGenerating" class="btn-content">
             <svg class="sparkle-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0L14.59 8.41L23 11L14.59 13.59L12 22L9.41 13.59L1 11L9.41 8.41L12 0Z"/>
+              <path d="M12 0L14.59 8.41L23 11L14.59 13.59L12 22L9.41 13.59L1 11L9.41 8.41L12 0Z" />
             </svg>
             <template v-if="!hasEnoughCoins">AI 티켓이 부족해요</template>
             <template v-else-if="hasExistingImage">이미지 다시 생성하기</template>
@@ -147,7 +149,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -216,10 +217,10 @@ const hasExistingImage = computed(() => {
 async function handleGenerateClick() {
   if (hasExistingImage.value) {
     const confirmed = await confirm({
-      title: '이미지 재생성',
-      message: '이미지를 재생성하시면\n기존 이미지는 사라집니다.',
-      subMessage: '재생성 하시겠습니까?',
-      type: 'warning'
+      title: "이미지 재생성",
+      message: "이미지를 재생성하시면\n기존 이미지는 사라집니다.",
+      subMessage: "재생성 하시겠습니까?",
+      type: "warning",
     });
     if (!confirmed) return;
   }
@@ -227,12 +228,24 @@ async function handleGenerateClick() {
 }
 
 function handleGenerateImage() {
-  // 자동으로 최신 꿈 선택 (또는 현재 페이지에 해당하는 꿈)
-  const dates = Object.keys(postedDates.value).sort();
-  if (dates.length > 0) {
-    const latestDate = dates[dates.length - 1];
-    selectedDreamKey.value = latestDate;
-    selectedDream.value = postedDates.value[latestDate];
+  // analysisResult에서 해당 날짜의 꿈 데이터 가져오기 (props로 전달된 날짜 사용)
+  if (props.analysisResult?.date) {
+    const dateKey = props.analysisResult.date;
+    selectedDreamKey.value = dateKey;
+    // analysisResult에 이미 title, content가 있으면 사용, 없으면 postedDates에서 가져오기
+    selectedDream.value = {
+      dreamId: postedDates.value[dateKey]?.dreamId,
+      title: props.analysisResult.dreamTitle || postedDates.value[dateKey]?.title || "",
+      content: props.analysisResult.dreamContent || postedDates.value[dateKey]?.content || "",
+    };
+  } else {
+    // fallback: analysisResult가 없으면 최신 꿈 선택
+    const dates = Object.keys(postedDates.value).sort();
+    if (dates.length > 0) {
+      const latestDate = dates[dates.length - 1];
+      selectedDreamKey.value = latestDate;
+      selectedDream.value = postedDates.value[latestDate];
+    }
   }
 
   isExpanding.value = true;
@@ -240,10 +253,10 @@ function handleGenerateImage() {
 
   setTimeout(() => {
     showVisualization.value = true;
-    
+
     // 기존 이미지가 있으면 불러오기
     loadExistingImage();
-    
+
     // 모바일에서 자동 스크롤
     nextTick(() => {
       if (bubbleRef.value && window.innerWidth <= 1400) {
@@ -257,19 +270,21 @@ function handleGenerateImage() {
 function loadExistingImage() {
   // props.analysisResult에 imageUrl이 있으면 표시
   if (props.analysisResult?.imageUrl && selectedDream.value) {
-    generatedImages.value = [{
-      id: selectedDream.value.dreamId,
-      dreamId: selectedDream.value.dreamId,
-      dreamKey: selectedDreamKey.value,
-      dreamDate: selectedDreamKey.value,
-      title: selectedDream.value.title,
-      content: selectedDream.value.content,
-      style: "저장된 이미지",
-      imageSrc: props.analysisResult.imageUrl,
-      mimeType: "image/png",
-      caption: selectedDream.value.title,
-      createdAt: new Date().toISOString(),
-    }];
+    generatedImages.value = [
+      {
+        id: selectedDream.value.dreamId,
+        dreamId: selectedDream.value.dreamId,
+        dreamKey: selectedDreamKey.value,
+        dreamDate: selectedDreamKey.value,
+        title: selectedDream.value.title,
+        content: selectedDream.value.content,
+        style: "저장된 이미지",
+        imageSrc: props.analysisResult.imageUrl,
+        mimeType: "image/png",
+        caption: selectedDream.value.title,
+        createdAt: new Date().toISOString(),
+      },
+    ];
   } else {
     generatedImages.value = [];
   }
@@ -309,12 +324,12 @@ async function generateImage() {
   if (imageAbortController) {
     imageAbortController.abort();
   }
-  
+
   // 새 AbortController 생성
   imageAbortController = new AbortController();
 
   isGenerating.value = true;
-  
+
   // 기존 이미지 초기화 (재생성 시 새 이미지만 표시)
   generatedImages.value = [];
 
@@ -326,10 +341,13 @@ async function generateImage() {
     const dreamPrompt = `${selectedDream.value.title}. ${selectedDream.value.content}`;
 
     // AI API 호출 (코인 차감 포함, 취소 가능)
-    const response = await fortuneService.generateDreamImage({
-      dream_prompt: dreamPrompt,
-      style: styleInfo.apiStyle,
-    }, imageAbortController.signal);
+    const response = await fortuneService.generateDreamImage(
+      {
+        dream_prompt: dreamPrompt,
+        style: styleInfo.apiStyle,
+      },
+      imageAbortController.signal
+    );
 
     if (response.success && response.images && response.images.length > 0) {
       // 생성된 이미지를 목록에 추가하고 자동 저장
@@ -369,7 +387,7 @@ async function generateImage() {
     }
   } catch (error) {
     // 요청이 취소된 경우
-    if (error.name === 'CanceledError' || error.name === 'AbortError') {
+    if (error.name === "CanceledError" || error.name === "AbortError") {
       console.log("ℹ️ 이미지 생성 요청이 사용자에 의해 취소됨");
       return;
     }
@@ -456,7 +474,7 @@ function downloadImage(image) {
 // 기존 이미지 다운로드 (props에서)
 function downloadExistingImage() {
   if (!props.analysisResult?.imageUrl) return;
-  
+
   try {
     const link = document.createElement("a");
     link.href = props.analysisResult.imageUrl;
@@ -759,7 +777,7 @@ defineExpose({
 }
 
 .vis-label {
-  font-family: 'Dongle', sans-serif;
+  font-family: "Dongle", sans-serif;
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--color-text-secondary);
@@ -784,7 +802,7 @@ defineExpose({
 }
 
 .preview-tag {
-  font-family: 'Dongle', sans-serif;
+  font-family: "Dongle", sans-serif;
   font-size: 1.2rem;
   font-weight: 600;
   color: var(--color-purple-dark);
@@ -897,7 +915,7 @@ defineExpose({
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 8px 20px rgba(99, 70, 171, 0.25);
-  font-family: 'Dongle', sans-serif !important;
+  font-family: "Dongle", sans-serif !important;
 }
 
 .vis-generate-btn .btn-content {
@@ -1005,7 +1023,7 @@ defineExpose({
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  font-family: 'Dongle', sans-serif !important;
+  font-family: "Dongle", sans-serif !important;
 }
 
 .result-action-btn.download-btn {
@@ -1166,6 +1184,3 @@ defineExpose({
   }
 }
 </style>
-
-
-
