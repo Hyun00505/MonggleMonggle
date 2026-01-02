@@ -1,0 +1,119 @@
+import os
+from contextlib import asynccontextmanager
+
+from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+# 서비스 모듈 및 스키마 임포트
+from services.schemas import (
+    ComprehensiveFortuneRequest, 
+    ComprehensiveFortuneResponse,
+    DreamImageRequest, 
+    DreamImageResponse,
+    MonthlyAnalysisRequest,
+    MonthlyAnalysisResponse
+)
+from services.dream_interprinter_service import load_llama_model, models
+from services.comprehensive_service import process_comprehensive_fortune
+from services.image_service import process_dream_image
+from services.monthly_analysis_service import process_monthly_analysis
+from services.Naver_fortune_api import init_driver_pool, cleanup_driver_pool
+
+# .env 파일 로드 (프로젝트 루트의 .env 파일을 항상 로드)
+load_dotenv(override=True)
+
+# Gemini API 키 설정 (필요 시 확인용, 실제 사용은 서비스 모듈에서)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY 환경변수가 설정되지 않았습니다. .env 파일을 확인해주세요.")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    앱 시작/종료 시 실행되는 수명주기 관리자
+    Gemini API 사용으로 로컬 모델 로드 불필요
+    """
+    print("🚀 서버 시작: 리소스 초기화 중...")
+    
+    # 1. Gemini API 확인 (로컬 모델 로드 대신 API 사용)
+    print("   🤖 Gemini API 사용 설정 확인...")
+    models["llm"] = "gemini-2.5-flash"
+    print("   ✅ Gemini API (gemini-2.5-flash) 사용 준비 완료!")
+    
+    # 2. Chrome 드라이버 풀 초기화
+    print("   🏊 Chrome 드라이버 풀 초기화 중...")
+    try:
+        init_driver_pool(pool_size=2, headless=True)
+        print("   ✅ 드라이버 풀 초기화 완료!")
+    except Exception as e:
+        print(f"   ⚠️ 드라이버 풀 초기화 실패: {e}")
+        print("   네이버 운세 크롤링이 느릴 수 있습니다.")
+    
+    print("🎉 서버 준비 완료!")
+    
+    yield
+    
+    # 앱 종료 시 정리
+    print("🔚 서버 종료 중...")
+    models.clear()
+    cleanup_driver_pool()
+    print("👋 서버 종료 완료")
+
+app = FastAPI(
+    title="AI 통합 운세 서비스",
+    description="꿈 해몽과 네이버 운세를 결합한 통합 운세 API",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# CORS 설정 - 프론트엔드 및 백엔드 연동 허용
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # Vue 개발 서버
+        "http://localhost:3000",  # 대체 프론트엔드 포트
+        "http://localhost:8080",  # Spring Boot 백엔드
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- API 엔드포인트 ---
+
+@app.post("/api/v1/fortune/comprehensive", response_model=ComprehensiveFortuneResponse)
+async def get_comprehensive_fortune(request: ComprehensiveFortuneRequest):
+    """
+    통합 운세 조회 API
+    1. Gemini API로 꿈 해몽
+    2. 네이버 운세 크롤링
+    3. Gemini API로 종합 분석 및 행운의 아이템 추천
+    """
+    return await process_comprehensive_fortune(request)
+
+@app.post("/api/v1/dream/generate-image", response_model=DreamImageResponse)
+async def generate_dream_image(request: DreamImageRequest):
+    """
+    꿈 내용을 기반으로 이미지를 생성하는 API
+    Gemini 2.0 Flash Exp Image Generation 모델 사용
+    """
+    return await process_dream_image(request)
+
+@app.post("/api/v1/fortune/monthly-analysis", response_model=MonthlyAnalysisResponse)
+async def get_monthly_analysis(request: MonthlyAnalysisRequest):
+    """
+    월간 운세 분석 API
+    한 달 동안의 꿈과 운세 데이터를 종합 분석하여 감동적인 리포트 생성
+    
+    - 31일간의 꿈과 운세 데이터 분석
+    - 감정 흐름 및 패턴 분석
+    - 심리적 통찰 제공
+    - 다음 달을 위한 조언 제공
+    """
+    return await process_monthly_analysis(request)
+
+# 서버 실행 (개발용)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
